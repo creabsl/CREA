@@ -1,4 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { DURATION } from '../animations'
 import type { FormEvent } from 'react'
 import SectionHeader from '../components/SectionHeader'
 import Input from '../components/Input'
@@ -121,7 +123,7 @@ export default function MutualTransfers() {
         notes: form.notes.trim() || undefined,
         availabilityDate: form.availabilityDate ? form.availabilityDate : null,
       })
-      setSuccess('Listing published successfully.')
+  setSuccess('Listing published successfully.')
       setForm({
         post: '',
         currentLocation: '',
@@ -132,7 +134,7 @@ export default function MutualTransfers() {
         contactPhone: '',
         notes: '',
       })
-      fetchList()
+  fetchList()
       fetchMine()
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Unable to create listing'
@@ -178,7 +180,19 @@ export default function MutualTransfers() {
       />
 
       {error && <div className="rounded-md border border-red-300 bg-red-50 p-3 text-sm text-red-700">{error}</div>}
-      {success && <div className="rounded-md border border-green-300 bg-green-50 p-3 text-sm text-green-700">{success}</div>}
+      <AnimatePresence>
+        {success && (
+          <motion.div
+            className="rounded-md border border-green-300 bg-green-50 p-3 text-sm text-green-700"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: DURATION.standard }}
+          >
+            {success}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <div className="grid gap-6 lg:grid-cols-3">
         <form onSubmit={onSubmit} className="space-y-4 rounded-lg border bg-white p-5 shadow-sm lg:col-span-1">
@@ -246,7 +260,7 @@ export default function MutualTransfers() {
               disabled={!canPublish || saving}
             />
           </div>
-          <Button type="submit" disabled={saving || !canPublish}>
+          <Button type="submit" disabled={saving || !canPublish} loading={saving}>
             {saving ? 'Saving...' : 'Publish Listing'}
           </Button>
         </form>

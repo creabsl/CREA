@@ -1,9 +1,16 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { motion } from 'framer-motion'
+import { STAGGER } from '../animations'
 import Card from '../components/Card'
-import Button from '../components/Button'
 import Calendar from '../components/Calendar'
 import SectionHeader from '../components/SectionHeader'
+import CounterCard from '../components/CounterCard'
+import BreakingNews from '../components/BreakingNews'
+import QuickPreviewCard from '../components/QuickPreviewCard'
+import QuickLinks from '../components/QuickLinks'
+import { EventIcon, ForumIcon, CircularIcon, CourtCaseIcon, CalendarIcon, UserIcon } from '../components/Icons'
+import { StaggerContainer, StaggerItem } from '../components/StaggerAnimation'
 import { usePageTitle } from '../hooks/usePageTitle'
 import { getCirculars, getCourtCases, getEvents, getForumTopics, getMemberCounts, getTotals } from '../services/api'
 import type { Circular, CourtCase, EventItem, ForumTopic, MemberCount } from '../types'
@@ -43,157 +50,75 @@ export default function Dashboard() {
   const breaking = useMemo(() => events.find(e => e.breaking), [events])
 
   return (
-    <div className="space-y-10">
-      {/* Hero banner */}
-      <div className="rounded-xl bg-gradient-to-r from-blue-900 to-blue-700 text-white p-6 shadow">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-bold">Central Railway Engineers Association</h1>
-            <p className="text-sm text-blue-100 mt-1">Official portal for events, circulars, discussions, and membership.</p>
-          </div>
-          <div className="grid grid-cols-3 gap-3 text-center">
-            <div className="bg-white/10 rounded-md p-3">
-              <div className="text-xs">Divisions</div>
-              <div className="text-lg font-semibold">{totals.divisions}</div>
+    <div className="space-y-8 xl:space-y-10">
+      {/* Header block */}
+      <motion.div
+        className="rounded-xl bg-white border p-6 shadow-sm"
+        initial={{ opacity: 0, y: -12 }}
+        animate={{ opacity: 1, y: 0 }}
+      >
+        <div className="flex flex-col gap-6">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <h1 className="text-2xl font-bold text-blue-900">Welcome to CREA Portal</h1>
+              <p className="text-sm text-gray-600 mt-1">Your hub for events, circulars, forums, and membership.</p>
             </div>
-            <div className="bg-white/10 rounded-md p-3">
-              <div className="text-xs">Members</div>
-              <div className="text-lg font-semibold">{totals.members.toLocaleString()}</div>
-            </div>
-            <div className="bg-white/10 rounded-md p-3">
-              <div className="text-xs">Active Cases</div>
-              <div className="text-lg font-semibold">{totals.courtCases}</div>
+            {/* Key stats */}
+            <div className="hidden md:grid grid-cols-3 gap-3">
+              <CounterCard label="Divisions" value={totals.divisions} delay={0} icon={<UserIcon />} />
+              <CounterCard label="Members" value={totals.members} delay={1} icon={<UserIcon />} />
+              <CounterCard label="Active Cases" value={totals.courtCases} delay={2} icon={<CourtCaseIcon />} />
             </div>
           </div>
+          {breaking && (
+            <BreakingNews
+              title={breaking.title}
+              content={`Scheduled event at ${breaking.location}`}
+              date={breaking.date}
+              location={breaking.location}
+            />
+          )}
         </div>
-      </div>
+      </motion.div>
 
-      {/* Breaking news */}
-      {breaking && (
-        <div className="rounded-md border border-amber-300 bg-amber-50 p-4 text-amber-800">
-          <div className="flex items-start gap-3">
-            <div className="mt-0.5 text-amber-600">⚡</div>
-            <div className="flex-1">
-              <div className="font-semibold">Breaking News</div>
-              <div className="text-sm">{breaking.title} on {new Date(breaking.date).toLocaleDateString()} at {breaking.location}</div>
-              <div className="mt-2">
-                <Button onClick={() => navigate('/events')}>View Events</Button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Division stats */}
-      <SectionHeader title="Division-wise Member Count" />
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-        {counts.map((c) => (
-          <Card key={c.division}>
-            <div className="text-sm text-gray-500">{c.division}</div>
-            <div className="mt-1 text-2xl font-bold text-blue-900">{c.count}</div>
-          </Card>
-        ))}
-      </div>
-
-      {/* Quick previews */}
-      <SectionHeader title="Quick Previews" subtitle="A snapshot of what's new across the portal" />
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
-        <Card title={
-          <div className="flex items-center justify-between">
-            <span>Events</span>
-            <button className="text-xs text-blue-900 hover:underline" onClick={() => navigate('/events')}>View all</button>
-          </div>
-        }>
-          <ul className="space-y-2">
-            {events.slice(0,2).map(e => (
-              <li key={e.id}>
-                <button onClick={() => navigate('/events')} className="w-full text-left rounded-md px-2 py-1.5 hover:bg-gray-50">
-                  <div className="text-sm font-medium text-gray-800 truncate">{e.title}</div>
-                  <div className="text-xs text-gray-600">{new Date(e.date).toLocaleDateString()} • {e.location}</div>
-                </button>
-              </li>
-            ))}
-            {events.length === 0 && <li className="text-sm text-gray-500">No events yet.</li>}
-          </ul>
-        </Card>
-
-        <Card title={
-          <div className="flex items-center justify-between">
-            <span>Forum</span>
-            <button className="text-xs text-blue-900 hover:underline" onClick={() => navigate('/forum')}>View all</button>
-          </div>
-        }>
-          <ul className="space-y-2">
-            {topics.slice(0,2).map(t => (
-              <li key={t.id}>
-                <button onClick={() => navigate('/forum')} className="w-full text-left rounded-md px-2 py-1.5 hover:bg-gray-50">
-                  <div className="text-sm font-medium text-gray-800 truncate">{t.title}</div>
-                  <div className="text-xs text-gray-600">{t.replies} replies • {new Date(t.createdAt).toLocaleDateString()}</div>
-                </button>
-              </li>
-            ))}
-            {topics.length === 0 && <li className="text-sm text-gray-500">No topics yet.</li>}
-          </ul>
-        </Card>
-
-        <Card title={
-          <div className="flex items-center justify-between">
-            <span>Circulars</span>
-            <button className="text-xs text-blue-900 hover:underline" onClick={() => navigate('/circulars')}>View all</button>
-          </div>
-        }>
-          <ul className="space-y-2">
-            {circulars.slice(0,2).map(c => (
-              <li key={c.id}>
-                <button onClick={() => navigate('/circulars')} className="w-full text-left rounded-md px-2 py-1.5 hover:bg-gray-50">
-                  <div className="text-sm font-medium text-gray-800 truncate">{c.subject}</div>
-                  <div className="text-xs text-gray-600">{c.boardNumber} • {new Date(c.dateOfIssue).toLocaleDateString()}</div>
-                </button>
-              </li>
-            ))}
-            {circulars.length === 0 && <li className="text-sm text-gray-500">No circulars yet.</li>}
-          </ul>
-        </Card>
-
-        <Card title={
-          <div className="flex items-center justify-between">
-            <span>Court Cases</span>
-            <button className="text-xs text-blue-900 hover:underline" onClick={() => navigate('/court-cases')}>View all</button>
-          </div>
-        }>
-          <ul className="space-y-2">
-            {cases.slice(0,2).map(cc => (
-              <li key={cc.id}>
-                <button onClick={() => navigate('/court-cases')} className="w-full text-left rounded-md px-2 py-1.5 hover:bg-gray-50">
-                  <div className="text-sm font-medium text-gray-800 truncate">{cc.caseNumber}</div>
-                  <div className="text-xs text-gray-600">{new Date(cc.date).toLocaleDateString()} • {cc.subject}</div>
-                </button>
-              </li>
-            ))}
-            {cases.length === 0 && <li className="text-sm text-gray-500">No court cases.</li>}
-          </ul>
-        </Card>
-      </div>
-
-      {/* Calendar & quick actions */}
+      {/* Main content grid */}
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
-        <Card title={
-          <div className="flex items-center justify-between">
-            <span>Event Calendar</span>
-            <button className="text-xs text-blue-900 hover:underline" onClick={() => navigate('/events')}>Open</button>
+        {/* Left column: Quick previews and links */}
+        <div className="space-y-4 xl:col-span-2">
+          <SectionHeader title="What's new" subtitle="Recent updates from across the portal" />
+          <div className="grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-4 gap-4">
+            <QuickPreviewCard title="Events" icon={<EventIcon />} items={events.map(e => ({ id: e.id, title: e.title, subtitle: e.location, date: e.date }))} onViewAll={()=>navigate('/events')} delay={0} />
+            <QuickPreviewCard title="Forum" icon={<ForumIcon />} items={topics.map(t => ({ id: t.id, title: t.title, subtitle: `${t.replies} replies`, date: t.createdAt }))} onViewAll={()=>navigate('/forum')} delay={1} />
+            <QuickPreviewCard title="Circulars" icon={<CircularIcon />} items={circulars.map(c => ({ id: c.id, title: c.subject, subtitle: c.boardNumber, date: c.dateOfIssue }))} onViewAll={()=>navigate('/circulars')} delay={2} />
+            <QuickPreviewCard title="Court Cases" icon={<CourtCaseIcon />} items={cases.map(cc => ({ id: cc.id, title: cc.caseNumber, subtitle: cc.subject, date: cc.date }))} onViewAll={()=>navigate('/court-cases')} delay={3} />
           </div>
-        } className="xl:col-span-2">
-          <Calendar year={new Date().getFullYear()} month={new Date().getMonth()} markers={events.map(e=>e.date)} />
-        </Card>
 
-        <Card title="Quick Links">
-          <div className="flex flex-wrap gap-2">
-            <Button onClick={() => navigate('/apply-membership')}>Apply Membership</Button>
-            <Button variant="secondary" onClick={() => navigate('/manuals')}>Manuals</Button>
-            <Button variant="ghost" onClick={() => navigate('/body-details')}>Association Body</Button>
-            <Button variant="ghost" onClick={() => navigate('/suggestions')}>Suggestions</Button>
-          </div>
-        </Card>
+          <SectionHeader title="Division-wise Member Count" />
+          <StaggerContainer className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+            {counts.map((c, index) => (
+              <StaggerItem key={c.division}>
+                <Card delay={index * STAGGER.children}>
+                  <div className="text-sm text-gray-500">{c.division}</div>
+                  <div className="mt-1 text-2xl font-bold text-blue-900">{c.count}</div>
+                </Card>
+              </StaggerItem>
+            ))}
+          </StaggerContainer>
+        </div>
+
+        {/* Right column: Calendar and quick actions */}
+        <div className="space-y-4">
+      <Card title={
+            <div className="flex items-center justify-between">
+        <span className="inline-flex items-center gap-2"><CalendarIcon /> Event Calendar</span>
+        <button className="text-xs text-brand hover:text-brand-900 no-underline" onClick={() => navigate('/events')}>Open</button>
+            </div>
+          }>
+            <Calendar year={new Date().getFullYear()} month={new Date().getMonth()} markers={events.map(e=>e.date)} />
+          </Card>
+
+          <QuickLinks onApplyMembership={()=>navigate('/apply-membership')} onViewManuals={()=>navigate('/manuals')} />
+        </div>
       </div>
     </div>
   )

@@ -80,7 +80,7 @@ export default function Signup() {
               }
             />
           )}
-          <Button type="submit" disabled={loading}>
+          <Button type="submit" disabled={loading} loading={loading}>
             {loading ? (sent ? 'Verifying...' : 'Sending OTP...') : (sent ? 'Verify & Create Account' : 'Send OTP')}
           </Button>
         </form>

@@ -1,16 +1,47 @@
 import type { ButtonHTMLAttributes } from 'react'
+import { motion } from 'framer-motion'
+import { SPRING } from '../animations'
+import Spinner from './Spinner'
 
 type Props = ButtonHTMLAttributes<HTMLButtonElement> & {
   variant?: 'primary' | 'secondary' | 'ghost' | 'danger'
+  loading?: boolean
 }
 
-export default function Button({ variant = 'primary', className = '', ...rest }: Props) {
-  const base = 'inline-flex items-center justify-center rounded-md px-4 py-2 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed'
+export default function Button({ variant = 'primary', className = '', children, onClick, disabled, type, loading = false }: Props) {
+  const base = 'btn'
   const variants: Record<string, string> = {
-    primary: 'bg-blue-900 text-white hover:bg-blue-800 focus:ring-blue-900',
-    secondary: 'bg-amber-500 text-white hover:bg-amber-600 focus:ring-amber-500',
-    ghost: 'bg-transparent text-blue-900 hover:bg-blue-50 focus:ring-blue-900',
-  danger: 'bg-red-600 text-white hover:bg-red-700 focus:ring-red-600',
+    primary: 'btn-primary',
+    secondary: 'btn-secondary',
+    ghost: 'btn-ghost',
+    danger: 'btn-danger',
   }
-  return <button className={`${base} ${variants[variant]} ${className}`} {...rest} />
+  
+  return (
+    <motion.button 
+      className={`${base} ${variants[variant]} ${className}`}
+      onClick={onClick}
+      disabled={disabled || loading}
+      type={type}
+      whileHover={{ 
+        scale: 1.015,
+        transition: SPRING.hover
+      }}
+      whileTap={{ 
+        scale: 0.985,
+        transition: SPRING.press
+      }}
+      initial={{ scale: 1 }}
+    >
+      <span className="inline-flex items-center gap-2">
+        {loading && (
+          // Subtle inline spinner to the left when loading
+          <span className="-ml-1 inline-flex">
+            <Spinner size={16} variant="classic" />
+          </span>
+        )}
+        <span>{children}</span>
+      </span>
+    </motion.button>
+  )
 }

@@ -1,4 +1,11 @@
-export default function Spinner({ size = 20 }: { size?: number }) {
+import TrainLoader from './TrainLoader'
+
+export default function Spinner({ size = 20, variant = 'train' }: { size?: number; variant?: 'train' | 'classic' }) {
+  if (variant === 'train') {
+    return <TrainLoader size={size} />
+  }
+  
+  // Classic spinner fallback
   const s = `${size}px`
   return (
     <svg className="animate-spin text-blue-900" width={s} height={s} viewBox="0 0 24 24" aria-hidden="true" role="status">

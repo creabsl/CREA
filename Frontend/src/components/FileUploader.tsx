@@ -9,7 +9,7 @@ export interface FileUploaderProps {
 }
 
 export default function FileUploader({ 
-  label = 'Attach files', 
+  label: _label = 'Attach files', 
   accept = '.pdf,.doc,.docx,.jpg,.jpeg,.png', 
   maxFiles = 1, 
   onFiles,

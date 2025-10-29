@@ -6,9 +6,9 @@ export default function Footer() {
           © {new Date().getFullYear()} CREA — Central Railway Engineers Association
         </div>
         <div className="flex items-center gap-4">
-          <a href="#" className="text-blue-900 hover:underline">Privacy</a>
-          <a href="#" className="text-blue-900 hover:underline">Terms</a>
-          <a href="#" className="text-blue-900 hover:underline">Contact</a>
+          <a href="#" className="text-brand hover:text-brand-900 no-underline">Privacy</a>
+          <a href="#" className="text-brand hover:text-brand-900 no-underline">Terms</a>
+          <a href="#" className="text-brand hover:text-brand-900 no-underline">Contact</a>
         </div>
       </div>
     </footer>

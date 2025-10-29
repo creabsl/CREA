@@ -23,5 +23,10 @@
     "noFallthroughCasesInSwitch": true,
     "noUncheckedSideEffectImports": true
   },
-  "include": ["src"]
+  "include": ["src"],
+  "exclude": [
+    "src/pages/Events.backup.tsx",
+  "src/pages/**/*.backup.tsx",
+  "src/components/**/*.backup.tsx"
+  ]
 }

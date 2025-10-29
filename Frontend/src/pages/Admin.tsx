@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+// import { motion } from 'framer-motion'
 import SectionHeader from '../components/SectionHeader'
 import Button from '../components/Button'
 import Input from '../components/Input'
 import Card from '../components/Card'
+import { StaggerContainer, StaggerItem } from '../components/StaggerAnimation'
 import { usePageTitle } from '../hooks/usePageTitle'
 import { createCircular, createCourtCase, createEvent, createForumTopic, createManual, deleteCircular, deleteCourtCase, deleteEvent, deleteForumTopic, deleteManual, getCirculars, getCourtCases, getEvents, getForumTopics, getManuals, getSuggestions, updateCircular, updateCourtCase, updateEvent, updateForumTopic, updateManual, adminListUsers, adminUpdateUser, notifyStatsChanged } from '../services/api'
 import type { Circular, CourtCase, EventItem, ForumTopic, Manual, Suggestion, Division } from '../types'
@@ -36,18 +38,19 @@ export default function Admin() {
 
   return (
     <div className="space-y-6">
-  <SectionHeader title="Admin Panel" subtitle="Manage events, manuals, circulars, court cases, forum topics, and more." />
+      <SectionHeader title="Admin Panel" subtitle="Manage events, manuals, circulars, court cases, forum topics, and more." />
       {/* Removed demo data loader */}
 
       {/* Miniature overview of key pages */}
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
-        <Card title={
-          <div className="flex items-center justify-between">
-            <span>Events (latest)</span>
-            <button className="text-xs text-blue-900 hover:underline" onClick={() => navigate('/events')}>View all</button>
-          </div>
-        }>
-          <ul className="space-y-2">
+      <StaggerContainer className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+        <StaggerItem>
+          <Card title={
+            <div className="flex items-center justify-between">
+              <span>Events (latest)</span>
+              <button className="text-xs text-blue-900 hover:underline" onClick={() => navigate('/events')}>View all</button>
+            </div>
+          }>
+            <ul className="space-y-2">
             {events.slice(0,2).map(e => (
               <li key={e.id}>
                 <button onClick={() => navigate('/events')} className="w-full text-left rounded-md px-2 py-1.5 hover:bg-gray-50">
@@ -59,7 +62,9 @@ export default function Admin() {
             {events.length === 0 && <li className="text-sm text-gray-500">No events yet.</li>}
           </ul>
         </Card>
+        </StaggerItem>
 
+        <StaggerItem>
         <Card title={
           <div className="flex items-center justify-between">
             <span>Forum</span>
@@ -78,7 +83,9 @@ export default function Admin() {
             {topics.length === 0 && <li className="text-sm text-gray-500">No topics yet.</li>}
           </ul>
         </Card>
+        </StaggerItem>
 
+        <StaggerItem>
         <Card title={
           <div className="flex items-center justify-between">
             <span>Circulars</span>
@@ -97,7 +104,9 @@ export default function Admin() {
             {circulars.length === 0 && <li className="text-sm text-gray-500">No circulars yet.</li>}
           </ul>
         </Card>
+        </StaggerItem>
 
+        <StaggerItem>
         <Card title={
           <div className="flex items-center justify-between">
             <span>Court Cases</span>
@@ -116,7 +125,8 @@ export default function Admin() {
             {cases.length === 0 && <li className="text-sm text-gray-500">No court cases.</li>}
           </ul>
         </Card>
-      </div>
+        </StaggerItem>
+      </StaggerContainer>
 
       <div className="flex gap-2 flex-wrap">
         {(['events','manuals','circulars','forum','court-cases','suggestions','members'] as const).map(k => (

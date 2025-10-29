@@ -1,4 +1,6 @@
 import { useMemo, useState } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { SPRING, DURATION } from '../animations'
 
 export type Column<T> = {
   key: keyof T
@@ -52,20 +54,20 @@ export default function DataTable<T extends Record<string, unknown>>({ data, col
           placeholder="Search..."
           value={query}
           onChange={(e) => { setQuery(e.target.value); setPage(1) }}
-          className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-900 focus:ring-1 focus:ring-blue-900"
+          className="input"
         />
         <div className="hidden sm:block text-xs text-gray-500 whitespace-nowrap">{filtered.length} result(s)</div>
       </div>
-      <div className="overflow-x-auto rounded-md border">
+      <div className="overflow-x-auto rounded-md border border-default">
         <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
+          <thead className="bg-brand-50/50">
             <tr>
               {columns.map((c) => {
                 const key = c.key
                 const active = sortKey===key
                 return (
                   <th key={String(key)} className="px-4 py-2 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                    <button className="inline-flex items-center gap-1 hover:underline" onClick={()=>onSort(key)}>
+                    <button className="inline-flex items-center gap-1 no-underline text-brand hover:text-brand-900" onClick={()=>onSort(key)}>
                       {c.header}
                       {active && <span>{sortDir==='asc'?'▲':'▼'}</span>}
                     </button>
@@ -75,15 +77,29 @@ export default function DataTable<T extends Record<string, unknown>>({ data, col
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100 bg-white">
-            {current.map((row, idx) => (
-              <tr key={idx} className="hover:bg-gray-50">
-                {columns.map((c) => (
-                  <td key={String(c.key)} className="px-4 py-2 text-sm text-gray-800 whitespace-nowrap">
-                    {c.render ? c.render(row) : String(row[c.key] ?? '')}
-                  </td>
-                ))}
-              </tr>
-            ))}
+            <AnimatePresence mode="popLayout">
+      {current.map((row, idx) => (
+                <motion.tr 
+                  key={idx} 
+                  className="hover:bg-brand-50/60"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -20 }}
+                  transition={{ 
+        duration: DURATION.standard,
+        delay: Math.min(idx * 0.03, 0.18),
+        ...SPRING.entrance,
+                  }}
+                  layout
+                >
+                  {columns.map((c) => (
+                    <td key={String(c.key)} className="px-4 py-2 text-sm text-gray-800 whitespace-nowrap">
+                      {c.render ? c.render(row) : String(row[c.key] ?? '')}
+                    </td>
+                  ))}
+                </motion.tr>
+              ))}
+            </AnimatePresence>
             {current.length === 0 && (
               <tr>
                 <td colSpan={columns.length} className="px-4 py-6 text-center text-sm text-gray-500">

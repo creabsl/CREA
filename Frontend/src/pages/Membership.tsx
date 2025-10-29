@@ -210,11 +210,10 @@ export default function Membership() {
         </div>
       ) : (
         <div className="space-y-4">
-          <div className="flex items-center gap-2 text-sm">
-            <span className={`px-2 py-1 rounded ${step>=1?'bg-blue-900 text-white':'bg-gray-200'}`}>1. Basic Info</span>
-            <span className={`px-2 py-1 rounded ${step>=2?'bg-blue-900 text-white':'bg-gray-200'}`}>2. Personal Details</span>
-            <span className={`px-2 py-1 rounded ${step>=3?'bg-blue-900 text-white':'bg-gray-200'}`}>3. Professional Info</span>
-            <span className={`px-2 py-1 rounded ${step>=4?'bg-blue-900 text-white':'bg-gray-200'}`}>4. Payment</span>
+          <div className="flex items-center gap-2 text-xs sm:text-sm">
+            {[1,2,3,4].map((i) => (
+              <span key={i} className={`px-2 py-1 rounded ${step>=i?'bg-blue-900 text-white':'bg-gray-200'}`}>{i}. {['Basic','Personal','Professional','Payment'][i-1]}</span>
+            ))}
           </div>
 
           {step === 1 && (
@@ -407,7 +406,7 @@ export default function Membership() {
 
               <div className="flex justify-between">
                 <Button variant="ghost" onClick={()=>setStep(3)}>Back</Button>
-                <Button onClick={submit} disabled={submitting}>
+                <Button onClick={submit} disabled={submitting} loading={submitting}>
                   {submitting ? 'Processing...' : `Pay ₹${form.paymentAmount}`}
                 </Button>
               </div>

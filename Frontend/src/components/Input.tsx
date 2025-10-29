@@ -11,13 +11,13 @@ export default function Input({ label, hint, error, className = '', id, ...rest 
   return (
     <div className="w-full">
       {label && (
-        <label htmlFor={inputId} className="block text-sm font-medium text-gray-700 mb-1">
+  <label htmlFor={inputId} className="block text-sm font-medium text-gray-700 mb-1">
           {label}
         </label>
       )}
       <input
         id={inputId}
-        className={`block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm placeholder:text-gray-400 focus:border-blue-900 focus:ring-1 focus:ring-blue-900 ${className}`}
+  className={`input ${className}`}
         {...rest}
       />
       {hint && <p className="mt-1 text-xs text-gray-500">{hint}</p>}

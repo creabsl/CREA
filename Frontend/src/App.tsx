@@ -1,7 +1,9 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
+import { AnimatePresence } from 'framer-motion'
 import './App.css'
 import Navbar from './components/Navbar'
 import Footer from './components/Footer'
+import PageTransition from './components/PageTransition'
 import AuthProvider from './context/AuthContext'
 import { RequireAuth, RequireRole } from './routes/guards'
 import Dashboard from './pages/Dashboard'
@@ -20,6 +22,33 @@ import Profile from './pages/Profile'
 import Files from './pages/Files'
 import MutualTransfers from './pages/MutualTransfers'
 
+function AnimatedRoutes() {
+  const location = useLocation()
+  
+  return (
+    <AnimatePresence mode="wait">
+      <Routes location={location} key={location.pathname}>
+        <Route path="/login" element={<PageTransition><Login /></PageTransition>} />
+        <Route path="/forgot-password" element={<PageTransition><ForgotPassword /></PageTransition>} />
+        <Route path="/signup" element={<PageTransition><Signup /></PageTransition>} />
+        <Route path="/admin" element={<RequireRole role="admin"><PageTransition><Admin /></PageTransition></RequireRole>} />
+        <Route path="/" element={<PageTransition><Dashboard /></PageTransition>} />
+        <Route path="/events" element={<RequireAuth><PageTransition><Events /></PageTransition></RequireAuth>} />
+        <Route path="/forum" element={<RequireAuth><PageTransition><Forum /></PageTransition></RequireAuth>} />
+        <Route path="/documents" element={<RequireAuth><PageTransition><Documents /></PageTransition></RequireAuth>} />
+        <Route path="/apply-membership" element={<RequireAuth><PageTransition><Membership /></PageTransition></RequireAuth>} />
+        <Route path="/body-details" element={<RequireAuth><PageTransition><BodyDetails /></PageTransition></RequireAuth>} />
+        <Route path="/suggestions" element={<RequireAuth><PageTransition><Suggestions /></PageTransition></RequireAuth>} />
+        <Route path="/profile" element={<RequireAuth><PageTransition><Profile /></PageTransition></RequireAuth>} />
+        <Route path="/files" element={<RequireAuth><PageTransition><Files /></PageTransition></RequireAuth>} />
+        <Route path="/mutual-transfers" element={<RequireAuth><PageTransition><MutualTransfers /></PageTransition></RequireAuth>} />
+        <Route path="/external-links" element={<RequireAuth><PageTransition><ExternalLinks /></PageTransition></RequireAuth>} />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </AnimatePresence>
+  )
+}
+
 function App() {
   return (
     <BrowserRouter>
@@ -27,24 +56,7 @@ function App() {
         <div className="min-h-screen bg-gray-50 text-gray-900">
           <Navbar />
           <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-6">
-            <Routes>
-              <Route path="/login" element={<Login />} />
-              <Route path="/forgot-password" element={<ForgotPassword />} />
-              <Route path="/signup" element={<Signup />} />
-              <Route path="/admin" element={<RequireRole role="admin"><Admin /></RequireRole>} />
-              <Route path="/" element={<Dashboard />} />
-              <Route path="/events" element={<RequireAuth><Events /></RequireAuth>} />
-              <Route path="/forum" element={<RequireAuth><Forum /></RequireAuth>} />
-              <Route path="/documents" element={<RequireAuth><Documents /></RequireAuth>} />
-              <Route path="/apply-membership" element={<RequireAuth><Membership /></RequireAuth>} />
-              <Route path="/body-details" element={<RequireAuth><BodyDetails /></RequireAuth>} />
-              <Route path="/suggestions" element={<RequireAuth><Suggestions /></RequireAuth>} />
-              <Route path="/profile" element={<RequireAuth><Profile /></RequireAuth>} />
-              <Route path="/files" element={<RequireAuth><Files /></RequireAuth>} />
-              <Route path="/mutual-transfers" element={<RequireAuth><MutualTransfers /></RequireAuth>} />
-              <Route path="/external-links" element={<RequireAuth><ExternalLinks /></RequireAuth>} />
-              <Route path="*" element={<Navigate to="/" replace />} />
-            </Routes>
+            <AnimatedRoutes />
           </main>
           <Footer />
         </div>

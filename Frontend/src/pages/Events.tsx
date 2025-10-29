@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
+import { motion } from 'framer-motion'
+import { SPRING } from '../animations'
 import { getEvents, createEvent } from '../services/api'
 import type { EventItem } from '../types'
 import Button from '../components/Button'
@@ -6,6 +8,7 @@ import Modal from '../components/Modal'
 import SegmentedControl from '../components/SegmentedControl'
 import Calendar from '../components/Calendar'
 import Spinner from '../components/Spinner'
+import { StaggerContainer, StaggerItem } from '../components/StaggerAnimation'
 import { usePageTitle } from '../hooks/usePageTitle'
 import { useAuth } from '../context/auth'
 import Input from '../components/Input'
@@ -31,9 +34,14 @@ export default function Events() {
       <h1 className="text-2xl font-semibold text-blue-900">Events</h1>
 
       {breaking && (
-        <div className="rounded-md border border-amber-300 bg-amber-50 p-3 text-amber-800">
+        <motion.div 
+          className="rounded-md border border-amber-300 bg-amber-50 p-3 text-amber-800"
+          initial={{ opacity: 0, y: 6 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={SPRING.entrance}
+        >
           <strong>Breaking News:</strong> {breaking.title} on {new Date(breaking.date).toLocaleDateString()} at {breaking.location}
-        </div>
+        </motion.div>
       )}
 
       <div className="flex items-center justify-between gap-3">
@@ -41,27 +49,32 @@ export default function Events() {
         <SegmentedControl options={[{label:'List', value:'list'},{label:'Calendar', value:'calendar'}]} value={view} onChange={setView} />
       </div>
       {loading ? (
-        <div className="flex justify-center py-10"><Spinner size={28} /></div>
+        <div className="flex justify-center py-10"><Spinner size={60} /></div>
       ) : view==='list' ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <StaggerContainer className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {events.map((e) => (
-            <div key={e.id} className="rounded-lg border bg-white p-4 shadow-sm">
-              <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold text-gray-800">{e.title}</h3>
-                <span className="text-xs text-gray-500">{new Date(e.date).toLocaleDateString()}</span>
-              </div>
-              <div className="mt-1 text-sm text-gray-600">{e.location}</div>
-              <p className="mt-2 text-sm text-gray-700">{e.description}</p>
-              {e.photos?.length ? (
-                <div className="mt-3 flex gap-3 overflow-x-auto">
-                  {e.photos.map((p, idx) => (
-                    <img key={idx} src={p} alt="event" className="h-24 w-36 rounded-md object-cover cursor-pointer" onClick={() => setOpenImg(p)} />
-                  ))}
+            <StaggerItem key={e.id}>
+              <motion.div 
+                className="rounded-lg border bg-white p-4 shadow-sm"
+                whileHover={{ y: -1, boxShadow: "0 8px 20px rgba(0, 0, 0, 0.08)", transition: SPRING.hover }}
+              >
+                <div className="flex items-center justify-between">
+                  <h3 className="text-lg font-semibold text-gray-800">{e.title}</h3>
+                  <span className="text-xs text-gray-500">{new Date(e.date).toLocaleDateString()}</span>
                 </div>
-              ) : null}
-            </div>
+                <div className="mt-1 text-sm text-gray-600">{e.location}</div>
+                <p className="mt-2 text-sm text-gray-700">{e.description}</p>
+                {e.photos?.length ? (
+                  <div className="mt-3 flex gap-3 overflow-x-auto">
+                    {e.photos.map((p, idx) => (
+                      <img key={idx} src={p} alt="event" className="h-24 w-36 rounded-md object-cover cursor-pointer" onClick={() => setOpenImg(p)} />
+                    ))}
+                  </div>
+                ) : null}
+              </motion.div>
+            </StaggerItem>
           ))}
-        </div>
+        </StaggerContainer>
       ) : (
         <Calendar year={new Date().getFullYear()} month={new Date().getMonth()} markers={events.map(e=>e.date)} />
       )}
@@ -96,7 +109,7 @@ export default function Events() {
               } finally {
                 setCreating(false)
               }
-            }} disabled={creating}>{creating ? 'Saving...' : 'Create Event'}</Button>
+            }} disabled={creating} loading={creating}>{creating ? 'Saving...' : 'Create Event'}</Button>
           </div>
         </div>
       </Modal>
