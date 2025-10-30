@@ -50,7 +50,7 @@ export default function Events() {
       </div>
       {loading ? (
         <div className="flex justify-center py-10"><Spinner size={60} /></div>
-      ) : view==='list' ? (
+  ) : view==='list' ? (
         <StaggerContainer className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {events.map((e) => (
             <StaggerItem key={e.id}>
@@ -76,7 +76,11 @@ export default function Events() {
           ))}
         </StaggerContainer>
       ) : (
-        <Calendar year={new Date().getFullYear()} month={new Date().getMonth()} markers={events.map(e=>e.date)} />
+        <Calendar
+          year={new Date().getFullYear()}
+          month={new Date().getMonth()}
+          markers={events.map(e => ({ date: e.date, title: e.title, content: e.location }))}
+        />
       )}
 
   <Modal open={!!openImg} onClose={() => setOpenImg(null)}>

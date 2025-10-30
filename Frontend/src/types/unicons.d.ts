@@ -15,4 +15,11 @@ declare module '@iconscout/react-unicons' {
   export const UilShieldExclamation: React.FC<UniconProps>
   export const UilProcess: React.FC<UniconProps>
   export const UilArrowRight: React.FC<UniconProps>
+  export const UilAngleDown: React.FC<UniconProps>
+  export const UilBuilding: React.FC<UniconProps>
+  export const UilUsersAlt: React.FC<UniconProps>
+  export const UilDownloadAlt: React.FC<UniconProps>
+  export const UilEdit: React.FC<UniconProps>
+  export const UilTrashAlt: React.FC<UniconProps>
+  export const UilPlus: React.FC<UniconProps>
 }

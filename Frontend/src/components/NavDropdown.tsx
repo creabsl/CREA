@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { TWEEN } from '../animations'
+import { ArrowDownIcon } from './Icons'
 
 type Item = { to: string; label: string }
 
@@ -29,13 +30,13 @@ export default function NavDropdown({ label, items }: { label: string; items: It
 			>
 				{label}
 				<motion.span
-					className="ml-1 select-none"
+					className="ml-1 select-none inline-flex"
 					initial={false}
 					animate={{ rotate: open ? 180 : 0 }}
 					transition={TWEEN.fast}
 					aria-hidden="true"
 				>
-					▾
+					<ArrowDownIcon size={16} />
 				</motion.span>
 			</button>
 			<AnimatePresence>

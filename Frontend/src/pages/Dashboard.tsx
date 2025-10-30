@@ -24,6 +24,7 @@ export default function Dashboard() {
   const navigate = useNavigate()
   usePageTitle('CREA • Dashboard')
   const [totals, setTotals] = useState<{ divisions: number; members: number; courtCases: number }>({ divisions: 0, members: 0, courtCases: 0 })
+
   useEffect(() => {
     const load = async () => {
       const [counts, totals, events, topics, circulars, cases] = await Promise.all([
@@ -83,16 +84,8 @@ export default function Dashboard() {
 
       {/* Main content grid */}
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
-        {/* Left column: Quick previews and links */}
+        {/* Left column: Division counts first, then Quick previews and links */}
         <div className="space-y-4 xl:col-span-2">
-          <SectionHeader title="What's new" subtitle="Recent updates from across the portal" />
-          <div className="grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-4 gap-4">
-            <QuickPreviewCard title="Events" icon={<EventIcon />} items={events.map(e => ({ id: e.id, title: e.title, subtitle: e.location, date: e.date }))} onViewAll={()=>navigate('/events')} delay={0} />
-            <QuickPreviewCard title="Forum" icon={<ForumIcon />} items={topics.map(t => ({ id: t.id, title: t.title, subtitle: `${t.replies} replies`, date: t.createdAt }))} onViewAll={()=>navigate('/forum')} delay={1} />
-            <QuickPreviewCard title="Circulars" icon={<CircularIcon />} items={circulars.map(c => ({ id: c.id, title: c.subject, subtitle: c.boardNumber, date: c.dateOfIssue }))} onViewAll={()=>navigate('/circulars')} delay={2} />
-            <QuickPreviewCard title="Court Cases" icon={<CourtCaseIcon />} items={cases.map(cc => ({ id: cc.id, title: cc.caseNumber, subtitle: cc.subject, date: cc.date }))} onViewAll={()=>navigate('/court-cases')} delay={3} />
-          </div>
-
           <SectionHeader title="Division-wise Member Count" />
           <StaggerContainer className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
             {counts.map((c, index) => (
@@ -104,20 +97,34 @@ export default function Dashboard() {
               </StaggerItem>
             ))}
           </StaggerContainer>
+
+          <SectionHeader title="What's new" subtitle="Recent updates from across the portal" />
+          <div className="grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-4 gap-4">
+            <QuickPreviewCard title="Events" icon={<EventIcon />} items={events.map(e => ({ id: e.id, title: e.title, subtitle: e.location, date: e.date }))} onViewAll={()=>navigate('/events')} delay={0} />
+            <QuickPreviewCard title="Forum" icon={<ForumIcon />} items={topics.map(t => ({ id: t.id, title: t.title, subtitle: `${t.replies} replies`, date: t.createdAt }))} onViewAll={()=>navigate('/forum')} delay={1} />
+            <QuickPreviewCard title="Circulars" icon={<CircularIcon />} items={circulars.map(c => ({ id: c.id, title: c.subject, subtitle: c.boardNumber, date: c.dateOfIssue }))} onViewAll={()=>navigate('/circulars')} delay={2} />
+            <QuickPreviewCard title="Court Cases" icon={<CourtCaseIcon />} items={cases.map(cc => ({ id: cc.id, title: cc.caseNumber, subtitle: cc.subject, date: cc.date }))} onViewAll={()=>navigate('/court-cases')} delay={3} />
+          </div>
         </div>
 
         {/* Right column: Calendar and quick actions */}
         <div className="space-y-4">
-      <Card title={
-            <div className="flex items-center justify-between">
-        <span className="inline-flex items-center gap-2"><CalendarIcon /> Event Calendar</span>
-        <button className="text-xs text-brand hover:text-brand-900 no-underline" onClick={() => navigate('/events')}>Open</button>
-            </div>
-          }>
-            <Calendar year={new Date().getFullYear()} month={new Date().getMonth()} markers={events.map(e=>e.date)} />
+          <Card
+            title={
+              <div className="flex items-center justify-between">
+                <span className="inline-flex items-center gap-2"><CalendarIcon /> Event Calendar</span>
+                <button className="text-xs text-brand hover:text-brand-900 no-underline" onClick={() => navigate('/events')}>Open</button>
+              </div>
+            }
+          >
+            <Calendar
+              year={new Date().getFullYear()}
+              month={new Date().getMonth()}
+              markers={events.map(e => ({ date: e.date, title: e.title, content: e.location }))}
+            />
           </Card>
 
-          <QuickLinks onApplyMembership={()=>navigate('/apply-membership')} onViewManuals={()=>navigate('/manuals')} />
+          <QuickLinks onApplyMembership={() => navigate('/apply-membership')} onViewManuals={() => navigate('/manuals')} />
         </div>
       </div>
     </div>
