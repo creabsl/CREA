@@ -47,7 +47,7 @@ export default function Admin() {
           <Card title={
             <div className="flex items-center justify-between">
               <span>Events (latest)</span>
-              <button className="text-xs text-blue-900 hover:underline" onClick={() => navigate('/events')}>View all</button>
+              <button className="text-xs text-[var(--primary)] hover:underline" onClick={() => navigate('/events')}>View all</button>
             </div>
           }>
             <ul className="space-y-2">
@@ -68,7 +68,7 @@ export default function Admin() {
         <Card title={
           <div className="flex items-center justify-between">
             <span>Forum</span>
-            <button className="text-xs text-blue-900 hover:underline" onClick={() => navigate('/forum')}>View all</button>
+            <button className="text-xs text-[var(--primary)] hover:underline" onClick={() => navigate('/forum')}>View all</button>
           </div>
         }>
           <ul className="space-y-2">
@@ -89,7 +89,7 @@ export default function Admin() {
         <Card title={
           <div className="flex items-center justify-between">
             <span>Circulars</span>
-            <button className="text-xs text-blue-900 hover:underline" onClick={() => navigate('/circulars')}>View all</button>
+            <button className="text-xs text-[var(--primary)] hover:underline" onClick={() => navigate('/circulars')}>View all</button>
           </div>
         }>
           <ul className="space-y-2">
@@ -110,7 +110,7 @@ export default function Admin() {
         <Card title={
           <div className="flex items-center justify-between">
             <span>Court Cases</span>
-            <button className="text-xs text-blue-900 hover:underline" onClick={() => navigate('/court-cases')}>View all</button>
+            <button className="text-xs text-[var(--primary)] hover:underline" onClick={() => navigate('/court-cases')}>View all</button>
           </div>
         }>
           <ul className="space-y-2">
@@ -130,7 +130,7 @@ export default function Admin() {
 
       <div className="flex gap-2 flex-wrap">
         {(['events','manuals','circulars','forum','court-cases','suggestions','members'] as const).map(k => (
-          <button key={k} onClick={()=>setTab(k)} className={`px-3 py-1.5 rounded-md text-sm border ${tab===k? 'bg-blue-900 text-white border-blue-900':'bg-white text-blue-900'}`}>{k[0].toUpperCase()+k.slice(1)}</button>
+          <button key={k} onClick={()=>setTab(k)} className={`px-3 py-1.5 rounded-md text-sm border ${tab===k? 'bg-[var(--primary)] text-white border-gray-900':'bg-white text-[var(--primary)]'}`}>{k[0].toUpperCase()+k.slice(1)}</button>
         ))}
       </div>
 
@@ -148,21 +148,69 @@ export default function Admin() {
 function MembersAdmin({ data, onReload, onUpdate, division, onDivisionChange }: { data: MemberUser[]; onReload: (div?: Division | '')=>Promise<void> | void; onUpdate: (id: string, patch: Partial<Omit<MemberUser,'id'|'email'>>) => Promise<void> | void; division: Division | ''; onDivisionChange: (d: Division | '') => Promise<void> | void }){
   const navigate = useNavigate()
   const [editing, setEditing] = useState<Record<string, Partial<MemberUser>>>({})
+  const [saving, setSaving] = useState(false)
 
   const setEdit = (id: string, patch: Partial<MemberUser>) => setEditing(prev => ({ ...prev, [id]: { ...prev[id], ...patch } }))
+
+  const hasChanges = Object.keys(editing).length > 0
+
+  const saveAllChanges = async () => {
+    if (!hasChanges) return
+    setSaving(true)
+    try {
+      // Save all changes in parallel
+      await Promise.all(
+        Object.entries(editing).map(([id, patch]) => onUpdate(id, patch))
+      )
+      setEditing({})
+      notifyStatsChanged()
+      alert('All changes saved successfully!')
+      // Redirect to Dashboard so admin can see updated division-wise counts immediately
+      navigate('/')
+    } catch (e) {
+      alert((e as Error).message || 'Save failed')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const discardAllChanges = () => {
+    if (hasChanges && confirm('Are you sure you want to discard all changes?')) {
+      setEditing({})
+    }
+  }
 
   return (
     <div className="space-y-4">
       <div className="rounded-md border bg-white p-4 flex flex-wrap items-end gap-3">
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Filter by Division</label>
-          <select className="block w-56 rounded-md border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-blue-900 focus:ring-1 focus:ring-blue-900" value={division} onChange={async(e)=>{ await onDivisionChange(e.target.value as Division | ''); }}>
+          <select className="block w-56 rounded-md border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-[var(--primary)]" value={division} onChange={async(e)=>{ await onDivisionChange(e.target.value as Division | ''); }}>
             <option value="">All divisions</option>
             {DIVISIONS.map(d => <option key={d} value={d}>{d}</option>)}
           </select>
         </div>
         <Button onClick={()=> onReload(division)}>Refresh</Button>
       </div>
+
+      {/* Save All Changes Bar */}
+      {hasChanges && (
+        <div className="rounded-md border-2 border-[var(--accent)] bg-yellow-50 p-4 flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-semibold text-[var(--primary)]">
+              You have unsaved changes for {Object.keys(editing).length} member{Object.keys(editing).length > 1 ? 's' : ''}
+            </span>
+          </div>
+          <div className="flex gap-2">
+            <Button variant="secondary" onClick={discardAllChanges} disabled={saving}>
+              Discard All
+            </Button>
+            <Button onClick={saveAllChanges} disabled={saving}>
+              {saving ? 'Saving...' : 'Save All Changes'}
+            </Button>
+          </div>
+        </div>
+      )}
 
       <div className="rounded-md border bg-white overflow-x-auto">
         <table className="min-w-full text-sm">
@@ -175,14 +223,15 @@ function MembersAdmin({ data, onReload, onUpdate, division, onDivisionChange }: 
               <th className="px-3 py-2 text-left font-medium text-gray-700">Department</th>
               <th className="px-3 py-2 text-left font-medium text-gray-700">Membership</th>
               <th className="px-3 py-2 text-left font-medium text-gray-700">Role</th>
-              <th className="px-3 py-2 text-left font-medium text-gray-700">Actions</th>
+              <th className="px-3 py-2 text-left font-medium text-gray-700">Status</th>
             </tr>
           </thead>
           <tbody>
             {data.map(u => {
               const e = editing[u.id] || {}
+              const hasRowChanges = !!editing[u.id]
               return (
-                <tr key={u.id} className="border-t">
+                <tr key={u.id} className={`border-t ${hasRowChanges ? 'bg-yellow-50' : ''}`}>
                   <td className="px-3 py-2">
                     <input className="w-40 rounded-md border border-gray-300 px-2 py-1 text-sm" value={(e.name ?? u.name) as string} onChange={(ev)=> setEdit(u.id, { name: ev.target.value })} />
                   </td>
@@ -211,20 +260,17 @@ function MembersAdmin({ data, onReload, onUpdate, division, onDivisionChange }: 
                     </select>
                   </td>
                   <td className="px-3 py-2">
-                    <div className="flex items-center gap-2">
-                      <Button variant="secondary" onClick={async()=>{
-                        try {
-                          const patch = editing[u.id] || {}; await onUpdate(u.id, patch);
-                          setEditing(prev=>{ const n={...prev}; delete n[u.id]; return n })
-                          notifyStatsChanged()
-                          // Redirect to Dashboard so admin can see updated division-wise counts immediately
-                          navigate('/')
-                        } catch (e) {
-                          alert((e as Error).message || 'Update failed')
-                        }
-                      }}>Save</Button>
-                      <Button variant="ghost" onClick={()=> setEditing(prev=>{ const n={...prev}; delete n[u.id]; return n })}>Cancel</Button>
-                    </div>
+                    {hasRowChanges && (
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-medium text-[var(--accent)]">Modified</span>
+                        <button 
+                          className="text-xs text-gray-600 hover:text-gray-900 underline"
+                          onClick={()=> setEditing(prev=>{ const n={...prev}; delete n[u.id]; return n })}
+                        >
+                          Undo
+                        </button>
+                      </div>
+                    )}
                   </td>
                 </tr>
               )
@@ -237,6 +283,25 @@ function MembersAdmin({ data, onReload, onUpdate, division, onDivisionChange }: 
           </tbody>
         </table>
       </div>
+
+      {/* Bottom Save All Changes Bar */}
+      {hasChanges && (
+        <div className="rounded-md border-2 border-[var(--accent)] bg-yellow-50 p-4 flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-semibold text-[var(--primary)]">
+              You have unsaved changes for {Object.keys(editing).length} member{Object.keys(editing).length > 1 ? 's' : ''}
+            </span>
+          </div>
+          <div className="flex gap-2">
+            <Button variant="secondary" onClick={discardAllChanges} disabled={saving}>
+              Discard All
+            </Button>
+            <Button onClick={saveAllChanges} disabled={saving}>
+              {saving ? 'Saving...' : 'Save All Changes'}
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
@@ -299,7 +364,7 @@ function ManualsAdmin({ data, onChange }: { data: Manual[]; onChange: (d: Manual
           <div key={m.id} className="p-3 flex items-center gap-3">
             <div className="flex-1">
               <div className="font-medium">{m.title}</div>
-              {m.url && <div className="text-xs text-blue-900"><a className="underline" href={m.url} target="_blank" rel="noreferrer">Open</a></div>}
+              {m.url && <div className="text-xs text-[var(--primary)]"><a className="underline" href={m.url} target="_blank" rel="noreferrer">Open</a></div>}
             </div>
             <Button variant="secondary" onClick={async()=>{ const upd = await updateManual(m.id,{ title: m.title + ' (Updated)' }); onChange(data.map(d=>d.id===m.id?upd:d)) }}>Quick Update</Button>
             <Button variant="danger" onClick={async()=>{ await deleteManual(m.id); onChange(data.filter(d=>d.id!==m.id)) }}>Delete</Button>
@@ -339,7 +404,7 @@ function CircularsAdmin({ data, onChange }: { data: Circular[]; onChange: (d: Ci
             <div className="flex-1">
               <div className="font-medium">{c.subject}</div>
               <div className="text-xs text-gray-600">{c.boardNumber} • {c.dateOfIssue}</div>
-              {c.url && <div className="text-xs text-blue-900"><a className="underline" href={c.url} target="_blank" rel="noreferrer">Open</a></div>}
+              {c.url && <div className="text-xs text-[var(--primary)]"><a className="underline" href={c.url} target="_blank" rel="noreferrer">Open</a></div>}
             </div>
             <Button variant="secondary" onClick={async()=>{ const upd = await updateCircular(c.id,{ subject: c.subject + ' (Updated)' }); onChange(data.map(d=>d.id===c.id?upd:d)) }}>Quick Update</Button>
             <Button variant="danger" onClick={async()=>{ await deleteCircular(c.id); onChange(data.filter(d=>d.id!==c.id)) }}>Delete</Button>
@@ -418,7 +483,7 @@ function SuggestionsAdmin({ data }: { data: Suggestion[] }){
           <div key={s.id} className="p-4 border-b last:border-b-0">
             <div className="flex items-center justify-between">
               <div className="text-sm text-gray-600">{new Date(s.createdAt).toLocaleString()}</div>
-              <div className="text-sm font-medium text-blue-900">{s.userName} ({s.userId})</div>
+              <div className="text-sm font-medium text-[var(--primary)]">{s.userName} ({s.userId})</div>
             </div>
             <p className="mt-2 text-gray-800 whitespace-pre-wrap">{s.text}</p>
             {s.fileNames?.length>0 && (

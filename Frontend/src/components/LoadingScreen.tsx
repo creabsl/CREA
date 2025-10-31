@@ -12,7 +12,7 @@ export default function LoadingScreen({ message = "Loading..." }: { message?: st
     >
       <TrainLoader size={80} />
       <motion.p 
-        className="mt-4 text-lg text-blue-900 font-medium"
+        className="mt-4 text-lg text-[var(--primary)] font-medium"
         animate={{ opacity: [0.5, 1, 0.5] }}
         transition={{ duration: 2, repeat: Infinity }}
       >

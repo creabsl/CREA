@@ -16,7 +16,7 @@ export default function EnhancedNavLink({ to, children, end }: EnhancedNavLinkPr
       end={end}
       className={({ isActive }) =>
         `relative px-3 py-2 rounded-md text-sm font-medium transition-all duration-300 no-underline overflow-visible ${
-          isActive ? 'shadow-lg' : 'text-blue-900 hover:bg-blue-50'
+          isActive ? 'shadow-lg' : 'text-[var(--primary)] hover:bg-gray-50'
         }`
       }
     >
@@ -25,7 +25,7 @@ export default function EnhancedNavLink({ to, children, end }: EnhancedNavLinkPr
           <motion.span
             whileHover={{ scale: 1.01, transition: SPRING.hover }}
             whileTap={{ scale: 0.99, transition: SPRING.press }}
-            className={`relative z-50 ${isActive ? 'text-white' : 'text-blue-900'}`}
+            className={`relative z-50 ${isActive ? 'text-white' : 'text-[var(--primary)]'}`}
           >
             {children}
           </motion.span>
@@ -33,7 +33,7 @@ export default function EnhancedNavLink({ to, children, end }: EnhancedNavLinkPr
           {/* Active background glow */}
           {isActive && (
             <motion.div
-              className="absolute inset-0 bg-blue-900 rounded-md"
+              className="absolute inset-0 bg-[var(--primary)] rounded-md"
               initial={{ scale: 0.8, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               transition={SPRING.entrance}

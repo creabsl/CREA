@@ -130,7 +130,7 @@ export default function Events() {
                 </div>
                 <h3 className="text-lg font-bold text-gray-900 mb-1">{breaking.title}</h3>
                 <p className="text-gray-700">
-                  Event scheduled at <span className="font-semibold text-blue-900">{breaking.location}</span>
+                  Event scheduled at <span className="font-semibold text-[var(--primary)]">{breaking.location}</span>
                 </p>
               </div>
             </div>
@@ -151,7 +151,7 @@ export default function Events() {
               placeholder="Search events, locations, descriptions..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-transparent"
+              className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent"
             />
           </div>
 
@@ -162,7 +162,7 @@ export default function Events() {
               <select
                 value={filter}
                 onChange={(e) => setFilter(e.target.value as FilterMode)}
-                className="border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-900"
+                className="border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
               >
                 {filterOptions.map(option => (
                   <option key={option.value} value={option.value}>
@@ -180,7 +180,7 @@ export default function Events() {
                   onClick={() => setView(option.value)}
                   className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200 ${
                     view === option.value
-                      ? 'bg-white text-blue-900 shadow-sm'
+                      ? 'bg-white text-[var(--primary)] shadow-sm'
                       : 'text-gray-600 hover:text-gray-900'
                   }`}
                 >
@@ -236,7 +236,7 @@ export default function Events() {
                     <div className="flex items-start gap-4">
                       <div className="flex-shrink-0">
                         <div className="h-12 w-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                          <Calendar className="h-6 w-6 text-blue-900" />
+                          <Calendar className="h-6 w-6 text-[var(--primary)]" />
                         </div>
                       </div>
                       
@@ -280,8 +280,8 @@ export default function Events() {
                   >
                     <div className="space-y-4">
                       {/* Event Image Placeholder */}
-                      <div className="aspect-video bg-gradient-to-br from-blue-100 to-blue-50 rounded-lg flex items-center justify-center">
-                        <Calendar className="h-12 w-12 text-blue-900" />
+                      <div className="aspect-video bg-gradient-to-br from-[var(--primary)]100 to-[var(--primary)]50 rounded-lg flex items-center justify-center">
+                        <Calendar className="h-12 w-12 text-[var(--primary)]" />
                       </div>
                       
                       {/* Event Content */}
@@ -402,7 +402,7 @@ export default function Events() {
               id="breaking" 
               checked={form.breaking}
               onChange={(e) => setForm(prev => ({ ...prev, breaking: e.target.checked }))}
-              className="rounded border-gray-300 text-blue-900 focus:ring-blue-900" 
+              className="rounded border-gray-300 text-[var(--primary)] focus:ring-[var(--primary)]" 
             />
             <label htmlFor="breaking" className="text-sm font-medium text-gray-700">
               Mark as breaking news
@@ -469,7 +469,7 @@ export default function Events() {
       {/* Create Event Modal */}
       <Modal open={openCreate} onClose={() => { if (!creating) setOpenCreate(false) }}>
         <div className="space-y-4">
-          <h2 className="text-lg font-semibold text-blue-900">Schedule New Event</h2>
+          <h2 className="text-lg font-semibold text-[var(--primary)]">Schedule New Event</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <Input label="Title" value={form.title} onChange={(e)=>setForm({...form, title:e.target.value})} />
             <Input label="Date" type="date" value={form.date} onChange={(e)=>setForm({...form, date:e.target.value})} />

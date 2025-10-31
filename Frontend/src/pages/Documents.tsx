@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import { usePageTitle } from '../hooks/usePageTitle'
-import SectionHeader from '../components/SectionHeader'
 import Button from '../components/Button'
 import SegmentedControl from '../components/SegmentedControl'
 import DataTable from '../components/DataTable'
@@ -106,7 +105,7 @@ export default function Documents() {
         key: 'fileUrl' as keyof Document,
         header: 'File',
         render: (row: Document) => (
-          <a href={row.fileUrl} className="text-blue-600 hover:text-blue-800 flex items-center gap-2">
+          <a href={row.fileUrl} className="text-[var(--primary)] hover:text-[var(--accent)] flex items-center gap-2">
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
             </svg>
@@ -178,44 +177,179 @@ export default function Documents() {
     }
   }
 
+  const getTabIcon = (type: DocumentType) => {
+    switch (type) {
+      case 'circular':
+        return (
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+          </svg>
+        )
+      case 'manual':
+        return (
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+          </svg>
+        )
+      case 'court-case':
+        return (
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3" />
+          </svg>
+        )
+    }
+  }
+
+  const getTypeColor = (_type: DocumentType) => {
+    // Using dashboard color palette only
+    return 'from-[var(--primary)] to-[var(--primary)]'
+  }
+
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <SectionHeader 
-          title="Documents" 
-          subtitle="Access all organization documents in one place" 
-        />
-        <Button onClick={() => setIsAddModalOpen(true)}>
-          {getAddButtonText(activeTab)}
-        </Button>
+    <div className="space-y-8">
+      {/* Enhanced Header */}
+      <div className="relative overflow-hidden bg-gradient-to-br from-[var(--primary)] to-[#1a4d8f] rounded-2xl p-8 text-white">
+        <div className="relative z-10">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="p-2 bg-white/20 rounded-lg backdrop-blur-sm">
+              <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+            </div>
+            <h1 className="text-4xl font-bold !text-white" style={{ color: 'white' }}>Document Repository</h1>
+          </div>
+          <p className="text-white/90 text-lg">Access all organization documents, circulars, manuals, and legal records</p>
+        </div>
+        
+        {/* Decorative gradient blob */}
+        <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl"></div>
       </div>
 
-      <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-        <SegmentedControl
-          value={activeTab}
-          onChange={(value) => setActiveTab(value as DocumentType)}
-          options={[
-            { value: 'circular', label: 'Circulars' },
-            { value: 'manual', label: 'Manuals' },
-            { value: 'court-case', label: 'Court Cases' }
-          ]}
-        />
-        <div className="flex-1 max-w-md">
-          <Input
-            type="search"
-            placeholder="Search documents..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-md">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-[var(--secondary)] mb-1">Circulars</p>
+              <p className="text-3xl font-bold text-[var(--primary)]">{documents.filter(d => d.type === 'circular').length}</p>
+            </div>
+            <div className="p-3 bg-[var(--primary)] rounded-xl text-white">
+              {getTabIcon('circular')}
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-md">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-[var(--secondary)] mb-1">Manuals</p>
+              <p className="text-3xl font-bold text-[var(--primary)]">{documents.filter(d => d.type === 'manual').length}</p>
+            </div>
+            <div className="p-3 bg-[var(--accent)] rounded-xl text-white">
+              {getTabIcon('manual')}
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-md">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-[var(--secondary)] mb-1">Court Cases</p>
+              <p className="text-3xl font-bold text-[var(--primary)]">{documents.filter(d => d.type === 'court-case').length}</p>
+            </div>
+            <div className="p-3 bg-[var(--secondary)] rounded-xl text-white">
+              {getTabIcon('court-case')}
+            </div>
+          </div>
         </div>
       </div>
 
-      <div className="bg-white rounded-lg border shadow-sm">
-        <DataTable
-          columns={getColumns(activeTab)}
-          data={filteredDocuments}
-        />
+      {/* Enhanced Controls */}
+      <div className="bg-white rounded-xl shadow-lg border p-6">
+        <div className="flex flex-col lg:flex-row lg:items-center gap-4">
+          <div className="flex-1">
+            <SegmentedControl
+              value={activeTab}
+              onChange={(value) => setActiveTab(value as DocumentType)}
+              options={[
+                { value: 'circular', label: 'Circulars' },
+                { value: 'manual', label: 'Manuals' },
+                { value: 'court-case', label: 'Court Cases' }
+              ]}
+            />
+          </div>
+          <div className="flex-1 max-w-md">
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+              </div>
+              <input
+                type="search"
+                placeholder="Search documents..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent"
+              />
+            </div>
+          </div>
+          <Button 
+            onClick={() => setIsAddModalOpen(true)}
+            className="whitespace-nowrap"
+          >
+            <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
+            </svg>
+            {getAddButtonText(activeTab)}
+          </Button>
+        </div>
+
+        {/* Document Count Badge */}
+        <div className="mt-4 inline-flex items-center gap-2 px-3 py-1 bg-gray-50 rounded-full text-sm text-gray-600">
+          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+            <path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z" />
+            <path fillRule="evenodd" d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3zm-3 4a1 1 0 100 2h.01a1 1 0 100-2H7zm3 0a1 1 0 100 2h3a1 1 0 100-2h-3z" clipRule="evenodd" />
+          </svg>
+          <span className="font-medium">{filteredDocuments.length}</span>
+          <span>document{filteredDocuments.length !== 1 ? 's' : ''} found</span>
+        </div>
       </div>
+
+      {/* Enhanced Document Table */}
+      {filteredDocuments.length > 0 ? (
+        <div className="bg-white rounded-xl shadow-lg border overflow-hidden">
+          <DataTable
+            columns={getColumns(activeTab)}
+            data={filteredDocuments}
+          />
+        </div>
+      ) : (
+        <div className="bg-white rounded-xl border-2 border-dashed border-gray-300 p-12">
+          <div className="text-center">
+            <div className={`inline-flex p-4 bg-gradient-to-br ${getTypeColor(activeTab)} rounded-2xl mb-4`}>
+              <div className="text-white">
+                {getTabIcon(activeTab)}
+              </div>
+            </div>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">No Documents Found</h3>
+            <p className="text-gray-500 mb-6">
+              {searchQuery 
+                ? `No documents match your search "${searchQuery}"`
+                : `No ${activeTab === 'circular' ? 'circulars' : activeTab === 'manual' ? 'manuals' : 'court cases'} available yet`
+              }
+            </p>
+            {!searchQuery && (
+              <Button onClick={() => setIsAddModalOpen(true)}>
+                <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
+                </svg>
+                Add First Document
+              </Button>
+            )}
+          </div>
+        </div>
+      )}
 
       <Modal
         open={isAddModalOpen}
@@ -241,7 +375,7 @@ export default function Documents() {
               <Input type="date" label="Next Hearing Date" />
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
-                <select className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                <select className="block w-full rounded-md border-gray-300 shadow-sm focus:border-gray-500 focus:ring-blue-500">
                   <option value="ongoing">Ongoing</option>
                   <option value="closed">Closed</option>
                   <option value="pending">Pending</option>

@@ -30,7 +30,7 @@ export default function TrainLoader({ size = 60 }: { size?: number }) {
           {/* Chimney */}
           <div className="w-2 h-6 bg-gray-700 rounded-t-sm mr-1"></div>
           {/* Main body */}
-          <div className="w-8 h-4 bg-blue-900 rounded-sm relative">
+          <div className="w-8 h-4 bg-[var(--primary)] rounded-sm relative">
             {/* Window */}
             <div className="absolute top-1 right-1 w-2 h-2 bg-yellow-300 rounded-sm"></div>
           </div>
@@ -95,7 +95,7 @@ export default function TrainLoader({ size = 60 }: { size?: number }) {
       
       {/* Loading text */}
       <motion.div
-        className="text-sm text-blue-900 font-medium mt-2"
+        className="text-sm text-[var(--primary)] font-medium mt-2"
         animate={{ opacity: [0.5, 1, 0.5] }}
         transition={{ duration: 1.8, repeat: Infinity }}
       >

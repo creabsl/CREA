@@ -18,7 +18,7 @@ export default function ForgotPassword() {
   return (
     <div className="max-w-md mx-auto">
       <div className="rounded-lg border bg-white p-6 shadow-sm">
-        <h1 className="text-xl font-semibold text-blue-900">Forgot password</h1>
+        <h1 className="text-xl font-semibold text-[var(--primary)]">Forgot password</h1>
         {sent ? (
           <div className="mt-3 rounded border bg-green-50 p-3 text-green-700 text-sm">If an account exists for {username}, a reset link has been sent (mock).</div>
         ) : (
@@ -31,7 +31,7 @@ export default function ForgotPassword() {
           </>
         )}
         <div className="mt-3 text-sm text-gray-600">
-          <Link className="text-blue-900 underline" to="/login">Back to login</Link>
+          <Link className="text-[var(--primary)] underline" to="/login">Back to login</Link>
         </div>
       </div>
     </div>

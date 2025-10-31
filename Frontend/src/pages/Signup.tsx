@@ -57,7 +57,7 @@ export default function Signup() {
   return (
     <div className="max-w-md mx-auto">
       <div className="rounded-lg border bg-white p-6 shadow-sm">
-        <h1 className="text-xl font-semibold text-blue-900">Create your account</h1>
+        <h1 className="text-xl font-semibold text-[var(--primary)]">Create your account</h1>
         {error && <div className="mt-3 rounded border border-red-300 bg-red-50 p-2 text-sm text-red-700">{error}</div>}
         <form className="mt-4 space-y-3" onSubmit={onSubmit}>
           <Input label="Email" value={email} onChange={(e)=>setEmail(e.target.value)} autoComplete="email" placeholder="you@example.com" />
@@ -73,9 +73,9 @@ export default function Signup() {
               maxLength={6}
               hint={
                 <div className="flex items-center gap-2">
-                  <button type="button" className="text-blue-900 hover:underline" onClick={()=>{ setSent(false); setCode(''); setResendIn(0); }}>Change email</button>
+                  <button type="button" className="text-[var(--primary)] hover:underline" onClick={()=>{ setSent(false); setCode(''); setResendIn(0); }}>Change email</button>
                   <span aria-hidden>•</span>
-                  <button type="button" className={`hover:underline ${resendIn>0 ? 'text-gray-400 cursor-not-allowed' : 'text-blue-900'}`} disabled={resendIn>0 || loading} onClick={async()=>{ if (!loading) { setError(null); await requestOtp?.(email.trim(), name.trim()); setResendIn(30) } }}>{resendIn>0 ? `Resend in ${resendIn}s` : 'Resend code'}</button>
+                  <button type="button" className={`hover:underline ${resendIn>0 ? 'text-gray-400 cursor-not-allowed' : 'text-[var(--primary)]'}`} disabled={resendIn>0 || loading} onClick={async()=>{ if (!loading) { setError(null); await requestOtp?.(email.trim(), name.trim()); setResendIn(30) } }}>{resendIn>0 ? `Resend in ${resendIn}s` : 'Resend code'}</button>
                 </div>
               }
             />
@@ -85,7 +85,7 @@ export default function Signup() {
           </Button>
         </form>
         <div className="mt-3 text-sm text-gray-600">
-          Already have an account? <Link className="text-blue-900 underline" to="/login">Log in</Link>
+          Already have an account? <Link className="text-[var(--primary)] underline" to="/login">Log in</Link>
         </div>
       </div>
     </div>

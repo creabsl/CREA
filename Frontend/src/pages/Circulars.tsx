@@ -14,7 +14,7 @@ export default function Circulars() {
     { key: 'boardNumber', header: 'Railway Board Number' },
     { key: 'subject', header: 'Subject' },
     { key: 'dateOfIssue', header: 'Date of Issue', render: (r) => new Date(r.dateOfIssue).toLocaleDateString() },
-    { key: 'url', header: 'Document', render: (r) => <a className="text-blue-900 underline" href={r.url} target="_blank" rel="noreferrer">View/Download</a> },
+    { key: 'url', header: 'Document', render: (r) => <a className="text-[var(--primary)] underline" href={r.url} target="_blank" rel="noreferrer">View/Download</a> },
   ]
 
   return (

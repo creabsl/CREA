@@ -109,7 +109,7 @@ export default function Footer() {
             <div>
               <div className="flex items-center gap-2">
                 <img src={Logo} alt="CREA logo" className="h-7 w-auto" />
-                <h2 className="text-sm font-semibold text-blue-900">
+                <h2 className="text-sm font-semibold text-[var(--primary)]">
                   Central Railway Engineers Association
                 </h2>
               </div>
@@ -123,7 +123,7 @@ export default function Footer() {
             </div>
 
             <div className="pt-1.5">
-              <h3 className="text-xs font-semibold uppercase tracking-wide text-blue-900">
+              <h3 className="text-xs font-semibold uppercase tracking-wide text-[var(--primary)]">
                 Connect
               </h3>
               <div className="mt-2 grid grid-cols-8 gap-5">
@@ -133,7 +133,7 @@ export default function Footer() {
                     href={href}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex flex-col items-center justify-center gap-1 rounded-md bg-gray-100/60 px-2.5 py-1.5 text-[11px] text-gray-600 transition hover:bg-blue-50 hover:text-blue-900"
+                    className="flex flex-col items-center justify-center gap-1 rounded-md bg-gray-100/60 px-2.5 py-1.5 text-[11px] text-gray-600 transition hover:bg-gray-50 hover:text-[var(--primary)]"
                   >
                     <span className="sr-only">{label}</span>
                     <span
@@ -149,7 +149,7 @@ export default function Footer() {
           </div>
 
           <div>
-            <h3 className="text-xs font-semibold uppercase tracking-wide text-blue-900">
+            <h3 className="text-xs font-semibold uppercase tracking-wide text-[var(--primary)]">
               Explore
             </h3>
             <ul className="mt-2 grid grid-cols-2 gap-y-2 gap-x-10">
@@ -157,7 +157,7 @@ export default function Footer() {
                 <li key={label}>
                   <Link
                     to={to}
-                    className="text-gray-500 transition hover:text-blue-900"
+                    className="text-gray-500 transition hover:text-[var(--primary)]"
                   >
                     {label}
                   </Link>
@@ -168,7 +168,7 @@ export default function Footer() {
               
 
           <div>
-            <h3 className="text-xs font-semibold uppercase tracking-wide text-blue-900">
+            <h3 className="text-xs font-semibold uppercase tracking-wide text-[var(--primary)]">
               Stay Connected
             </h3>
             <ul className="mt-2 space-y-1.5">
@@ -177,14 +177,14 @@ export default function Footer() {
                   {to ? (
                     <Link
                       to={to}
-                      className="text-gray-500 transition hover:text-blue-900"
+                      className="text-gray-500 transition hover:text-[var(--primary)]"
                     >
                       {label}
                     </Link>
                   ) : (
                     <a
                       href={href}
-                      className="text-gray-500 transition hover:text-blue-900"
+                      className="text-gray-500 transition hover:text-[var(--primary)]"
                     >
                       {label}
                     </a>
@@ -201,13 +201,13 @@ export default function Footer() {
         <div className="mt-5 flex flex-col gap-2 border-t border-gray-200 pt-3 text-xs text-gray-500 sm:flex-row sm:items-center sm:justify-between">
           <div>© {year} CREA — Central Railway Engineers Association. All rights reserved.</div>
           <div className="flex flex-wrap items-center gap-3">
-            <a href="#" className="transition hover:text-blue-900">
+            <a href="#" className="transition hover:text-[var(--primary)]">
               Privacy Policy
             </a>
-            <a href="#" className="transition hover:text-blue-900">
+            <a href="#" className="transition hover:text-[var(--primary)]">
               Terms of Use
             </a>
-            <a href="mailto:secretary@crea.org" className="transition hover:text-blue-900">
+            <a href="mailto:secretary@crea.org" className="transition hover:text-[var(--primary)]">
               secretary@crea.org
             </a>
           </div>

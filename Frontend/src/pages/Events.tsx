@@ -31,56 +31,170 @@ export default function Events() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-semibold text-blue-900">Events</h1>
+      {/* Header Section */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-[var(--primary)]">Events</h1>
+          <p className="text-gray-600 mt-1">Stay updated with our latest activities and gatherings</p>
+        </div>
+        <div className="flex items-center gap-3">
+          {isAdmin && (
+            <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+              <Button onClick={() => setOpenCreate(true)}>
+                <span className="flex items-center gap-2">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
+                  </svg>
+                  Schedule New Event
+                </span>
+              </Button>
+            </motion.div>
+          )}
+          <SegmentedControl 
+            options={[
+              {label:'List', value:'list'},
+              {label:'Calendar', value:'calendar'}
+            ]} 
+            value={view} 
+            onChange={setView} 
+          />
+        </div>
+      </div>
 
+      {/* Breaking News Alert */}
       {breaking && (
         <motion.div 
-          className="rounded-md border border-amber-300 bg-amber-50 p-3 text-amber-800"
-          initial={{ opacity: 0, y: 6 }}
+          className="relative rounded-xl border-2 border-[var(--accent)] bg-gradient-to-r from-yellow-50 to-orange-50 p-5 overflow-hidden"
+          initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={SPRING.entrance}
         >
-          <strong>Breaking News:</strong> {breaking.title} on {new Date(breaking.date).toLocaleDateString()} at {breaking.location}
+          <div className="absolute top-0 right-0 w-32 h-32 bg-[var(--accent)]/10 rounded-full blur-2xl -mr-16 -mt-16" />
+          <div className="relative flex items-start gap-4">
+            <div className="w-12 h-12 bg-gradient-to-br from-red-500 to-orange-500 rounded-xl flex items-center justify-center flex-shrink-0 shadow-lg">
+              <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+              </svg>
+            </div>
+            <div className="flex-1">
+              <div className="flex items-center gap-2 mb-1">
+                <span className="bg-red-500 text-white px-2 py-0.5 rounded text-xs font-bold uppercase">Breaking News</span>
+                <span className="text-xs text-gray-600">{new Date(breaking.date).toLocaleDateString()}</span>
+              </div>
+              <h3 className="font-bold text-lg text-gray-900">{breaking.title}</h3>
+              <p className="text-sm text-gray-700 mt-1">📍 {breaking.location}</p>
+            </div>
+          </div>
         </motion.div>
       )}
 
-      <div className="flex items-center justify-between gap-3">
-        {isAdmin && <Button onClick={() => setOpenCreate(true)}>Schedule New Event</Button>}
-        <SegmentedControl options={[{label:'List', value:'list'},{label:'Calendar', value:'calendar'}]} value={view} onChange={setView} />
-      </div>
       {loading ? (
-        <div className="flex justify-center py-10"><Spinner size={60} /></div>
-  ) : view==='list' ? (
-        <StaggerContainer className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {events.map((e) => (
+        <div className="flex justify-center py-20">
+          <Spinner size={60} />
+        </div>
+      ) : view === 'list' ? (
+        <StaggerContainer className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {events.map((e, index) => (
             <StaggerItem key={e.id}>
               <motion.div 
-                className="rounded-lg border bg-white p-4 shadow-sm"
-                whileHover={{ y: -1, boxShadow: "0 8px 20px rgba(0, 0, 0, 0.08)", transition: SPRING.hover }}
+                className="group relative rounded-xl border border-gray-200 bg-white p-6 shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden"
+                whileHover={{ y: -4, transition: SPRING.hover }}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.05 }}
               >
-                <div className="flex items-center justify-between">
-                  <h3 className="text-lg font-semibold text-gray-800">{e.title}</h3>
-                  <span className="text-xs text-gray-500">{new Date(e.date).toLocaleDateString()}</span>
-                </div>
-                <div className="mt-1 text-sm text-gray-600">{e.location}</div>
-                <p className="mt-2 text-sm text-gray-700">{e.description}</p>
-                {e.photos?.length ? (
-                  <div className="mt-3 flex gap-3 overflow-x-auto">
-                    {e.photos.map((p, idx) => (
-                      <img key={idx} src={p} alt="event" className="h-24 w-36 rounded-md object-cover cursor-pointer" onClick={() => setOpenImg(p)} />
-                    ))}
+                {/* Decorative gradient overlay */}
+                <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-[var(--primary)]/5 to-transparent rounded-full blur-2xl -mr-16 -mt-16 group-hover:from-[var(--primary)]/10 transition-all duration-300" />
+                
+                <div className="relative">
+                  {/* Header */}
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="flex-1">
+                      <h3 className="text-xl font-bold text-[var(--primary)] group-hover:text-blue-700 transition-colors">{e.title}</h3>
+                      {e.breaking && (
+                        <span className="inline-block mt-2 bg-red-100 text-red-700 px-2 py-1 rounded text-xs font-bold">
+                          ⚡ Breaking
+                        </span>
+                      )}
+                    </div>
+                    <div className="w-14 h-14 bg-gradient-to-br from-[var(--primary)] to-blue-600 rounded-lg flex flex-col items-center justify-center text-white flex-shrink-0 ml-3 shadow-md">
+                      <span className="text-xs font-medium">{new Date(e.date).toLocaleDateString('en-US', { month: 'short' })}</span>
+                      <span className="text-2xl font-bold leading-none">{new Date(e.date).getDate()}</span>
+                    </div>
                   </div>
-                ) : null}
+
+                  {/* Location */}
+                  <div className="flex items-center gap-2 mb-3 text-gray-600">
+                    <svg className="w-4 h-4 text-[var(--accent)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                    <span className="text-sm font-medium">{e.location}</span>
+                  </div>
+
+                  {/* Description */}
+                  <p className="text-sm text-gray-700 leading-relaxed mb-4">{e.description}</p>
+
+                  {/* Photos */}
+                  {e.photos?.length ? (
+                    <div className="flex gap-2 overflow-x-auto pb-2 -mx-1 px-1">
+                      {e.photos.map((p, idx) => (
+                        <motion.img 
+                          key={idx} 
+                          src={p} 
+                          alt={`Event photo ${idx + 1}`}
+                          className="h-28 w-40 rounded-lg object-cover cursor-pointer border-2 border-gray-100 hover:border-[var(--accent)] transition-all flex-shrink-0" 
+                          onClick={() => setOpenImg(p)}
+                          whileHover={{ scale: 1.05 }}
+                          whileTap={{ scale: 0.95 }}
+                        />
+                      ))}
+                    </div>
+                  ) : null}
+
+                  {/* Footer */}
+                  <div className="mt-4 pt-4 border-t border-gray-100 flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-xs text-gray-500">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <span>{new Date(e.date).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</span>
+                    </div>
+                  </div>
+                </div>
               </motion.div>
             </StaggerItem>
           ))}
+          
+          {events.length === 0 && (
+            <div className="col-span-full">
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="text-center py-16 bg-gray-50 rounded-xl border-2 border-dashed border-gray-200"
+              >
+                <svg className="w-16 h-16 mx-auto text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">No Events Scheduled</h3>
+                <p className="text-gray-600">Check back later for upcoming events</p>
+              </motion.div>
+            </div>
+          )}
         </StaggerContainer>
       ) : (
-        <Calendar
-          year={new Date().getFullYear()}
-          month={new Date().getMonth()}
-          markers={events.map(e => ({ date: e.date, title: e.title, content: e.location }))}
-        />
+        <div className="bg-white rounded-xl shadow-lg p-6">
+          <Calendar
+            year={new Date().getFullYear()}
+            month={new Date().getMonth()}
+            markers={events.map(e => ({ 
+              date: e.date, 
+              title: e.title, 
+              content: e.description,
+              type: e.location 
+            }))}
+          />
+        </div>
       )}
 
   <Modal open={!!openImg} onClose={() => setOpenImg(null)}>
@@ -90,7 +204,7 @@ export default function Events() {
       {/* Create Event Modal */}
       <Modal open={openCreate} onClose={() => { if (!creating) setOpenCreate(false) }}>
         <div className="space-y-4">
-          <h2 className="text-lg font-semibold text-blue-900">Schedule New Event</h2>
+          <h2 className="text-lg font-semibold text-[var(--primary)]">Schedule New Event</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <Input label="Title" value={form.title} onChange={(e)=>setForm({...form, title:e.target.value})} />
             <Input label="Date" type="date" value={form.date} onChange={(e)=>setForm({...form, date:e.target.value})} />

@@ -16,7 +16,7 @@ export default function Manuals() {
         {list.map(m => (
           <li key={m.id} className="flex items-center justify-between rounded-md border bg-white p-3">
             <span className="text-gray-800">{m.title}</span>
-            <a className="text-blue-900 underline" href={m.url} target="_blank" rel="noreferrer">Download</a>
+            <a className="text-[var(--primary)] underline" href={m.url} target="_blank" rel="noreferrer">Download</a>
           </li>
         ))}
       </ul>

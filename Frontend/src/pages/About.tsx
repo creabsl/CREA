@@ -165,11 +165,11 @@ export default function About() {
   return (
     <div className="space-y-12">
       {/* Hero Section */}
-      <div className="relative bg-gradient-to-br from-blue-950 via-blue-900 to-indigo-950 text-white overflow-hidden -mx-4 sm:-mx-6 lg:-mx-8 mb-8">
+      <div className="relative bg-gradient-to-br from-[#0a2343] via-[var(--primary)] to-[#051121] text-white overflow-hidden -mx-4 sm:-mx-6 lg:-mx-8 mb-8">
         {/* Animated background elements */}
         <div className="absolute inset-0 overflow-hidden">
-          <div className="absolute -top-1/2 -left-1/2 w-full h-full bg-blue-500 rounded-full opacity-10 blur-3xl animate-pulse" />
-          <div className="absolute -bottom-1/2 -right-1/2 w-full h-full bg-indigo-500 rounded-full opacity-10 blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
+          <div className="absolute -top-1/2 -left-1/2 w-full h-full bg-[var(--secondary)] rounded-full opacity-10 blur-3xl animate-pulse" />
+          <div className="absolute -bottom-1/2 -right-1/2 w-full h-full bg-[var(--primary)] rounded-full opacity-10 blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
         </div>
         
         {/* Diagonal pattern overlay */}
@@ -194,7 +194,7 @@ export default function About() {
                 transition={{ delay: 0.2, duration: 0.5 }}
                 className="inline-block mb-6"
               >
-                <span className="bg-blue-500/20 text-blue-200 px-6 py-2 rounded-full text-sm font-semibold border border-blue-400/30 backdrop-blur-sm">
+                <span className="bg-[var(--primary)]/20 text-gray-100 px-6 py-2 rounded-full text-sm font-semibold border border-[var(--secondary)]/30 backdrop-blur-sm">
                   Est. 1950
                 </span>
               </motion.div>
@@ -214,7 +214,7 @@ export default function About() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.6, duration: 0.8 }}
-                className="text-xl sm:text-2xl md:text-3xl text-blue-200 mb-4 font-light"
+                className="text-xl sm:text-2xl md:text-3xl text-gray-200 mb-4 font-light"
               >
                 Central Railway Engineers Association
               </motion.p>
@@ -224,7 +224,7 @@ export default function About() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.8, duration: 0.8 }}
-                className="text-base sm:text-lg md:text-xl text-blue-300 max-w-2xl mx-auto leading-relaxed px-4"
+                className="text-base sm:text-lg md:text-xl text-gray-300 max-w-2xl mx-auto leading-relaxed px-4"
               >
                 Empowering Railway Engineers with professional excellence, 
                 advocacy, and community support for over seven decades
@@ -238,16 +238,16 @@ export default function About() {
                 className="mt-12 grid grid-cols-3 gap-4 sm:gap-8 max-w-3xl mx-auto"
               >
                 <div className="text-center">
-                  <div className="text-3xl sm:text-4xl md:text-5xl font-bold text-yellow-400 mb-2">75+</div>
-                  <div className="text-xs sm:text-sm md:text-base text-blue-300">Years of Service</div>
+                  <div className="text-3xl sm:text-4xl md:text-5xl font-bold text-[var(--accent)] mb-2">75+</div>
+                  <div className="text-xs sm:text-sm md:text-base text-gray-300">Years of Service</div>
                 </div>
-                <div className="text-center border-x border-blue-700">
-                  <div className="text-3xl sm:text-4xl md:text-5xl font-bold text-yellow-400 mb-2">5</div>
-                  <div className="text-xs sm:text-sm md:text-base text-blue-300">Divisions</div>
+                <div className="text-center border-x border-[var(--secondary)]">
+                  <div className="text-3xl sm:text-4xl md:text-5xl font-bold text-[var(--accent)] mb-2">5</div>
+                  <div className="text-xs sm:text-sm md:text-base text-gray-300">Divisions</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-3xl sm:text-4xl md:text-5xl font-bold text-yellow-400 mb-2">1000+</div>
-                  <div className="text-xs sm:text-sm md:text-base text-blue-300">Members</div>
+                  <div className="text-3xl sm:text-4xl md:text-5xl font-bold text-[var(--accent)] mb-2">1000+</div>
+                  <div className="text-xs sm:text-sm md:text-base text-gray-300">Members</div>
                 </div>
               </motion.div>
             </motion.div>
@@ -264,10 +264,10 @@ export default function About() {
 
       {/* News Ticker */}
       <div className="relative overflow-hidden">
-        <div className="bg-yellow-400 text-yellow-900 px-4 py-2 font-bold text-sm uppercase text-center">
+        <div className="bg-[var(--accent)] text-[var(--text-dark)] px-4 py-2 font-bold text-sm uppercase text-center">
           Upcoming Events
         </div>
-        <div className="bg-yellow-50 border-b-2 border-yellow-400 py-3 overflow-hidden">
+        <div className="bg-[#fef9f0] border-b-2 border-[var(--accent)] py-3 overflow-hidden">
           <motion.div
             animate={{ x: [0, -1000] }}
             transition={{ duration: 20, repeat: Infinity, ease: 'linear' }}
@@ -296,7 +296,7 @@ export default function About() {
             >
               <Card className="h-full hover:shadow-xl transition-shadow duration-300">
                 <div className="text-5xl mb-4">{aim.icon}</div>
-                <h3 className="text-xl font-bold text-blue-900 mb-3">{aim.title}</h3>
+                <h3 className="text-xl font-bold text-[var(--primary)] mb-3">{aim.title}</h3>
                 <p className="text-gray-600 leading-relaxed">{aim.text}</p>
               </Card>
             </motion.div>
@@ -305,26 +305,26 @@ export default function About() {
       </div>
 
       {/* Interactive Timeline */}
-      <div className="relative bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 rounded-3xl p-8 md:p-12 overflow-hidden">
+      <div className="relative bg-gradient-to-br from-[#0a2343] via-[var(--primary)] to-[#0a2343] rounded-3xl p-8 md:p-12 overflow-hidden">
         {/* Background decoration */}
         <div className="absolute inset-0 opacity-10">
           <div className="absolute inset-0" style={{
-            backgroundImage: `radial-gradient(circle at 20% 50%, rgba(59, 130, 246, 0.5), transparent 50%), radial-gradient(circle at 80% 50%, rgba(147, 51, 234, 0.5), transparent 50%)`
+            backgroundImage: `radial-gradient(circle at 20% 50%, rgba(112, 128, 144, 0.5), transparent 50%), radial-gradient(circle at 80% 50%, rgba(242, 169, 0, 0.3), transparent 50%)`
           }} />
         </div>
 
         <div className="relative z-10">
           <div className="text-center mb-12">
-            <h2 className="text-4xl md:text-5xl font-bold text-white mb-4" >Our Journey Through Time</h2>
-            <p className="text-xl text-blue-200">Milestones in CREA's history</p>
+            <h2 className="text-4xl md:text-5xl font-bold text-white mb-4" style={{ textShadow: '0 2px 4px rgba(0,0,0,0.3)' }}>Our Journey Through Time</h2>
+            <p className="text-xl text-gray-200">Milestones in CREA's history</p>
           </div>
           
           {/* Enhanced Train Track Timeline */}
           <div className="relative mt-16 mb-12">
             {/* Glowing track */}
             <div className="absolute top-1/2 left-0 right-0 h-1 -translate-y-1/2">
-              <div className="absolute inset-0 bg-gradient-to-r from-blue-500 via-purple-500 to-blue-500 opacity-30 blur-sm"></div>
-              <div className="absolute inset-0 bg-gradient-to-r from-blue-400 via-purple-400 to-blue-400"></div>
+              <div className="absolute inset-0 bg-gradient-to-r from-[var(--secondary)] via-[var(--accent)] to-[var(--secondary)] opacity-30 blur-sm"></div>
+              <div className="absolute inset-0 bg-gradient-to-r from-[var(--secondary)] via-[var(--accent)] to-[var(--secondary)]"></div>
             </div>
 
             {/* Stations/Stops */}
@@ -344,7 +344,7 @@ export default function About() {
                       <motion.div
                         initial={{ opacity: 0, scale: 0.8 }}
                         animate={{ opacity: 1, scale: 1 }}
-                        className="absolute inset-0 bg-blue-400 rounded-full blur-xl opacity-50"
+                        className="absolute inset-0 bg-[var(--accent)] rounded-full blur-xl opacity-50"
                       />
                     )}
                     
@@ -352,8 +352,8 @@ export default function About() {
                     <div
                       className={`relative w-20 h-20 md:w-24 md:h-24 rounded-full flex items-center justify-center text-3xl md:text-4xl shadow-2xl transition-all duration-500 ${
                         activeStop === idx
-                          ? 'bg-gradient-to-br from-blue-500 to-purple-600 text-white ring-4 ring-blue-300 ring-offset-4 ring-offset-slate-900'
-                          : 'bg-white text-gray-600 border-4 border-gray-300 hover:border-blue-300'
+                          ? 'bg-gradient-to-br from-[var(--primary)] to-[var(--secondary)] text-white ring-4 ring-[var(--accent)]/50 ring-offset-4 ring-offset-[#0a2343]'
+                          : 'bg-white text-gray-600 border-4 border-gray-300 hover:border-[var(--secondary)]'
                       }`}
                     >
                       {stop.icon}
@@ -367,8 +367,8 @@ export default function About() {
                     transition={{ delay: idx * 0.1 }}
                     className={`mt-4 font-bold text-lg md:text-xl transition-all duration-300 ${
                       activeStop === idx 
-                        ? 'text-yellow-400 scale-110' 
-                        : 'text-blue-200'
+                        ? 'text-[var(--accent)] scale-110' 
+                        : 'text-gray-200'
                     }`}
                   >
                     {stop.year}
@@ -379,7 +379,7 @@ export default function About() {
                     <motion.div
                       initial={{ scaleY: 0 }}
                       animate={{ scaleY: 1 }}
-                      className="w-1 h-8 bg-gradient-to-b from-blue-400 to-transparent mt-2"
+                      className="w-1 h-8 bg-gradient-to-b from-[var(--accent)] to-transparent mt-2"
                     />
                   )}
                 </div>
@@ -424,8 +424,8 @@ export default function About() {
               className="relative bg-white rounded-2xl p-8 md:p-10 shadow-2xl"
             >
               {/* Decorative corner accent */}
-              <div className="absolute top-0 left-0 w-32 h-32 bg-gradient-to-br from-blue-500/10 to-transparent rounded-tl-2xl" />
-              <div className="absolute bottom-0 right-0 w-32 h-32 bg-gradient-to-tl from-purple-500/10 to-transparent rounded-br-2xl" />
+              <div className="absolute top-0 left-0 w-32 h-32 bg-gradient-to-br from-[var(--primary)]/10 to-transparent rounded-tl-2xl" />
+              <div className="absolute bottom-0 right-0 w-32 h-32 bg-gradient-to-tl from-[var(--accent)]/10 to-transparent rounded-br-2xl" />
               
               <div className="relative flex flex-col md:flex-row md:items-start md:justify-between gap-6">
                 <div className="flex-1">
@@ -436,7 +436,7 @@ export default function About() {
                     transition={{ delay: 0.2 }}
                     className="inline-block"
                   >
-                    <span className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-2 rounded-full text-lg font-bold shadow-lg mb-4">
+                    <span className="inline-flex items-center gap-2 bg-gradient-to-r from-[var(--primary)] to-[var(--secondary)] text-white px-6 py-2 rounded-full text-lg font-bold shadow-lg mb-4">
                       <span className="text-2xl">{timelineStops[activeStop].icon}</span>
                       {timelineStops[activeStop].year}
                     </span>
@@ -447,7 +447,7 @@ export default function About() {
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: 0.3 }}
-                    className="text-3xl md:text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-900 to-purple-900 mb-4"
+                    className="text-3xl md:text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-[var(--primary)] to-[var(--secondary)]  mb-4"
                   >
                     {timelineStops[activeStop].title}
                   </motion.h3>
@@ -472,13 +472,13 @@ export default function About() {
                 >
                   <button
                     onClick={prevStop}
-                    className="group p-4 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 text-white hover:from-blue-600 hover:to-blue-700 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-110"
+                    className="group p-4 rounded-full bg-gradient-to-br from-[var(--primary)] to-[var(--secondary)] text-white hover:from-[#081a32] hover:to-[#5a6a7a] shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-110"
                   >
                     <ChevronLeftIcon className="w-6 h-6 group-hover:-translate-x-1 transition-transform" />
                   </button>
                   <button
                     onClick={nextStop}
-                    className="group p-4 rounded-full bg-gradient-to-br from-purple-500 to-purple-600 text-white hover:from-purple-600 hover:to-purple-700 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-110"
+                    className="group p-4 rounded-full bg-gradient-to-br from-[var(--accent)] to-[#d49500] text-white hover:from-[#d49500] hover:to-[#b67f00] shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-110"
                   >
                     <ChevronRightIcon className="w-6 h-6 group-hover:translate-x-1 transition-transform" />
                   </button>
@@ -493,8 +493,8 @@ export default function About() {
                     onClick={() => goToStop(idx)}
                     className={`h-2 rounded-full transition-all duration-300 ${
                       activeStop === idx 
-                        ? 'w-12 bg-gradient-to-r from-blue-500 to-purple-500' 
-                        : 'w-2 bg-gray-300 hover:bg-gray-400'
+                        ? 'w-12 bg-gradient-to-r from-[var(--primary)] to-[var(--accent)]' 
+                        : 'w-2 bg-gray-300 hover:bg-[var(--secondary)]'
                     }`}
                   />
                 ))}
@@ -510,7 +510,7 @@ export default function About() {
         <Card className="mt-6">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div className="flex-1">
-              <h3 className="text-xl font-bold text-blue-900 mb-2">Official Charter of Demand Document</h3>
+              <h3 className="text-xl font-bold text-[var(--primary)] mb-2">Official Charter of Demand Document</h3>
               <p className="text-gray-600">
                 Review our comprehensive charter outlining the demands and requirements for the welfare of railway engineers.
               </p>
@@ -573,7 +573,7 @@ export default function About() {
         <SectionHeader title="Membership Eligibility" subtitle="Who can join CREA" />
         <div className="grid md:grid-cols-2 gap-6 mt-6">
           <Card>
-            <h3 className="text-xl font-bold text-blue-900 mb-4">Eligibility Criteria</h3>
+            <h3 className="text-xl font-bold text-[var(--primary)] mb-4">Eligibility Criteria</h3>
             <ul className="space-y-3">
               {eligibilityCriteria.map((criteria, idx) => (
                 <li key={idx} className="flex items-start gap-3">
@@ -594,13 +594,13 @@ export default function About() {
 
           {/* FAQs */}
           <Card>
-            <h3 className="text-xl font-bold text-blue-900 mb-4">Frequently Asked Questions</h3>
+            <h3 className="text-xl font-bold text-[var(--primary)] mb-4">Frequently Asked Questions</h3>
             <div className="space-y-3">
               {faqs.map((faq, idx) => (
                 <div key={idx} className="border-b border-gray-200 last:border-0">
                   <button
                     onClick={() => setExpandedFaq(expandedFaq === idx ? null : idx)}
-                    className="w-full text-left py-3 flex items-center justify-between hover:text-blue-900 transition"
+                    className="w-full text-left py-3 flex items-center justify-between hover:text-[var(--primary)] transition"
                   >
                     <span className="font-semibold">{faq.question}</span>
                     <span className="text-xl">{expandedFaq === idx ? '−' : '+'}</span>

@@ -39,7 +39,7 @@ export default function Login() {
   return (
     <div className="max-w-md mx-auto">
       <div className="rounded-lg border bg-white p-6 shadow-sm">
-        <h1 className="text-xl font-semibold text-blue-900">Member Login</h1>
+        <h1 className="text-xl font-semibold text-[var(--primary)]">Member Login</h1>
         {error && <div className="mt-3 rounded border border-red-300 bg-red-50 p-2 text-sm text-red-700">{error}</div>}
         <form className="mt-4 space-y-3" onSubmit={onSubmit}>
           <Input label="Username / Email" value={username} onChange={(e)=>setUsername(e.target.value)} autoComplete="username" />
@@ -47,9 +47,9 @@ export default function Login() {
           <Button type="submit" disabled={loading} loading={loading}>{loading ? 'Signing in...' : 'Sign In'}</Button>
         </form>
         <div className="mt-3 flex items-center justify-between text-sm text-gray-600">
-          <Link className="text-blue-900 underline" to="/forgot-password">Forgot password?</Link>
+          <Link className="text-[var(--primary)] underline" to="/forgot-password">Forgot password?</Link>
           <span>
-            New here? <Link className="text-blue-900 underline" to="/signup">Create account</Link>
+            New here? <Link className="text-[var(--primary)] underline" to="/signup">Create account</Link>
           </span>
         </div>
       </div>

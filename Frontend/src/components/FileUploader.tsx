@@ -62,7 +62,7 @@ export default function FileUploader({
     <div>
       <div 
         className={`relative flex flex-col items-center justify-center w-full min-h-[150px] border-2 border-dashed rounded-lg cursor-pointer transition-colors ${
-          dragActive ? 'border-blue-500 bg-blue-50' : 'border-gray-300 hover:bg-gray-50'
+          dragActive ? 'border-gray-500 bg-gray-50' : 'border-gray-300 hover:bg-gray-50'
         }`}
         onDragEnter={handleDrag}
         onDragLeave={handleDrag}

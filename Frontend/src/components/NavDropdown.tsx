@@ -23,7 +23,7 @@ export default function NavDropdown({ label, items }: { label: string; items: It
 		<div className="relative" ref={ref}>
 			<button
 				type="button"
-				className="px-3 py-2 rounded-md text-sm font-medium text-blue-900 hover:bg-blue-50 no-underline inline-flex items-center gap-1"
+				className="px-3 py-2 rounded-md text-sm font-medium text-[var(--primary)] hover:bg-gray-50 no-underline inline-flex items-center gap-1"
 				onClick={() => setOpen((o) => !o)}
 				aria-haspopup="menu"
 				aria-expanded={open}

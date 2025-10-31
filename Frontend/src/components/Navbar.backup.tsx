@@ -19,7 +19,7 @@ import {
 import { useAuth } from '../context/auth'
 
 const navLinkClass = ({ isActive }: { isActive: boolean }) =>
-  `px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200 ${isActive ? 'bg-blue-900 text-white' : 'text-blue-900 hover:bg-blue-50'}`
+  `px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200 ${isActive ? 'bg-[var(--primary)] text-white' : 'text-[var(--primary)] hover:bg-gray-50'}`
 
 // Navigation structure with grouped items
 const navigationGroups = {
@@ -117,7 +117,7 @@ export default function Navbar() {
               transition={{ type: "spring", stiffness: 400, damping: 20 }}
             />
             <div className="hidden sm:block">
-              <span className="text-blue-900 font-bold text-lg">CREA Portal</span>
+              <span className="text-[var(--primary)] font-bold text-lg">CREA Portal</span>
               <div className="text-xs text-gray-600">Central Railway Engineers Association</div>
             </div>
           </Link>
@@ -151,7 +151,7 @@ export default function Navbar() {
             <div className="hidden md:block relative" ref={searchRef}>
               <button
                 onClick={() => setSearchOpen(!searchOpen)}
-                className="p-2 text-blue-900 hover:bg-blue-50 rounded-md transition-colors duration-200"
+                className="p-2 text-[var(--primary)] hover:bg-gray-50 rounded-md transition-colors duration-200"
               >
                 <Search className="h-5 w-5" />
               </button>
@@ -168,7 +168,7 @@ export default function Navbar() {
                     <input
                       type="text"
                       placeholder="Search events, documents, forum..."
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-transparent"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent"
                       autoFocus
                     />
                     <div className="mt-2 text-xs text-gray-500">
@@ -181,7 +181,7 @@ export default function Navbar() {
 
             {/* Notifications */}
             {user && (
-              <button className="p-2 text-blue-900 hover:bg-blue-50 rounded-md transition-colors duration-200 relative">
+              <button className="p-2 text-[var(--primary)] hover:bg-gray-50 rounded-md transition-colors duration-200 relative">
                 <Bell className="h-5 w-5" />
                 <span className="absolute -top-1 -right-1 h-4 w-4 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
                   3
@@ -203,7 +203,7 @@ export default function Navbar() {
                   <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-blue-950 to-blue-900 text-white font-semibold text-sm">
                     {user.name?.[0]?.toUpperCase() || 'U'}
                   </span>
-                  <span className="hidden sm:block text-sm text-blue-900 font-medium">
+                  <span className="hidden sm:block text-sm text-[var(--primary)] font-medium">
                     {user.name}
                   </span>
                 </button>
@@ -223,7 +223,7 @@ export default function Navbar() {
                           className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors duration-150" 
                           onClick={() => setMenuOpen(false)}
                         >
-                          <span className="text-blue-900">⚙️</span>
+                          <span className="text-[var(--primary)]">⚙️</span>
                           Admin Panel
                         </Link>
                       )}
@@ -232,7 +232,7 @@ export default function Navbar() {
                         className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors duration-150" 
                         onClick={() => setMenuOpen(false)}
                       >
-                        <span className="text-blue-900">👤</span>
+                        <span className="text-[var(--primary)]">👤</span>
                         Profile
                       </Link>
                       <Link 
@@ -240,7 +240,7 @@ export default function Navbar() {
                         className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors duration-150" 
                         onClick={() => setMenuOpen(false)}
                       >
-                        <span className="text-blue-900">📁</span>
+                        <span className="text-[var(--primary)]">📁</span>
                         My Files
                       </Link>
                       <hr className="my-2 border-gray-100" />
@@ -259,7 +259,7 @@ export default function Navbar() {
 
             {/* Mobile menu button */}
             <button 
-              className="lg:hidden p-2 rounded-md text-blue-900 hover:bg-blue-50 transition-colors duration-200" 
+              className="lg:hidden p-2 rounded-md text-[var(--primary)] hover:bg-gray-50 transition-colors duration-200" 
               onClick={() => setOpen(o => !o)} 
               aria-label="Toggle navigation"
             >
