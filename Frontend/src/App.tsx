@@ -21,6 +21,7 @@ import ForgotPassword from './pages/ForgotPassword'
 import Profile from './pages/Profile'
 import Files from './pages/Files'
 import MutualTransfers from './pages/MutualTransfers'
+import About from './pages/About'
 
 function AnimatedRoutes() {
   const location = useLocation()
@@ -33,6 +34,7 @@ function AnimatedRoutes() {
         <Route path="/signup" element={<PageTransition><Signup /></PageTransition>} />
         <Route path="/admin" element={<RequireRole role="admin"><PageTransition><Admin /></PageTransition></RequireRole>} />
         <Route path="/" element={<PageTransition><Dashboard /></PageTransition>} />
+        <Route path="/about" element={<PageTransition><About /></PageTransition>} />
         <Route path="/events" element={<RequireAuth><PageTransition><Events /></PageTransition></RequireAuth>} />
         <Route path="/forum" element={<RequireAuth><PageTransition><Forum /></PageTransition></RequireAuth>} />
         <Route path="/documents" element={<RequireAuth><PageTransition><Documents /></PageTransition></RequireAuth>} />

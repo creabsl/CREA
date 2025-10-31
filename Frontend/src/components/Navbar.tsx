@@ -33,6 +33,7 @@ export default function Navbar() {
           </Link>
           <div className="hidden md:flex items-center gap-2">
             <EnhancedNavLink to="/" end>Dashboard</EnhancedNavLink>
+            <EnhancedNavLink to="/about">About</EnhancedNavLink>
             <EnhancedNavLink to="/events">Events</EnhancedNavLink>
             <EnhancedNavLink to="/documents">Documents</EnhancedNavLink>
             <EnhancedNavLink to="/apply-membership">Membership</EnhancedNavLink>
@@ -87,6 +88,7 @@ export default function Navbar() {
               transition={{ duration: DURATION.standard }}
             >
               <NavLink to="/" className={navLinkClass} end onClick={()=>setOpen(false)}>Dashboard</NavLink>
+              <NavLink to="/about" className={navLinkClass} onClick={()=>setOpen(false)}>About</NavLink>
               <NavLink to="/events" className={navLinkClass} onClick={()=>setOpen(false)}>Events</NavLink>
 
               {/* Documents: direct link to All Documents */}
