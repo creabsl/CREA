@@ -1,18 +1,13 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import Input from '../components/Input'
 import Button from '../components/Button'
-import { submitMembership } from '../services/api'
+import { submitMembership, getMembershipPricing } from '../services/api'
 import SectionHeader from '../components/SectionHeader'
 import { usePageTitle } from '../hooks/usePageTitle'
 import { DIVISIONS } from '../types'
 import type { MembershipFormData } from '../services/api'
 import FileUploader from '../components/FileUploader'
-
-const MEMBERSHIP_FEES = {
-  ordinary: 500,
-  lifetime: 10000
-}
 
 type Form = MembershipFormData
 
@@ -21,6 +16,7 @@ export default function Membership() {
   const [submitting, setSubmitting] = useState(false)
   const [membershipId, setMembershipId] = useState<string | null>(null)
   const [step, setStep] = useState(1)
+  const [membershipFees, setMembershipFees] = useState({ ordinary: 500, lifetime: 10000 })
   const [form, setForm] = useState<Form>({
     name: '', 
     designation: '', 
@@ -42,11 +38,23 @@ export default function Membership() {
   
   usePageTitle('CREA • Choose Your Membership Plan')
 
+  useEffect(() => {
+    const fetchPricing = async () => {
+      try {
+        const pricing = await getMembershipPricing()
+        setMembershipFees(pricing)
+      } catch (error) {
+        console.error('Failed to fetch membership pricing:', error)
+      }
+    }
+    fetchPricing()
+  }, [])
+
   const startApplication = (type: 'ordinary' | 'lifetime') => {
     setForm(f => ({
       ...f,
       type,
-      paymentAmount: type === 'lifetime' ? MEMBERSHIP_FEES.lifetime : MEMBERSHIP_FEES.ordinary
+      paymentAmount: type === 'lifetime' ? membershipFees.lifetime : membershipFees.ordinary
     }))
     setShowForm(true)
   }
@@ -55,7 +63,7 @@ export default function Membership() {
     setForm((f) => ({ 
       ...f, 
       [k]: v,
-      paymentAmount: k === 'type' && v === 'lifetime' ? MEMBERSHIP_FEES.lifetime : MEMBERSHIP_FEES.ordinary
+      paymentAmount: k === 'type' && v === 'lifetime' ? membershipFees.lifetime : membershipFees.ordinary
     }))
   }
 
@@ -151,7 +159,7 @@ export default function Membership() {
                 <p className="text-gray-600 mb-6 min-h-[48px]">Ideal for staying connected and accessing annual benefits.</p>
                 
                 <div className="flex items-baseline mb-8">
-                  <span className="text-5xl font-bold bg-gradient-to-r from-[var(--primary)] to-blue-600 bg-clip-text text-transparent">₹500</span>
+                  <span className="text-5xl font-bold bg-gradient-to-r from-[var(--primary)] to-blue-600 bg-clip-text text-transparent">₹{membershipFees.ordinary}</span>
                   <span className="text-gray-500 ml-2 text-lg">/ year</span>
                 </div>
 
@@ -221,7 +229,7 @@ export default function Membership() {
                 <p className="text-gray-700 mb-6 min-h-[48px]">A one-time payment for a lifetime of benefits and support.</p>
                 
                 <div className="flex items-baseline mb-8">
-                  <span className="text-5xl font-bold bg-gradient-to-r from-[var(--accent)] to-yellow-600 bg-clip-text text-transparent">₹10,000</span>
+                  <span className="text-5xl font-bold bg-gradient-to-r from-[var(--accent)] to-yellow-600 bg-clip-text text-transparent">₹{membershipFees.lifetime.toLocaleString()}</span>
                   <span className="text-gray-600 ml-2 text-lg">one-time</span>
                 </div>
 

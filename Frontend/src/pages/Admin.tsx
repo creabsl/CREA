@@ -5,14 +5,14 @@ import Button from '../components/Button'
 import Input from '../components/Input'
 import { StaggerContainer, StaggerItem } from '../components/StaggerAnimation'
 import { usePageTitle } from '../hooks/usePageTitle'
-import { createCircular, createCourtCase, createEvent, createForumTopic, createManual, deleteCircular, deleteCourtCase, deleteEvent, deleteForumTopic, deleteManual, getCirculars, getCourtCases, getEvents, getForumTopics, getManuals, getSuggestions, updateCircular, updateCourtCase, updateEvent, updateForumTopic, updateManual, adminListUsers, adminUpdateUser, notifyStatsChanged } from '../services/api'
+import { createCircular, createCourtCase, createEvent, createForumTopic, createManual, deleteCircular, deleteCourtCase, deleteEvent, deleteForumTopic, deleteManual, getCirculars, getCourtCases, getEvents, getForumTopics, getManuals, getSuggestions, updateCircular, updateCourtCase, updateEvent, updateForumTopic, updateManual, adminListUsers, adminUpdateUser, notifyStatsChanged, getSettings, updateMultipleSettings } from '../services/api'
 import type { Circular, CourtCase, EventItem, ForumTopic, Manual, Suggestion, Division } from '../types'
 import { DIVISIONS } from '../types'
-import type { MemberUser } from '../services/api'
+import type { MemberUser, Setting } from '../services/api'
 
 export default function Admin() {
   usePageTitle('CREA • Admin')
-  const [tab, setTab] = useState<'events'|'manuals'|'circulars'|'forum'|'court-cases'|'suggestions'|'members'>('events')
+  const [tab, setTab] = useState<'events'|'manuals'|'circulars'|'forum'|'court-cases'|'suggestions'|'members'|'settings'>('events')
   const [events, setEvents] = useState<EventItem[]>([])
   const [manuals, setManuals] = useState<Manual[]>([])
   const [circulars, setCirculars] = useState<Circular[]>([])
@@ -20,6 +20,7 @@ export default function Admin() {
   const [cases, setCases] = useState<CourtCase[]>([])
   const [suggestions, setSuggestions] = useState<Suggestion[]>([])
   const [members, setMembers] = useState<MemberUser[]>([])
+  const [settings, setSettings] = useState<Setting[]>([])
   const [memberDivision, setMemberDivision] = useState<Division | ''>('')
   const navigate = useNavigate()
 
@@ -30,6 +31,7 @@ export default function Admin() {
   getForumTopics().then(setTopics)
   getCourtCases().then(setCases)
   getSuggestions().then(setSuggestions)
+    getSettings().then(setSettings).catch(()=>{})
     // Preload members (all)
     adminListUsers().then(setMembers).catch(()=>{})
   }, [])
@@ -224,7 +226,7 @@ export default function Admin() {
 
       {/* Tab Navigation */}
       <div className="flex gap-2 flex-wrap">
-        {(['events','manuals','circulars','forum','court-cases','suggestions','members'] as const).map(k => (
+        {(['events','manuals','circulars','forum','court-cases','suggestions','members','settings'] as const).map(k => (
           <motion.button 
             key={k} 
             onClick={()=>setTab(k)} 
@@ -236,7 +238,7 @@ export default function Admin() {
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
           >
-            {k.split('-').map(word => word[0].toUpperCase() + word.slice(1)).join(' ')}
+            {k === 'settings' ? 'Membership' : k.split('-').map(word => word[0].toUpperCase() + word.slice(1)).join(' ')}
           </motion.button>
         ))}
       </div>
@@ -248,6 +250,7 @@ export default function Admin() {
   {tab==='court-cases' && <CourtCasesAdmin data={cases} onChange={setCases} />}
   {tab==='suggestions' && <SuggestionsAdmin data={suggestions} />}
   {tab==='members' && <MembersAdmin data={members} onReload={async(div?: Division | '')=>{ const list = await adminListUsers(div? { division: div } : undefined); setMembers(list) }} onUpdate={async (id, patch)=>{ const upd = await adminUpdateUser(id, patch); setMembers(members.map(m=>m.id===id?upd:m)) }} division={memberDivision} onDivisionChange={async(d)=>{ setMemberDivision(d); const list = await adminListUsers(d? { division: d } : undefined); setMembers(list) }} />}
+  {tab==='settings' && <SettingsAdmin data={settings} onChange={setSettings} />}
     </div>
   )
 }
@@ -296,7 +299,7 @@ function MembersAdmin({ data, onReload, onUpdate, division, onDivisionChange }: 
       >
         <div className="flex flex-wrap items-end gap-3">
           <div className="flex-1 min-w-[250px]">
-            <label className="block text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
+            <label className="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" /></svg>
               Filter by Division
             </label>
@@ -493,19 +496,20 @@ function EventsAdmin({ data, onChange }: { data: EventItem[]; onChange: (d: Even
             <Input label="Date" type="date" value={form.date} onChange={(e)=>setForm({...form, date:e.target.value})} />
             <Input label="Location" value={form.location} onChange={(e)=>setForm({...form, location:e.target.value})} />
           </div>
-          <Input label="Description" value={form.description} onChange={(e)=>setForm({...form, description:e.target.value})} />
-          <label className="text-sm inline-flex items-center gap-2 font-medium text-gray-700 cursor-pointer">
-            <input type="checkbox" className="w-4 h-4 rounded border-gray-300 text-[var(--primary)] focus:ring-[var(--primary)]" checked={!!form.breaking} onChange={(e)=>setForm({...form, breaking:e.target.checked})}/>
-            Mark as Breaking News
-          </label>
-          <Button onClick={async()=>{ const created = await createEvent(form); onChange([...data, created]); setForm({ title:'', date:'', location:'', description:'', photos:[], breaking:false }) }}>
-            <span className="flex items-center gap-2">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
-              </svg>
-              Add Event
-            </span>
-          </Button>
+          <div className="flex items-center gap-4">
+            <label className="text-sm inline-flex items-center gap-2 font-medium text-gray-700 cursor-pointer">
+              <input type="checkbox" className="w-4 h-4 rounded border-gray-300 text-[var(--primary)] focus:ring-[var(--primary)]" checked={!!form.breaking} onChange={(e)=>setForm({...form, breaking:e.target.checked})}/>
+              Mark as Breaking News
+            </label>
+            <Button onClick={async()=>{ const created = await createEvent(form); onChange([...data, created]); setForm({ title:'', date:'', location:'', description:'', photos:[], breaking:false }) }}>
+              <span className="flex items-center gap-2">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
+                </svg>
+                Add Event
+              </span>
+            </Button>
+          </div>
         </div>
       </motion.div>
       <motion.div 
@@ -780,3 +784,203 @@ function SuggestionsAdmin({ data }: { data: Suggestion[] }){
     </div>
   )
 }
+
+function SettingsAdmin({ data, onChange }: { data: Setting[]; onChange: (s: Setting[]) => void }) {
+  const [editing, setEditing] = useState<Record<string, any>>({})
+  const [saving, setSaving] = useState(false)
+
+  useEffect(() => {
+    // Initialize editing state with current settings values
+    const initialEditing: Record<string, any> = {}
+    data.forEach(setting => {
+      initialEditing[setting.key] = setting.value
+    })
+    setEditing(initialEditing)
+  }, [data])
+
+  const handleSave = async () => {
+    setSaving(true)
+    try {
+      // Find settings that have changed
+      const updatedSettings: Setting[] = data
+        .filter(setting => editing[setting.key] !== undefined && editing[setting.key] !== setting.value)
+        .map(setting => ({
+          ...setting,
+          value: editing[setting.key]
+        }))
+
+      if (updatedSettings.length > 0) {
+        const result = await updateMultipleSettings(updatedSettings)
+        onChange(data.map(s => {
+          const updated = result.find(r => r.key === s.key)
+          return updated || s
+        }))
+        alert('✅ Membership prices updated successfully!\n\nChanges have been saved to the database and will be reflected on the membership page immediately.')
+      }
+    } catch (error) {
+      console.error('Failed to save settings:', error)
+      alert('❌ Failed to save settings. Please try again.')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const membershipSettings = data.filter(s => s.category === 'Membership Settings')
+  const hasChanges = data.some(s => editing[s.key] !== undefined && editing[s.key] !== s.value)
+
+  return (
+    <div className="space-y-6">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="rounded-xl border border-gray-200 bg-white shadow-lg overflow-hidden"
+      >
+        <div className="to-[#ffffff] p-6">
+          <h2 className="text-2xl font-bold text-white flex items-center gap-3">
+            <span className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center">
+              <svg className="w-6 h-6 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
+              </svg>
+            </span>
+            Membership Settings
+          </h2>
+          <p className="text-black/90 mt-2">Configure membership pricing for ordinary and lifetime plans</p>
+        </div>
+
+        <div className="p-6 space-y-6">
+          {/* Membership Pricing Section */}
+          <div>
+            <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+              <span className="w-8 h-8 bg-gradient-to-br from-[var(--accent)] to-yellow-500 rounded-lg flex items-center justify-center">
+                <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </span>
+              Membership Pricing
+            </h3>
+
+            {membershipSettings.length === 0 ? (
+              <div className="text-center py-12 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
+                <svg className="w-16 h-16 mx-auto text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                </svg>
+                <p className="text-gray-600 font-medium mb-2">No membership pricing settings found</p>
+                <p className="text-sm text-gray-500 mb-4">The settings need to be initialized in the database.</p>
+                <Button onClick={async () => {
+                  try {
+                    await fetch(`${import.meta.env?.VITE_API_URL || 'http://localhost:5001'}/api/settings/initialize`, {
+                      method: 'POST',
+                      headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('crea:token')}`,
+                        'Content-Type': 'application/json'
+                      }
+                    })
+                    const newSettings = await getSettings()
+                    onChange(newSettings)
+                  } catch (error) {
+                    console.error('Failed to initialize settings:', error)
+                    alert('Failed to initialize settings')
+                  }
+                }}>
+                  Initialize Default Settings
+                </Button>
+              </div>
+            ) : (
+              <div className="grid md:grid-cols-2 gap-6">
+                {membershipSettings.map(setting => (
+                <motion.div
+                  key={setting.key}
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  className="bg-gradient-to-br from-gray-50 to-white rounded-lg p-5 border-2 border-gray-200 hover:border-[var(--primary)]/30 transition-colors"
+                >
+                  <label className="block">
+                    <div className="flex items-center justify-between mb-3">
+                      <span className="text-sm font-bold text-gray-900 uppercase tracking-wide">
+                        {setting.key.includes('ordinary') ? '📝 Ordinary Membership' : '⭐ Lifetime Membership'}
+                      </span>
+                      <span className={`text-xs px-2 py-1 rounded-full ${
+                        editing[setting.key] !== setting.value
+                          ? 'bg-yellow-100 text-yellow-800'
+                          : 'bg-green-100 text-green-800'
+                      }`}>
+                        {editing[setting.key] !== setting.value ? 'Modified' : 'Current'}
+                      </span>
+                    </div>
+                    
+                    {setting.description && (
+                      <p className="text-xs text-gray-600 mb-3">{setting.description}</p>
+                    )}
+                    
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-bold text-lg">₹</span>
+                      <input
+                        type="number"
+                        className="w-full pl-8 pr-4 py-3 border-2 border-gray-300 rounded-lg text-lg font-bold focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/20 transition-all"
+                        value={editing[setting.key] ?? setting.value}
+                        onChange={(e) => setEditing({ ...editing, [setting.key]: Number(e.target.value) })}
+                        min="0"
+                        step="100"
+                      />
+                    </div>
+                    
+                    {editing[setting.key] !== setting.value && (
+                      <div className="mt-2 text-xs text-gray-500 flex items-center gap-1">
+                        <span>Previous: ₹{setting.value}</span>
+                        <span>→</span>
+                        <span className="font-bold text-[var(--primary)]">New: ₹{editing[setting.key]}</span>
+                      </div>
+                    )}
+                  </label>
+                </motion.div>
+              ))}
+            </div>
+            )}
+          </div>
+
+          {/* Save Button */}
+          {membershipSettings.length > 0 && (
+          <div className="flex items-center justify-between pt-4 border-t border-gray-200">
+            <div className="flex items-center gap-2 text-sm text-gray-600">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <span>Changes will be reflected immediately on the membership page</span>
+            </div>
+            <Button
+              onClick={handleSave}
+              disabled={!hasChanges || saving}
+              loading={saving}
+            >
+              {saving ? 'Saving...' : hasChanges ? 'Save Changes' : 'No Changes'}
+            </Button>
+          </div>
+          )}
+        </div>
+      </motion.div>
+
+      {/* Info Card */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.1 }}
+        className="rounded-lg bg-blue-50 border border-blue-200 p-5"
+      >
+        <div className="flex items-start gap-3">
+          <svg className="w-6 h-6 text-blue-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <div className="flex-1">
+            <h4 className="font-semibold text-blue-900 mb-1">About Membership Settings</h4>
+            <p className="text-sm text-blue-800 leading-relaxed">
+              The membership pricing you configure here will be automatically displayed on the membership application page. 
+              Users will see the updated prices when they visit the membership section. Make sure to set appropriate values 
+              that reflect your organization's membership policies.
+            </p>
+          </div>
+        </div>
+      </motion.div>
+    </div>
+  )
+}
+
