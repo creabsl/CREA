@@ -3,6 +3,7 @@ import type { User } from '../services/api'
 
 export type AuthState = {
   user: User | null
+  loading: boolean
   login: (username: string, password: string) => Promise<void>
   logout: () => Promise<void>
   register: (username: string, name: string, password: string) => Promise<void>

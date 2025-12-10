@@ -423,16 +423,47 @@ export async function getMembershipStats(): Promise<{
 }
 
 // Auth
-export type User = { id: string; name: string; role: 'admin' | 'member' }
+export type User = { 
+  id: string
+  name: string
+  email: string
+  role: 'admin' | 'member'
+  designation?: string
+  division?: string
+  department?: string
+  mobile?: string
+  membershipType?: string
+}
 
-type AuthDTO = { _id: string; name: string; email: string; role?: 'admin' | 'member'; token?: string }
+type AuthDTO = { 
+  _id: string
+  name: string
+  email: string
+  role?: 'admin' | 'member'
+  token?: string
+  designation?: string
+  division?: string
+  department?: string
+  mobile?: string
+  membershipType?: string
+}
 export async function register(username: string, name: string, password: string): Promise<User> {
   if (!username || !name || !password) throw new Error('All fields are required')
   // Map username -> email
   const res = await request<AuthDTO>('/api/users/register', { method: 'POST', body: JSON.stringify({ name, email: username, password }) })
   const token = res.token as string
   if (token) setToken(token)
-  return { id: res._id, name: res.name, role: (res.role || 'member') }
+  return { 
+    id: res._id, 
+    name: res.name, 
+    email: res.email, 
+    role: (res.role || 'member'),
+    designation: res.designation,
+    division: res.division,
+    department: res.department,
+    mobile: res.mobile,
+    membershipType: res.membershipType
+  }
 }
 
 export async function login(username: string, password: string): Promise<User> {
@@ -440,7 +471,17 @@ export async function login(username: string, password: string): Promise<User> {
   const res = await request<AuthDTO>('/api/users/login', { method: 'POST', body: JSON.stringify({ email: username, password }) })
   const token = res.token as string
   if (token) setToken(token)
-  return { id: res._id, name: res.name, role: (res.role || 'member') }
+  return { 
+    id: res._id, 
+    name: res.name, 
+    email: res.email, 
+    role: (res.role || 'member'),
+    designation: res.designation,
+    division: res.division,
+    department: res.department,
+    mobile: res.mobile,
+    membershipType: res.membershipType
+  }
 }
 
 export async function logout(): Promise<{ success: boolean }> {
@@ -454,13 +495,55 @@ export async function requestOtp(email: string, name?: string): Promise<{ succes
   return request('/api/auth/request-otp', { method: 'POST', body: JSON.stringify({ email, name }) })
 }
 
-type VerifyOtpDTO = { _id: string; name: string; role?: 'admin' | 'member'; token?: string }
+type VerifyOtpDTO = { _id: string; name: string; email: string; role?: 'admin' | 'member'; token?: string; designation?: string; division?: string; department?: string; mobile?: string; membershipType?: string }
 export async function verifyOtp(email: string, code: string, name?: string, password?: string): Promise<User> {
   if (!email || !code) throw new Error('Email and OTP code are required')
   const res = await request<VerifyOtpDTO>('/api/auth/verify-otp', { method: 'POST', body: JSON.stringify({ email, code, name, password }) })
   const token = (res as unknown as { token?: string }).token
   if (token) setToken(token)
-  return { id: res._id, name: res.name, role: (res.role || 'member') }
+  return { 
+    id: res._id, 
+    name: res.name, 
+    email: res.email, 
+    role: (res.role || 'member'),
+    designation: res.designation,
+    division: res.division,
+    department: res.department,
+    mobile: res.mobile,
+    membershipType: res.membershipType
+  }
+}
+
+// Profile update
+export async function updateProfile(data: { name?: string; designation?: string; division?: string; department?: string; mobile?: string }): Promise<User> {
+  const res = await request<AuthDTO>('/api/users/profile', { method: 'PUT', body: JSON.stringify(data) })
+  return {
+    id: res._id,
+    name: res.name,
+    email: res.email,
+    role: (res.role || 'member'),
+    designation: res.designation,
+    division: res.division,
+    department: res.department,
+    mobile: res.mobile,
+    membershipType: res.membershipType
+  }
+}
+
+// Get current user profile
+export async function getProfile(): Promise<User> {
+  const res = await request<AuthDTO>('/api/users/profile', { method: 'GET' })
+  return {
+    id: res._id,
+    name: res.name,
+    email: res.email,
+    role: (res.role || 'member'),
+    designation: res.designation,
+    division: res.division,
+    department: res.department,
+    mobile: res.mobile,
+    membershipType: res.membershipType
+  }
 }
 
 // Body members (no backend yet)
@@ -486,8 +569,8 @@ export function notifyStatsChanged(): void {
 }
 
 // Admin: Users
-type UserDTO = { _id: string; name: string; email: string; role: 'admin' | 'member'; designation?: string; division?: string; department?: string; membershipType?: 'Ordinary' | 'Lifetime' | 'None' }
-export type MemberUser = { id: string; name: string; email: string; role: 'admin' | 'member'; designation: string; division: Division | ''; department: string; membershipType: 'Ordinary' | 'Lifetime' | 'None' }
+type UserDTO = { _id: string; name: string; email: string; role: 'admin' | 'member'; designation?: string; division?: string; department?: string; mobile?: string; membershipType?: 'Ordinary' | 'Lifetime' | 'None' }
+export type MemberUser = { id: string; name: string; email: string; role: 'admin' | 'member'; designation: string; division: Division | ''; department: string; mobile?: string; membershipType: 'Ordinary' | 'Lifetime' | 'None' }
 
 function toMemberUser(u: UserDTO): MemberUser {
   return {
@@ -498,6 +581,7 @@ function toMemberUser(u: UserDTO): MemberUser {
     designation: u.designation || '',
     division: (u.division as Division) || '',
     department: u.department || '',
+    mobile: u.mobile,
     membershipType: (u.membershipType || 'None'),
   }
 }
