@@ -6,7 +6,7 @@ import Card from '../components/Card'
 import Calendar from '../components/Calendar'
 import BreakingNews from '../components/BreakingNews'
 import QuickPreviewCard from '../components/QuickPreviewCard'
-import { EventIcon, ForumIcon, CircularIcon, CourtCaseIcon, CalendarIcon } from '../components/Icons'
+import { EventIcon, ForumIcon, CircularIcon, CourtCaseIcon } from '../components/Icons'
 import { StaggerContainer, StaggerItem } from '../components/StaggerAnimation'
 import { usePageTitle } from '../hooks/usePageTitle'
 import { getCirculars, getCourtCases, getEvents, getForumTopics, getMemberCounts, getTotals } from '../services/api'
@@ -259,43 +259,22 @@ export default function Dashboard() {
 
         {/* Right column: Calendar and quick actions */}
         <div className="space-y-6">
-          {/* Enhanced Calendar Card */}
+          {/* Professional Calendar */}
           <motion.div
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.9, duration: 0.5 }}
           >
-            <Card>
-              <div className="mb-4">
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center gap-2">
-                    <div className="w-10 h-10 bg-gradient-to-br from-[var(--primary)] to-[var(--secondary)] rounded-lg flex items-center justify-center">
-                      <CalendarIcon className="w-5 h-5 text-white" />
-                    </div>
-                    <div>
-                      <h3 className="font-bold text-[var(--text-dark)]">Event Calendar</h3>
-                      <p className="text-xs text-gray-500">Upcoming events</p>
-                    </div>
-                  </div>
-                  <button 
-                    className="text-xs text-[var(--accent)] hover:text-[var(--primary)] font-semibold transition-colors" 
-                    onClick={() => navigate('/events')}
-                  >
-                    View All →
-                  </button>
-                </div>
-              </div>
-              <Calendar 
-                year={new Date().getFullYear()} 
-                month={new Date().getMonth()} 
-                markers={events.map(e => ({
-                  date: e.date,
-                  title: e.title,
-                  content: e.description,
-                  type: e.location
-                }))} 
-              />
-            </Card>
+            <Calendar 
+              year={new Date().getFullYear()} 
+              month={new Date().getMonth()} 
+              markers={events.map(e => ({
+                date: e.date,
+                title: e.title,
+                content: e.description,
+                type: e.location
+              }))} 
+            />
           </motion.div>
 
           {/* Quick Links with enhanced design */}
