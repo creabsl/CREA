@@ -6,10 +6,12 @@ import { AuthCtx, type AuthState } from './auth'
 
 export default function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     const raw = localStorage.getItem('crea:user')
     if (raw) setUser(JSON.parse(raw))
+    setLoading(false)
   }, [])
 
   useEffect(() => {
@@ -19,6 +21,7 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
 
   const value = useMemo<AuthState>(() => ({
     user,
+    loading,
     async login(username, password) {
       const u = await apiLogin(username, password)
       setUser(u)
@@ -38,7 +41,7 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
       const u = await apiVerifyOtp(email, code, name, password)
       setUser(u)
     },
-  }), [user])
+  }), [user, loading])
 
   return <AuthCtx.Provider value={value}>{children}</AuthCtx.Provider>
 }

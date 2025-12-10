@@ -1,8 +1,12 @@
-type Day = { date: Date; isCurrentMonth: boolean }
+import { motion } from 'framer-motion'
+import { useState } from 'react'
 
+type Day = { date: Date; isCurrentMonth: boolean }
 type Marker = string | { date: string; title?: string; content?: string; type?: string }
 
 export default function Calendar({ year, month, markers = [] }: { year: number; month: number; markers?: Marker[] }) {
+  const [selectedDate, setSelectedDate] = useState<string | null>(null)
+  
   const first = new Date(year, month, 1)
   const start = new Date(first)
   start.setDate(1 - ((first.getDay() + 6) % 7)) // start on Monday
@@ -33,35 +37,31 @@ export default function Calendar({ year, month, markers = [] }: { year: number; 
   })
 
   const monthName = first.toLocaleString(undefined, { month: 'long' })
+  const selectedEvents = selectedDate ? map.get(selectedDate) || [] : []
 
   return (
-    <div className="rounded-xl border border-gray-200 bg-white shadow-md overflow-visible">
-      {/* Enhanced Header */}
-      <div className="bg-gradient-to-r from-[var(--primary)] to-[#1a4d8f] px-5 py-4 relative">
+    <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+      {/* Clean Professional Header */}
+      <div className="bg-gradient-to-r from-[var(--primary)] to-[var(--secondary)] px-4 py-3.5">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-white/20 backdrop-blur-sm rounded-lg">
-              <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-              </svg>
-            </div>
-            <h3 className="text-lg font-bold !text-white tracking-wide drop-shadow-md">{monthName} {year}</h3>
-          </div>
-          <div className="flex items-center gap-2 !text-white text-xs bg-white/10 px-2.5 py-1.5 rounded-md backdrop-blur-sm">
-            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          <div className="flex items-center gap-2.5">
+            <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
             </svg>
-            <span className="font-medium">Hover for details</span>
+            <h3 className="text-base font-bold !text-white">{monthName} {year}</h3>
+          </div>
+          <div className="text-[10px] text-white/90 bg-white/20 px-2.5 py-1 rounded-md font-semibold">
+            {markers.length} events
           </div>
         </div>
       </div>
 
-      {/* Calendar Grid */}
-      <div className="p-4">
+      {/* Compact Calendar Grid */}
+      <div className="p-3">
         <div className="grid grid-cols-7 gap-1">
           {/* Weekday Headers */}
           {['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].map((w) => (
-            <div key={w} className="text-center py-3 font-semibold text-[var(--secondary)] text-sm uppercase tracking-wide">
+            <div key={w} className="text-center py-2 text-[10px] font-bold text-gray-500 uppercase tracking-wide">
               {w}
             </div>
           ))}
@@ -74,155 +74,112 @@ export default function Calendar({ year, month, markers = [] }: { year: number; 
             const hasEvents = items.length > 0
             
             return (
-              <div 
-                key={idx} 
+              <motion.div 
+                key={idx}
+                onClick={() => hasEvents && setSelectedDate(key)}
+                whileHover={hasEvents || d.isCurrentMonth ? { scale: 1.08 } : {}}
+                whileTap={hasEvents ? { scale: 0.95 } : {}}
                 className={`
-                  min-h-[90px] rounded-lg p-2.5 transition-all duration-200 relative group
+                  aspect-square flex flex-col items-center justify-center p-1.5 rounded-lg transition-all cursor-pointer relative
                   ${d.isCurrentMonth 
-                    ? 'bg-white hover:bg-gray-50 border border-gray-200 hover:shadow-md' 
-                    : 'bg-gray-50/50 text-gray-400 border border-gray-100'
+                    ? hasEvents
+                      ? 'bg-[var(--primary)] text-white hover:bg-[var(--secondary)] font-semibold shadow-sm hover:shadow-md'
+                      : isToday
+                      ? 'bg-[var(--accent)] text-white font-bold shadow-md ring-2 ring-[var(--accent)]/30 ring-offset-1'
+                      : 'text-gray-700 hover:bg-gray-100 font-medium'
+                    : 'text-gray-300 font-normal'
                   }
-                  ${isToday ? 'ring-2 ring-[var(--accent)] ring-offset-1 bg-amber-50/30' : ''}
-                  ${hasEvents ? 'cursor-pointer' : ''}
+                  ${selectedDate === key ? 'ring-2 ring-[var(--accent)] ring-offset-1' : ''}
                 `}
               >
-                {/* Date Number */}
-                <div className="flex items-start justify-between mb-1.5">
-                  <span className={`
-                    text-sm font-semibold
-                    ${isToday 
-                      ? 'flex items-center justify-center w-7 h-7 rounded-full bg-[var(--accent)] text-white shadow-sm' 
-                      : d.isCurrentMonth ? 'text-[var(--primary)]' : 'text-gray-400'
-                    }
-                  `}>
-                    {d.date.getDate()}
-                  </span>
-                  
-                  {/* Event Count Badge */}
-                  {hasEvents && (
-                    <span className="inline-flex items-center justify-center min-w-[22px] h-5 px-1.5 rounded-full text-[10px] font-bold bg-[var(--accent)] text-white shadow-sm">
-                      {items.length}
-                    </span>
-                  )}
-                </div>
-
-                {/* Event Dots Preview */}
-                {hasEvents && (
-                  <div className="flex flex-wrap gap-1 mt-1.5">
-                    {items.slice(0, 3).map((item, i) => (
-                      <div 
-                        key={i} 
-                        className="w-1.5 h-1.5 rounded-full bg-[var(--primary)]"
-                        title={item.title || 'Event'}
-                      />
+                <span className="text-xs leading-none">{d.date.getDate()}</span>
+                {hasEvents && d.isCurrentMonth && (
+                  <div className="absolute bottom-1 left-1/2 -translate-x-1/2 flex gap-0.5">
+                    {items.slice(0, 3).map((_, i) => (
+                      <div key={i} className="w-1 h-1 rounded-full bg-white/80"></div>
                     ))}
-                    {items.length > 3 && (
-                      <span className="text-[9px] text-[var(--secondary)] font-medium ml-0.5">
-                        +{items.length - 3}
-                      </span>
-                    )}
                   </div>
                 )}
-
-                {/* Enhanced Hover Tooltip - Position ABOVE the cell */}
-                {hasEvents && (
-                  <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 pointer-events-none">
-                    <div className="w-72 max-w-[90vw]">
-                      {/* Tooltip Arrow */}
-                      <div className="w-3 h-3 bg-white border-b border-r border-gray-200 transform rotate-45 mx-auto mb-[-6px] relative z-10"></div>
-                      
-                      {/* Tooltip Content */}
-                      <div className="rounded-lg bg-white border border-gray-200 shadow-2xl overflow-hidden">
-                        {/* Tooltip Header */}
-                        <div className="bg-gradient-to-r from-[var(--primary)] to-[#1a4d8f] px-3.5 py-2.5 text-white">
-                          <div className="flex items-center gap-2">
-                            <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                            </svg>
-                            <span className="font-semibold text-sm">
-                              {d.date.toLocaleDateString('en-US', { 
-                                weekday: 'long', 
-                                month: 'long', 
-                                day: 'numeric' 
-                              })}
-                            </span>
-                          </div>
-                          <p className="text-[10px] text-white/90 mt-0.5 ml-6">{items.length} event{items.length !== 1 ? 's' : ''} scheduled</p>
-                        </div>
-
-                        {/* Events List */}
-                        <div className="max-h-56 overflow-y-auto">
-                          {items.map((item, i) => (
-                            <div 
-                              key={i} 
-                              className="px-3.5 py-2.5 border-b border-gray-100 last:border-b-0 hover:bg-gray-50 transition-colors"
-                            >
-                              <div className="flex items-start gap-2.5">
-                                {/* Event Icon */}
-                                <div className="flex-shrink-0 w-7 h-7 rounded-full bg-[var(--accent)]/10 flex items-center justify-center mt-0.5">
-                                  <svg className="w-3.5 h-3.5 text-[var(--accent)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-                                  </svg>
-                                </div>
-                                
-                                {/* Event Details */}
-                                <div className="flex-1 min-w-0">
-                                  <h4 className="font-semibold text-[var(--primary)] text-xs mb-0.5 leading-tight">
-                                    {item.title || 'Event'}
-                                  </h4>
-                                  {item.content && (
-                                    <p className="text-[10px] text-[var(--secondary)] line-clamp-2 leading-relaxed">
-                                      {item.content}
-                                    </p>
-                                  )}
-                                  {item.type && (
-                                    <span className="inline-block mt-1.5 px-2 py-0.5 rounded-full bg-[var(--primary)]/10 text-[var(--primary)] text-[9px] font-medium">
-                                      {item.type}
-                                    </span>
-                                  )}
-                                </div>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-
-                        {/* Tooltip Footer (if more than 3 events) */}
-                        {items.length > 3 && (
-                          <div className="px-3.5 py-2 bg-gray-50 text-center border-t border-gray-100">
-                            <span className="text-[10px] text-[var(--secondary)] font-medium">
-                              Showing all {items.length} events
-                            </span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
+              </motion.div>
             )
           })}
         </div>
       </div>
 
-      {/* Legend */}
-      <div className="px-6 py-3 bg-gray-50 border-t border-gray-200">
-        <div className="flex items-center justify-between text-xs">
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2">
-              <div className="w-6 h-6 rounded-full bg-[var(--accent)] flex items-center justify-center text-white font-bold text-xs">
-                {new Date().getDate()}
-              </div>
-              <span className="text-[var(--secondary)]">Today</span>
+      {/* Event Details Panel */}
+      {selectedDate && selectedEvents.length > 0 && (
+        <motion.div 
+          initial={{ opacity: 0, height: 0 }}
+          animate={{ opacity: 1, height: 'auto' }}
+          exit={{ opacity: 0, height: 0 }}
+          className="border-t border-gray-200 bg-gradient-to-b from-blue-50/30 to-white"
+        >
+          <div className="p-4">
+            <div className="flex items-center justify-between mb-3">
+              <h4 className="text-sm font-bold text-[var(--primary)] flex items-center gap-2">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+                {new Date(selectedDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+              </h4>
+              <button 
+                onClick={() => setSelectedDate(null)}
+                className="text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full p-1 transition-all"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
             </div>
-            <div className="flex items-center gap-2">
-              <div className="w-2 h-2 rounded-full bg-[var(--primary)]"></div>
-              <span className="text-[var(--secondary)]">Has Events</span>
+            <div className="space-y-2 max-h-48 overflow-y-auto">
+              {selectedEvents.map((event, i) => (
+                <motion.div 
+                  key={i} 
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: i * 0.1 }}
+                  className="bg-white rounded-lg p-3 border border-gray-200 hover:border-[var(--primary)]/30 hover:shadow-sm transition-all"
+                >
+                  <div className="font-semibold text-sm text-gray-900 mb-1 flex items-start gap-2">
+                    <svg className="w-4 h-4 text-[var(--accent)] flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                    </svg>
+                    <span>{event.title || 'Event'}</span>
+                  </div>
+                  {event.content && (
+                    <div className="text-xs text-gray-600 ml-6 mb-2">
+                      {event.content}
+                    </div>
+                  )}
+                  {event.type && (
+                    <div className="flex items-center gap-1 text-xs text-[var(--primary)] ml-6 bg-[var(--primary)]/5 px-2 py-1 rounded w-fit">
+                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                      </svg>
+                      {event.type}
+                    </div>
+                  )}
+                </motion.div>
+              ))}
             </div>
           </div>
-          <div className="text-[var(--secondary)]">
-            Total Events: <span className="font-semibold text-[var(--primary)]">{markers.length}</span>
+        </motion.div>
+      )}
+      
+      {/* Simple Footer */}
+      <div className="px-4 py-2.5 bg-gray-50 border-t border-gray-200 flex items-center justify-between text-xs">
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-1.5">
+            <div className="w-3 h-3 rounded bg-[var(--primary)]"></div>
+            <span className="text-gray-600">Has Events</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <div className="w-3 h-3 rounded bg-[var(--accent)]"></div>
+            <span className="text-gray-600">Today</span>
           </div>
         </div>
+        <span className="text-gray-500 italic">Click dates to view details</span>
       </div>
     </div>
   )

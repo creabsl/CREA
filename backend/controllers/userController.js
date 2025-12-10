@@ -41,6 +41,7 @@ exports.registerUser = async (req, res) => {
       designation: user.designation,
       division: user.division,
       department: user.department,
+      mobile: user.mobile,
       membershipType: user.membershipType,
       token: generateToken(user._id),
     });
@@ -81,6 +82,7 @@ exports.loginUser = async (req, res) => {
       designation: user.designation,
       division: user.division,
       department: user.department,
+      mobile: user.mobile,
       membershipType: user.membershipType,
       token: generateToken(user._id),
     });
@@ -113,7 +115,7 @@ exports.listUsers = async (req, res) => {
 exports.updateUser = async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, designation, division, department, membershipType, role } = req.body;
+    const { name, designation, division, department, mobile, membershipType, role } = req.body;
 
     // Only allow safe fields; password/email updates are out-of-scope here
     const patch = {};
@@ -121,6 +123,7 @@ exports.updateUser = async (req, res) => {
     if (typeof designation === 'string') patch.designation = designation;
     if (typeof division === 'string') patch.division = division;
     if (typeof department === 'string') patch.department = department;
+    if (typeof mobile === 'string') patch.mobile = mobile;
     if (typeof membershipType === 'string') patch.membershipType = membershipType;
     // role change allowed but restrict to known values
     if (role === 'admin' || role === 'member') patch.role = role;
@@ -130,6 +133,69 @@ exports.updateUser = async (req, res) => {
     return res.json(updated);
   } catch (error) {
     console.error('Update user error:', error);
+    return res.status(500).json({ message: 'Server error' });
+  }
+};
+
+// @desc    Get own profile
+// @route   GET /api/users/profile
+// @access  Private (any authenticated user)
+exports.getProfile = async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const user = await User.findById(userId).select('-password');
+    
+    if (!user) return res.status(404).json({ message: 'User not found' });
+    
+    return res.json({
+      _id: user._id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      designation: user.designation,
+      division: user.division,
+      department: user.department,
+      mobile: user.mobile,
+      membershipType: user.membershipType,
+    });
+  } catch (error) {
+    console.error('Get profile error:', error);
+    return res.status(500).json({ message: 'Server error' });
+  }
+};
+
+// @desc    Update own profile (member self-edit)
+// @route   PUT /api/users/profile
+// @access  Private (any authenticated user)
+exports.updateProfile = async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const { name, designation, division, department, mobile } = req.body;
+
+    // Members can only update their own profile fields (not role/membershipType)
+    const patch = {};
+    if (typeof name === 'string') patch.name = name;
+    if (typeof designation === 'string') patch.designation = designation;
+    if (typeof division === 'string') patch.division = division;
+    if (typeof department === 'string') patch.department = department;
+    if (typeof mobile === 'string') patch.mobile = mobile;
+
+    const updated = await User.findByIdAndUpdate(userId, { $set: patch }, { new: true, runValidators: true }).select('-password');
+    if (!updated) return res.status(404).json({ message: 'User not found' });
+    
+    return res.json({
+      _id: updated._id,
+      name: updated.name,
+      email: updated.email,
+      role: updated.role,
+      designation: updated.designation,
+      division: updated.division,
+      department: updated.department,
+      mobile: updated.mobile,
+      membershipType: updated.membershipType,
+    });
+  } catch (error) {
+    console.error('Update profile error:', error);
     return res.status(500).json({ message: 'Server error' });
   }
 };

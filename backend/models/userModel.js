@@ -9,6 +9,7 @@ const userSchema = new mongoose.Schema(
     designation: { type: String },
     division: { type: String },
     department: { type: String },
+    mobile: { type: String },
     membershipType: {
       type: String,
       enum: ['Ordinary', 'Lifetime', 'None'],

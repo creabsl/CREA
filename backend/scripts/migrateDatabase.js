@@ -1,10 +1,22 @@
 const mongoose = require('mongoose');
+const path = require('path');
+require('dotenv').config({ path: path.resolve(__dirname, '..', '.env') });
 
-// Source and destination URIs
-const SOURCE_URI = 'mongodb+srv://gauravgame01_db_user:jieKYDzz5XdmaoGL@cluster0.latkfla.mongodb.net/crea?retryWrites=true&w=majority&appName=Cluster0';
-const DEST_URI = 'mongodb+srv://crearail5_db_user:crea1234@crea.bvyozxr.mongodb.net/crea?retryWrites=true&w=majority&appName=crea';
+// Source and destination URIs from environment variables
+// Set these in your .env file or pass as command line arguments:
+// SOURCE_MONGO_URI - The source MongoDB connection string
+// DEST_MONGO_URI - The destination MongoDB connection string (defaults to MONGO_URI from .env)
+const SOURCE_URI = process.env.SOURCE_MONGO_URI || process.argv[2];
+const DEST_URI = process.env.DEST_MONGO_URI || process.env.MONGO_URI || process.argv[3];
 
 async function migrateDatabase() {
+  if (!SOURCE_URI || !DEST_URI) {
+    console.error('❌ Error: Missing database URIs');
+    console.log('\nUsage:');
+    console.log('  Set environment variables SOURCE_MONGO_URI and DEST_MONGO_URI');
+    console.log('  OR run: node migrateDatabase.js <source-uri> <dest-uri>');
+    process.exit(1);
+  }
   console.log('Starting database migration...\n');
 
   // Create separate connections
