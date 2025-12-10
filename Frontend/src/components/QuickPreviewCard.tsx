@@ -66,22 +66,26 @@ export default function QuickPreviewCard({
               transition={{ delay: (delay * 0.1) + (index * 0.1) }}
               whileHover={{ 
                 x: 4,
-                backgroundColor: "rgba(249, 250, 251, 1)",
+                scale: 1.02,
+                backgroundColor: "rgba(14, 44, 84, 0.03)",
                 transition: { type: "spring", stiffness: 400 }
               }}
-              className="p-3 rounded-lg cursor-pointer transition-all duration-200"
+              className="p-3 rounded-lg cursor-pointer transition-all duration-200 border border-transparent hover:border-[var(--primary)]/20 hover:shadow-sm"
             >
-              <div className="text-sm font-medium text-gray-800 line-clamp-2">
+              <div className="text-sm font-semibold text-gray-900 line-clamp-1 mb-1">
                 {item.title}
               </div>
               {item.subtitle && (
-                <div className="text-xs text-gray-500 mt-1">
+                <div className="text-xs text-gray-600 line-clamp-1 mb-1">
                   {item.subtitle}
                 </div>
               )}
               {item.date && (
-                <div className="text-xs text-brand mt-1 font-medium">
-                  {new Date(item.date).toLocaleDateString()}
+                <div className="text-xs text-[var(--accent)] font-semibold flex items-center gap-1">
+                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                  {new Date(item.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                 </div>
               )}
             </motion.div>
