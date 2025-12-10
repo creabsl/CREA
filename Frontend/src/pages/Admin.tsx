@@ -1307,6 +1307,7 @@ function SettingsAdmin({ data, onChange }: { data: Setting[]; onChange: (s: Sett
               {saving ? 'Saving...' : hasChanges ? 'Save Changes' : 'No Changes'}
             </Button>
           </div>
+          )}
         </div>
       </motion.div>
 
