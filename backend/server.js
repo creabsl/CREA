@@ -11,7 +11,8 @@ const app = express();
 
 // Middleware
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
 // Static files for uploaded assets
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
@@ -29,6 +30,7 @@ const forumRoutes = require('./routes/forumRoutes');
 const statsRoutes = require('./routes/statsRoutes');
 const mutualTransferRoutes = require('./routes/mutualTransferRoutes');
 const externalLinkRoutes = require('./routes/externalLinkRoutes');
+const bodyMemberRoutes = require('./routes/bodyMemberRoutes');
 
 app.use('/api/users', userRoutes);
 app.use('/api/auth', authRoutes);
@@ -42,6 +44,7 @@ app.use('/api/forum', forumRoutes);
 app.use('/api/stats', statsRoutes);
 app.use('/api/mutual-transfers', mutualTransferRoutes);
 app.use('/api/external-links', externalLinkRoutes);
+app.use('/api/body-members', bodyMemberRoutes);
 
 // Health check
 app.get('/health', (_req, res) => res.json({ status: 'ok' }));

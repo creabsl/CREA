@@ -34,7 +34,7 @@ export type CourtCase = {
 
 export type Manual = { id: string; title: string; url?: string }
 
-export type BodyMember = { id: string; name: string; designation: string; photoUrl: string }
+export type BodyMember = { id: string; name: string; designation: string; photoUrl: string; division: Division }
 
 export type ForumTopic = { id: string; title: string; author: string; createdAt: string; replies: number }
 export type ForumComment = { author: string; content: string; createdAt?: string; createdAtStr?: string }

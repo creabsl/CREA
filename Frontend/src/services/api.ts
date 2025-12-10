@@ -547,12 +547,27 @@ export async function getProfile(): Promise<User> {
 }
 
 // Body members (no backend yet)
-export async function getBodyMembers(): Promise<BodyMember[]> {
-  return [
-    { id: 'b1', name: 'A. Sharma', designation: 'President', photoUrl: 'https://via.placeholder.com/150' },
-    { id: 'b2', name: 'R. Gupta', designation: 'General Secretary', photoUrl: 'https://via.placeholder.com/150' },
-    { id: 'b3', name: 'S. Khan', designation: 'Treasurer', photoUrl: 'https://via.placeholder.com/150' },
-  ]
+// Body Members
+type BodyMemberDTO = { _id: string; name: string; designation: string; photoUrl: string; division: Division }
+export async function getBodyMembers(division?: Division): Promise<BodyMember[]> {
+  const q = division ? `?division=${division}` : ''
+  const list = await request<BodyMemberDTO[]>(`/api/body-members${q}`)
+  return list.map(m => ({ id: m._id, name: m.name, designation: m.designation, photoUrl: m.photoUrl, division: m.division }))
+}
+
+export async function createBodyMember(input: Omit<BodyMember, 'id'>): Promise<BodyMember> {
+  const m = await request<BodyMemberDTO>('/api/body-members', { method: 'POST', body: JSON.stringify(input) })
+  return { id: m._id, name: m.name, designation: m.designation, photoUrl: m.photoUrl, division: m.division }
+}
+
+export async function updateBodyMember(id: string, patch: Partial<Omit<BodyMember, 'id'>>): Promise<BodyMember> {
+  const m = await request<BodyMemberDTO>(`/api/body-members/${id}`, { method: 'PUT', body: JSON.stringify(patch) })
+  return { id: m._id, name: m.name, designation: m.designation, photoUrl: m.photoUrl, division: m.division }
+}
+
+export async function deleteBodyMember(id: string): Promise<{ success: boolean }> {
+  await request(`/api/body-members/${id}`, { method: 'DELETE' })
+  return { success: true }
 }
 
 // Backward-compatible no-op used by pages that previously seeded demo data locally

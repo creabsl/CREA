@@ -3,16 +3,17 @@ import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import Button from '../components/Button'
 import Input from '../components/Input'
+import Spinner from '../components/Spinner'
 import { StaggerContainer, StaggerItem } from '../components/StaggerAnimation'
 import { usePageTitle } from '../hooks/usePageTitle'
-import { createCircular, createCourtCase, createEvent, createForumTopic, createManual, deleteCircular, deleteCourtCase, deleteEvent, deleteForumTopic, deleteManual, getCirculars, getCourtCases, getEvents, getForumTopics, getManuals, getSuggestions, updateCircular, updateCourtCase, updateEvent, updateForumTopic, updateManual, adminListUsers, adminUpdateUser, notifyStatsChanged } from '../services/api'
-import type { Circular, CourtCase, EventItem, ForumTopic, Manual, Suggestion, Division } from '../types'
+import { createCircular, createCourtCase, createEvent, createForumTopic, createManual, deleteCircular, deleteCourtCase, deleteEvent, deleteForumTopic, deleteManual, getCirculars, getCourtCases, getEvents, getForumTopics, getManuals, getSuggestions, updateCircular, updateCourtCase, updateEvent, updateForumTopic, updateManual, adminListUsers, adminUpdateUser, notifyStatsChanged, getBodyMembers, createBodyMember, updateBodyMember, deleteBodyMember } from '../services/api'
+import type { Circular, CourtCase, EventItem, ForumTopic, Manual, Suggestion, Division, BodyMember } from '../types'
 import { DIVISIONS } from '../types'
 import type { MemberUser } from '../services/api'
 
 export default function Admin() {
   usePageTitle('CREA • Admin')
-  const [tab, setTab] = useState<'events'|'manuals'|'circulars'|'forum'|'court-cases'|'suggestions'|'members'>('events')
+  const [tab, setTab] = useState<'events'|'manuals'|'circulars'|'forum'|'court-cases'|'suggestions'|'members'|'association-body'>('events')
   const [events, setEvents] = useState<EventItem[]>([])
   const [manuals, setManuals] = useState<Manual[]>([])
   const [circulars, setCirculars] = useState<Circular[]>([])
@@ -78,7 +79,7 @@ export default function Admin() {
                   ⚡ Management Center
                 </span>
               </motion.div>
-              <h1 className="text-3xl font-bold text-white">Admin Panel</h1>
+              <h1 className="text-3xl font-bold !text-white">Admin Panel</h1>
             </div>
           </div>
           <p className="text-white/90 text-sm max-w-3xl">
@@ -224,7 +225,7 @@ export default function Admin() {
 
       {/* Tab Navigation */}
       <div className="flex gap-2 flex-wrap">
-        {(['events','manuals','circulars','forum','court-cases','suggestions','members'] as const).map(k => (
+        {(['events','manuals','circulars','forum','court-cases','suggestions','members','association-body'] as const).map(k => (
           <motion.button 
             key={k} 
             onClick={()=>setTab(k)} 
@@ -248,6 +249,7 @@ export default function Admin() {
   {tab==='court-cases' && <CourtCasesAdmin data={cases} onChange={setCases} />}
   {tab==='suggestions' && <SuggestionsAdmin data={suggestions} />}
   {tab==='members' && <MembersAdmin data={members} onReload={async(div?: Division | '')=>{ const list = await adminListUsers(div? { division: div } : undefined); setMembers(list) }} onUpdate={async (id, patch)=>{ const upd = await adminUpdateUser(id, patch); setMembers(members.map(m=>m.id===id?upd:m)) }} division={memberDivision} onDivisionChange={async(d)=>{ setMemberDivision(d); const list = await adminListUsers(d? { division: d } : undefined); setMembers(list) }} />}
+  {tab==='association-body' && <AssociationBodyAdmin />}
     </div>
   )
 }
@@ -779,6 +781,447 @@ function SuggestionsAdmin({ data }: { data: Suggestion[] }){
         <svg className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
         <span>Note: Files are not uploaded in this mock; only filenames are stored.</span>
       </div>
+    </div>
+  )
+}
+
+function AssociationBodyAdmin() {
+  const [bodyMembers, setBodyMembers] = useState<BodyMember[]>([])
+  const [loading, setLoading] = useState(true)
+  const [openCreate, setOpenCreate] = useState(false)
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [selectedDivision, setSelectedDivision] = useState<Division | ''>('')
+  const [form, setForm] = useState<Omit<BodyMember, 'id'>>({ name: '', designation: '', photoUrl: '', division: 'Mumbai' })
+  const [photoFile, setPhotoFile] = useState<File | null>(null)
+  const [photoPreview, setPhotoPreview] = useState<string>('')
+
+  useEffect(() => {
+    getBodyMembers(selectedDivision || undefined)
+      .then(data => {
+        setBodyMembers(data)
+        setLoading(false)
+      })
+      .catch(error => {
+        console.error('Fetch body members error:', error)
+        setLoading(false)
+      })
+  }, [selectedDivision])
+
+  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      setPhotoFile(file)
+      // Create preview URL
+      const reader = new FileReader()
+      reader.onloadend = () => {
+        const result = reader.result as string
+        setPhotoPreview(result)
+        setForm({ ...form, photoUrl: result })
+      }
+      reader.readAsDataURL(file)
+    }
+  }
+
+  const handleCreate = async () => {
+    try {
+      await createBodyMember(form)
+      // Refresh the list from server to ensure consistency
+      const updatedList = await getBodyMembers(selectedDivision || undefined)
+      setBodyMembers(updatedList)
+      setForm({ name: '', designation: '', photoUrl: '', division: 'Mumbai' })
+      setPhotoFile(null)
+      setPhotoPreview('')
+      setOpenCreate(false)
+    } catch (error) {
+      console.error('Create body member error:', error)
+      alert('Failed to create body member')
+    }
+  }
+
+  const handleEdit = (member: BodyMember) => {
+    setEditingId(member.id)
+    setForm({ name: member.name, designation: member.designation, photoUrl: member.photoUrl, division: member.division })
+    setPhotoPreview(member.photoUrl)
+  }
+
+  const handleUpdate = async () => {
+    if (!editingId) return
+    try {
+      await updateBodyMember(editingId, form)
+      // Refresh the list from server to ensure consistency
+      const updatedList = await getBodyMembers(selectedDivision || undefined)
+      setBodyMembers(updatedList)
+      setEditingId(null)
+      setForm({ name: '', designation: '', photoUrl: '', division: 'Mumbai' })
+      setPhotoFile(null)
+      setPhotoPreview('')
+    } catch (error) {
+      console.error('Update body member error:', error)
+      alert('Failed to update body member')
+    }
+  }
+
+  const handleDelete = async (id: string) => {
+    if (confirm('Delete this body member?')) {
+      try {
+        await deleteBodyMember(id)
+        // Refresh the list from server to ensure consistency
+        const updatedList = await getBodyMembers(selectedDivision || undefined)
+        setBodyMembers(updatedList)
+      } catch (error) {
+        console.error('Delete body member error:', error)
+        alert('Failed to delete body member')
+      }
+    }
+  }
+
+  if (loading) return (
+    <div className="flex items-center justify-center py-12">
+      <div className="text-center">
+        <Spinner />
+        <p className="mt-4 text-gray-600">Loading body members...</p>
+      </div>
+    </div>
+  )
+
+  return (
+    <div className="space-y-6">
+      {/* Header Card with Gradient */}
+      <motion.div
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[var(--primary)] via-[#1a4d8f] to-[var(--primary)] p-8 text-white shadow-xl"
+      >
+        <div className="relative z-10">
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="flex items-center gap-3 mb-2">
+                <div className="p-2 bg-white/20 rounded-xl backdrop-blur-sm">
+                  <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                  </svg>
+                </div>
+                <div>
+                  <h2 className="text-2xl font-bold !text-white">Association Body</h2>
+                  <p className="text-white/80 text-sm">Manage office bearers and executive members</p>
+                </div>
+              </div>
+            </div>
+            <Button 
+              onClick={() => setOpenCreate(true)} 
+              variant="secondary"
+              className="bg-white !text-[var(--primary)] hover:bg-white/90 shadow-lg font-semibold"
+            >
+              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
+              </svg>
+              Add Member
+            </Button>
+          </div>
+        </div>
+        
+        {/* Decorative blobs */}
+        <div className="absolute -right-16 -top-16 w-48 h-48 bg-white/10 rounded-full blur-3xl"></div>
+        <div className="absolute -left-16 -bottom-16 w-48 h-48 bg-white/10 rounded-full blur-3xl"></div>
+      </motion.div>
+
+      {/* Filter Card */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.1 }}
+        className="bg-white rounded-xl shadow-md border border-gray-200 p-5"
+      >
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 text-gray-700">
+            <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+            </svg>
+            <label className="text-sm font-semibold">Filter by Division:</label>
+          </div>
+          <select
+            value={selectedDivision}
+            onChange={(e) => setSelectedDivision(e.target.value as Division | '')}
+            className="flex-1 max-w-xs px-4 py-2.5 border-2 border-gray-200 rounded-lg text-sm font-medium focus:ring-2 focus:ring-[var(--primary)] focus:border-[var(--primary)] transition-all"
+          >
+            <option value="">All Divisions ({bodyMembers.length})</option>
+            {DIVISIONS.map(d => (
+              <option key={d} value={d}>{d}</option>
+            ))}
+          </select>
+          {selectedDivision && (
+            <button
+              onClick={() => setSelectedDivision('')}
+              className="px-3 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+            >
+              Clear
+            </button>
+          )}
+        </div>
+      </motion.div>
+
+      {/* Members Grid/Table */}
+      {bodyMembers.length === 0 ? (
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: 0.2 }}
+          className="bg-white rounded-xl shadow-md border-2 border-dashed border-gray-300 p-12 text-center"
+        >
+          <div className="inline-flex items-center justify-center w-20 h-20 bg-gray-100 rounded-full mb-4">
+            <svg className="w-10 h-10 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+            </svg>
+          </div>
+          <h3 className="text-xl font-bold text-gray-700 mb-2">No Members Yet</h3>
+          <p className="text-gray-500 mb-6">Get started by adding your first body member</p>
+          <Button onClick={() => setOpenCreate(true)} variant="primary">
+            <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
+            </svg>
+            Add First Member
+          </Button>
+        </motion.div>
+      ) : (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+          className="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden"
+        >
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="bg-gradient-to-r from-gray-50 to-gray-100 border-b-2 border-gray-200">
+                  <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
+                    <div className="flex items-center gap-2">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      </svg>
+                      Photo
+                    </div>
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Name</th>
+                  <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Designation</th>
+                  <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Division</th>
+                  <th className="px-6 py-4 text-center text-xs font-bold text-gray-700 uppercase tracking-wider">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200">
+                {bodyMembers.map((member, index) => (
+                  <motion.tr 
+                    key={member.id}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: index * 0.05 }}
+                    className="hover:bg-blue-50/50 transition-colors group"
+                  >
+                    <td className="px-6 py-4">
+                      <div className="relative inline-block">
+                        <img 
+                          src={member.photoUrl} 
+                          alt={member.name} 
+                          className="w-14 h-14 rounded-full object-cover border-3 border-gray-200 shadow-md group-hover:border-[var(--primary)] transition-all ring-2 ring-transparent group-hover:ring-[var(--primary)]/20" 
+                        />
+                        <div className="absolute bottom-0 right-0 w-4 h-4 bg-green-500 rounded-full border-2 border-white shadow"></div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="text-sm font-bold text-gray-900 group-hover:text-[var(--primary)] transition-colors">{member.name}</div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-2">
+                        <svg className="w-4 h-4 text-[var(--accent)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+                        </svg>
+                        <span className="text-sm text-gray-700 font-medium">{member.designation}</span>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-gradient-to-r from-blue-100 to-blue-200 text-blue-800 shadow-sm">
+                        <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                        </svg>
+                        {member.division}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center justify-center gap-2">
+                        <button
+                          onClick={() => handleEdit(member)}
+                          className="inline-flex items-center gap-1.5 px-4 py-2 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-600 hover:text-white text-sm font-semibold transition-all shadow-sm hover:shadow-md"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                          </svg>
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => handleDelete(member.id)}
+                          className="inline-flex items-center gap-1.5 px-4 py-2 bg-red-50 text-red-700 rounded-lg hover:bg-red-600 hover:text-white text-sm font-semibold transition-all shadow-sm hover:shadow-md"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                          </svg>
+                          Delete
+                        </button>
+                      </div>
+                    </td>
+                  </motion.tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Footer Stats */}
+          <div className="bg-gradient-to-r from-gray-50 to-gray-100 px-6 py-4 border-t border-gray-200">
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-gray-600 font-medium">
+                Showing <span className="font-bold text-gray-900">{bodyMembers.length}</span> member{bodyMembers.length !== 1 ? 's' : ''}
+                {selectedDivision && <span> in <span className="font-bold text-[var(--primary)]">{selectedDivision}</span></span>}
+              </span>
+              <div className="flex items-center gap-2 text-gray-500">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span className="text-xs">Last updated: {new Date().toLocaleDateString()}</span>
+              </div>
+            </div>
+          </div>
+        </motion.div>
+      )}
+
+      {/* Create/Edit Modal */}
+      {(openCreate || editingId) && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-white rounded-xl shadow-xl max-w-md w-full p-6"
+          >
+            <h3 className="text-xl font-bold text-gray-800 mb-4">
+              {editingId ? 'Edit Body Member' : 'Add Body Member'}
+            </h3>
+            <div className="space-y-4">
+              <Input
+                label="Name"
+                value={form.name}
+                onChange={(e) => setForm({ ...form, name: e.target.value })}
+                placeholder="Enter full name"
+              />
+              <Input
+                label="Designation"
+                value={form.designation}
+                onChange={(e) => setForm({ ...form, designation: e.target.value })}
+                placeholder="e.g., President, Secretary"
+              />
+              
+              {/* Photo Upload Section */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Photo</label>
+                <div className="space-y-3">
+                  {/* Preview */}
+                  {photoPreview && (
+                    <div className="flex justify-center">
+                      <div className="relative">
+                        <img 
+                          src={photoPreview} 
+                          alt="Preview" 
+                          className="w-24 h-24 rounded-full object-cover border-4 border-gray-200 shadow-md"
+                        />
+                        <button
+                          onClick={() => {
+                            setPhotoPreview('')
+                            setPhotoFile(null)
+                            setForm({ ...form, photoUrl: '' })
+                          }}
+                          className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 transition-colors"
+                          type="button"
+                        >
+                          ×
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* Upload Button */}
+                  <div className="flex items-center justify-center w-full">
+                    <label className="w-full flex flex-col items-center px-4 py-6 bg-white border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-[var(--primary)] hover:bg-gray-50 transition-all">
+                      <svg className="w-8 h-8 text-gray-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                      </svg>
+                      <span className="text-sm text-gray-500">
+                        {photoFile ? photoFile.name : 'Click to upload or drag and drop'}
+                      </span>
+                      <span className="text-xs text-gray-400 mt-1">PNG, JPG, GIF up to 5MB</span>
+                      <input
+                        type="file"
+                        className="hidden"
+                        accept="image/*"
+                        onChange={handlePhotoChange}
+                      />
+                    </label>
+                  </div>
+
+                  {/* OR divider */}
+                  <div className="relative flex items-center">
+                    <div className="flex-grow border-t border-gray-300"></div>
+                    <span className="flex-shrink mx-4 text-sm text-gray-500">OR</span>
+                    <div className="flex-grow border-t border-gray-300"></div>
+                  </div>
+
+                  {/* URL Input */}
+                  <Input
+                    label=""
+                    value={form.photoUrl}
+                    onChange={(e) => {
+                      setForm({ ...form, photoUrl: e.target.value })
+                      setPhotoPreview(e.target.value)
+                      setPhotoFile(null)
+                    }}
+                    placeholder="Or paste photo URL"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1">Division</label>
+                <select
+                  value={form.division}
+                  onChange={(e) => setForm({ ...form, division: e.target.value as Division })}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent"
+                >
+                  {DIVISIONS.map(d => (
+                    <option key={d} value={d}>{d}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+            <div className="flex gap-3 mt-6">
+              <Button
+                onClick={editingId ? handleUpdate : handleCreate}
+                variant="primary"
+                disabled={!form.name || !form.designation}
+              >
+                {editingId ? 'Update' : 'Create'}
+              </Button>
+              <Button
+                onClick={() => {
+                  setOpenCreate(false)
+                  setEditingId(null)
+                  setForm({ name: '', designation: '', photoUrl: '', division: 'Mumbai' })
+                  setPhotoFile(null)
+                  setPhotoPreview('')
+                }}
+                variant="secondary"
+              >
+                Cancel
+              </Button>
+            </div>
+          </motion.div>
+        </div>
+      )}
     </div>
   )
 }
