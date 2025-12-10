@@ -223,7 +223,8 @@ export async function submitSuggestion(payload: { text: string; files: File[]; u
 
 // Mutual transfers
 type MutualTransferDTO = {
-  _id: string
+  id?: string
+  _id?: string
   post: string
   currentLocation: string
   desiredLocation: string
@@ -241,7 +242,7 @@ type MutualTransferDTO = {
 }
 
 const toMutual = (dto: MutualTransferDTO): MutualTransfer => ({
-  id: dto._id,
+  id: dto.id || dto._id || '',
   post: dto.post,
   currentLocation: dto.currentLocation,
   desiredLocation: dto.desiredLocation,
@@ -298,6 +299,12 @@ export async function updateMutualTransfer(id: string, patch: Partial<MutualTran
 export async function deleteMutualTransfer(id: string): Promise<{ success: boolean }> {
   await request(`/api/mutual-transfers/${id}`, { method: 'DELETE' })
   return { success: true }
+}
+
+// Admin function to get all transfers (including inactive)
+export async function getAllMutualTransfers(): Promise<MutualTransfer[]> {
+  const list = await request<MutualTransferDTO[]>('/api/mutual-transfers?includeInactive=true')
+  return list.map(toMutual)
 }
 
 // Forum

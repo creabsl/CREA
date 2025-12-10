@@ -5,15 +5,15 @@ import Button from '../components/Button'
 import Input from '../components/Input'
 import { StaggerContainer, StaggerItem } from '../components/StaggerAnimation'
 import { usePageTitle } from '../hooks/usePageTitle'
-import { createCircular, createCourtCase, createEvent, createForumTopic, createManual, deleteCircular, deleteCourtCase, deleteEvent, deleteForumTopic, deleteManual, getCirculars, getCourtCases, getEvents, getForumTopics, getManuals, getSuggestions, updateCircular, updateCourtCase, updateEvent, updateForumTopic, updateManual, adminListUsers, adminUpdateUser, notifyStatsChanged } from '../services/api'
-import type { Circular, CourtCase, EventItem, ForumTopic, Manual, Suggestion, Division } from '../types'
+import { createCircular, createCourtCase, createEvent, createForumTopic, createManual, deleteCircular, deleteCourtCase, deleteEvent, deleteForumTopic, deleteManual, getCirculars, getCourtCases, getEvents, getForumTopics, getManuals, getSuggestions, updateCircular, updateCourtCase, updateEvent, updateForumTopic, updateManual, adminListUsers, adminUpdateUser, notifyStatsChanged, getAllMutualTransfers, updateMutualTransfer, deleteMutualTransfer } from '../services/api'
+import type { Circular, CourtCase, EventItem, ForumTopic, Manual, Suggestion, Division, MutualTransfer } from '../types'
 import { DIVISIONS } from '../types'
 import type { MemberUser } from '../services/api'
 import { defaultTimelineStops, defaultPastEvents, type TimelineStop, type PastEvent } from '../data/aboutDefaults'
 
 export default function Admin() {
   usePageTitle('CREA • Admin')
-  const [tab, setTab] = useState<'events'|'manuals'|'circulars'|'forum'|'court-cases'|'suggestions'|'members'|'about'>('events')
+  const [tab, setTab] = useState<'events'|'manuals'|'circulars'|'forum'|'court-cases'|'suggestions'|'members'|'about'|'transfers'>('events')
   const [events, setEvents] = useState<EventItem[]>([])
   const [manuals, setManuals] = useState<Manual[]>([])
   const [circulars, setCirculars] = useState<Circular[]>([])
@@ -22,6 +22,7 @@ export default function Admin() {
   const [suggestions, setSuggestions] = useState<Suggestion[]>([])
   const [members, setMembers] = useState<MemberUser[]>([])
   const [memberDivision, setMemberDivision] = useState<Division | ''>('')
+  const [transfers, setTransfers] = useState<MutualTransfer[]>([])
   const navigate = useNavigate()
 
   useEffect(() => {
@@ -33,6 +34,8 @@ export default function Admin() {
   getSuggestions().then(setSuggestions)
     // Preload members (all)
     adminListUsers().then(setMembers).catch(()=>{})
+    // Preload mutual transfers (all including inactive)
+    getAllMutualTransfers().then(setTransfers).catch(()=>{})
   }, [])
 
   return (
@@ -225,7 +228,7 @@ export default function Admin() {
 
       {/* Tab Navigation */}
       <div className="flex gap-2 flex-wrap">
-        {(['events','manuals','circulars','forum','court-cases','suggestions','members'] as const).map(k => (
+        {(['events','manuals','circulars','forum','court-cases','suggestions','members','transfers'] as const).map(k => (
           <motion.button 
             key={k} 
             onClick={()=>setTab(k)} 
@@ -237,7 +240,7 @@ export default function Admin() {
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
           >
-            {k.split('-').map(word => word[0].toUpperCase() + word.slice(1)).join(' ')}
+            {k === 'transfers' ? 'Mutual Transfers' : k.split('-').map(word => word[0].toUpperCase() + word.slice(1)).join(' ')}
           </motion.button>
         ))}
         <motion.button 
@@ -262,6 +265,7 @@ export default function Admin() {
   {tab==='court-cases' && <CourtCasesAdmin data={cases} onChange={setCases} />}
   {tab==='suggestions' && <SuggestionsAdmin data={suggestions} />}
   {tab==='members' && <MembersAdmin data={members} onReload={async(div?: Division | '')=>{ const list = await adminListUsers(div? { division: div } : undefined); setMembers(list) }} onUpdate={async (id, patch)=>{ const upd = await adminUpdateUser(id, patch); setMembers(members.map(m=>m.id===id?upd:m)) }} division={memberDivision} onDivisionChange={async(d)=>{ setMemberDivision(d); const list = await adminListUsers(d? { division: d } : undefined); setMembers(list) }} />}
+  {tab==='transfers' && <MutualTransfersAdmin data={transfers} onReload={async()=>{ const list = await getAllMutualTransfers(); setTransfers(list) }} onChange={setTransfers} />}
   {tab==='about' && <AboutAdmin />}
     </div>
   )
@@ -280,6 +284,7 @@ function AboutAdmin(){
   const [removedDefaultMilestones, setRemovedDefaultMilestones] = useState<string[]>([])
   const [removedDefaultGallery, setRemovedDefaultGallery] = useState<number[]>([])
   const [editingDefaultMilestoneKey, setEditingDefaultMilestoneKey] = useState<string | null>(null)
+  const [editingCustomMilestoneKey, setEditingCustomMilestoneKey] = useState<string | null>(null)
   const [editingDefaultGalleryId, setEditingDefaultGalleryId] = useState<number | null>(null)
 
   useEffect(() => {
@@ -336,7 +341,14 @@ function AboutAdmin(){
     if (!y || !/^\d{4}$/.test(y)) { alert('Enter a valid 4-digit year'); return }
     if (!t) { alert('Title is required'); return }
     if (!d) { alert('Description is required'); return }
-    const next = [...extrasMilestones, { year: y, title: t, description: d, icon: icon || '🎉' }]
+    let next: TimelineStop[]
+    const newItem: TimelineStop = { year: y, title: t, description: d, icon: icon || '🎉' }
+    if (editingCustomMilestoneKey) {
+      // Replace the existing custom milestone being edited
+      next = extrasMilestones.map(m => (`${m.year}|${m.title}` === editingCustomMilestoneKey ? newItem : m))
+    } else {
+      next = [...extrasMilestones, newItem]
+    }
     next.sort((a,b)=>parseInt(a.year)-parseInt(b.year))
     saveMilestones(next)
     if (editingDefaultMilestoneKey) {
@@ -347,6 +359,7 @@ function AboutAdmin(){
     }
     setTitle(''); setYear(''); setDescription(''); setIcon('🎉')
     setEditingDefaultMilestoneKey(null)
+    setEditingCustomMilestoneKey(null)
     alert('Milestone added. Check About page timeline!')
   }
 
@@ -463,7 +476,10 @@ function AboutAdmin(){
                           <Button variant="danger" onClick={()=>{ const keys = new Set(removedDefaultMilestones); keys.add(key); saveRemovedMilestones(Array.from(keys)) }}>Remove</Button>
                         </>
                       ) : (
-                        <Button variant="secondary" onClick={()=> removeOne(key)}>Remove</Button>
+                        <>
+                          <Button variant="secondary" onClick={()=>{ setTitle(m.title); setYear(m.year); setDescription(m.description); setIcon(m.icon); setEditingCustomMilestoneKey(key) }}>Edit</Button>
+                          <Button variant="danger" onClick={()=> removeOne(key)}>Remove</Button>
+                        </>
                       )}
                     </div>
                   </li>
@@ -475,6 +491,12 @@ function AboutAdmin(){
               <div className="mt-2 text-xs text-amber-700 bg-amber-50 border border-amber-200 p-2 rounded">
                 Replacing default milestone. Saving will hide the original.
                 <button className="ml-2 underline" onClick={()=> setEditingDefaultMilestoneKey(null)}>Cancel</button>
+              </div>
+            )}
+            {editingCustomMilestoneKey && (
+              <div className="mt-2 text-xs text-blue-700 bg-blue-50 border border-blue-200 p-2 rounded">
+                Editing custom milestone. Saving will update the item.
+                <button className="ml-2 underline" onClick={()=> setEditingCustomMilestoneKey(null)}>Cancel</button>
               </div>
             )}
           </div>
@@ -1106,6 +1128,234 @@ function SuggestionsAdmin({ data }: { data: Suggestion[] }){
       <div className="text-sm text-gray-500 bg-blue-50 border border-blue-200 rounded-lg px-4 py-3 flex items-start gap-2">
         <svg className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
         <span>Note: Files are not uploaded in this mock; only filenames are stored.</span>
+      </div>
+    </div>
+  )
+}
+
+function MutualTransfersAdmin({ data, onReload, onChange }: { data: MutualTransfer[]; onReload: ()=>Promise<void>; onChange: (d: MutualTransfer[])=>void }){
+  const [filter, setFilter] = useState<'all'|'active'|'inactive'>('all')
+  const [searchTerm, setSearchTerm] = useState('')
+
+  const filteredData = useMemo(() => {
+    let result = data
+    if (filter === 'active') result = result.filter(t => t.isActive)
+    if (filter === 'inactive') result = result.filter(t => !t.isActive)
+    if (searchTerm.trim()) {
+      const term = searchTerm.toLowerCase()
+      result = result.filter(t => 
+        t.post.toLowerCase().includes(term) ||
+        t.currentLocation.toLowerCase().includes(term) ||
+        t.desiredLocation.toLowerCase().includes(term) ||
+        t.contactName.toLowerCase().includes(term) ||
+        t.contactEmail.toLowerCase().includes(term) ||
+        t.ownerDivision.toLowerCase().includes(term)
+      )
+    }
+    return result
+  }, [data, filter, searchTerm])
+
+  const activeCount = data.filter(t => t.isActive).length
+  const inactiveCount = data.filter(t => !t.isActive).length
+
+  return (
+    <div className="space-y-5">
+      {/* Stats Bar */}
+      <motion.div 
+        className="grid grid-cols-1 md:grid-cols-3 gap-4"
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+      >
+        <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-gray-600 mb-1">Total Listings</p>
+              <p className="text-2xl font-bold text-[var(--primary)]">{data.length}</p>
+            </div>
+            <div className="p-3 bg-blue-100 rounded-lg">
+              <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+            </div>
+          </div>
+        </div>
+        <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-gray-600 mb-1">Active</p>
+              <p className="text-2xl font-bold text-green-600">{activeCount}</p>
+            </div>
+            <div className="p-3 bg-green-100 rounded-lg">
+              <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+          </div>
+        </div>
+        <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-gray-600 mb-1">Inactive</p>
+              <p className="text-2xl font-bold text-gray-500">{inactiveCount}</p>
+            </div>
+            <div className="p-3 bg-gray-100 rounded-lg">
+              <svg className="w-6 h-6 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+              </svg>
+            </div>
+          </div>
+        </div>
+      </motion.div>
+
+      {/* Filters */}
+      <motion.div 
+        className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm"
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+      >
+        <div className="flex flex-wrap items-end gap-4">
+          <div className="flex-1 min-w-[250px]">
+            <label className="block text-sm font-semibold text-gray-700 mb-2">Search</label>
+            <Input 
+              value={searchTerm} 
+              onChange={(e)=>setSearchTerm(e.target.value)} 
+              placeholder="Search by post, location, name, email, or division..." 
+            />
+          </div>
+          <div className="min-w-[150px]">
+            <label className="block text-sm font-semibold text-gray-700 mb-2">Status Filter</label>
+            <select 
+              className="block w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm shadow-sm focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/20 transition-all" 
+              value={filter} 
+              onChange={(e)=>setFilter(e.target.value as 'all'|'active'|'inactive')}
+            >
+              <option value="all">All ({data.length})</option>
+              <option value="active">Active ({activeCount})</option>
+              <option value="inactive">Inactive ({inactiveCount})</option>
+            </select>
+          </div>
+          <Button onClick={onReload}>
+            <span className="flex items-center gap-2">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+              Refresh
+            </span>
+          </Button>
+        </div>
+      </motion.div>
+
+      {/* Listings Table */}
+      <motion.div 
+        className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden"
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.1 }}
+      >
+        <div className="bg-gradient-to-r from-gray-50 to-gray-100 px-6 py-4 border-b border-gray-200">
+          <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
+            <span className="w-8 h-8 bg-indigo-100 rounded-lg flex items-center justify-center">
+              <svg className="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+              </svg>
+            </span>
+            Mutual Transfer Listings ({filteredData.length})
+          </h3>
+        </div>
+        <div className="divide-y divide-gray-100">
+          {filteredData.map(t => (
+            <div key={t.id} className="p-5 hover:bg-gray-50 transition-colors">
+              <div className="flex flex-wrap gap-4 items-start justify-between">
+                <div className="flex-1 min-w-[300px]">
+                  <div className="flex items-center gap-3 mb-2">
+                    <div className="w-10 h-10 bg-gradient-to-br from-[var(--primary)] to-[#1a4d8f] rounded-lg flex items-center justify-center text-white font-bold text-sm">
+                      {t.post.substring(0, 2).toUpperCase()}
+                    </div>
+                    <div>
+                      <h4 className="font-semibold text-gray-800">{t.post}</h4>
+                      <div className="text-xs text-gray-500">
+                        {t.ownerDivision && <span className="bg-blue-50 text-blue-700 px-2 py-0.5 rounded mr-2">{t.ownerDivision}</span>}
+                        Created: {t.createdAt ? new Date(t.createdAt).toLocaleDateString() : 'N/A'}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm text-gray-600 mt-2">
+                    <span className="bg-blue-50 px-2 py-1 rounded">{t.currentLocation}</span>
+                    <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                    </svg>
+                    <span className="bg-green-50 px-2 py-1 rounded text-green-700">{t.desiredLocation}</span>
+                  </div>
+                  <div className="mt-2 text-sm text-gray-600">
+                    <span className="font-medium">Contact:</span> {t.contactName || 'N/A'} 
+                    {t.contactEmail && <span className="ml-2 text-blue-600">{t.contactEmail}</span>}
+                    {t.contactPhone && <span className="ml-2">{t.contactPhone}</span>}
+                  </div>
+                  {t.notes && (
+                    <div className="mt-2 text-sm text-gray-500 bg-gray-50 p-2 rounded border-l-2 border-gray-300">
+                      {t.notes}
+                    </div>
+                  )}
+                </div>
+                <div className="flex flex-col items-end gap-2">
+                  {t.isActive ? (
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-green-100 text-green-700 text-xs font-semibold rounded-full">
+                      <span className="w-2 h-2 bg-green-500 rounded-full"></span>
+                      Active
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-gray-100 text-gray-600 text-xs font-semibold rounded-full">
+                      <span className="w-2 h-2 bg-gray-400 rounded-full"></span>
+                      Inactive
+                    </span>
+                  )}
+                  <div className="flex gap-2">
+                    <Button 
+                      variant="secondary" 
+                      onClick={async()=>{
+                        try {
+                          const upd = await updateMutualTransfer(t.id, { isActive: !t.isActive });
+                          onChange(data.map(d => d.id===t.id ? upd : d));
+                        } catch (err) {
+                          alert((err as Error).message || 'Failed to update listing');
+                        }
+                      }}
+                    >
+                      {t.isActive ? 'Deactivate' : 'Activate'}
+                    </Button>
+                    <Button 
+                      variant="danger" 
+                      onClick={async()=>{
+                        if (!confirm(`Delete listing "${t.post}" by ${t.contactName || 'unknown'}? This action cannot be undone.`)) return;
+                        try {
+                          await deleteMutualTransfer(t.id);
+                          onChange(data.filter(d => d.id !== t.id));
+                        } catch (err) {
+                          alert((err as Error).message || 'Failed to delete listing');
+                        }
+                      }}
+                    >
+                      Delete
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
+          {filteredData.length===0 && (
+            <div className="p-8 text-center text-gray-500">
+              {data.length === 0 ? 'No mutual transfer listings found.' : 'No listings match your filter criteria.'}
+            </div>
+          )}
+        </div>
+      </motion.div>
+
+      {/* Info Note */}
+      <div className="text-sm text-gray-500 bg-amber-50 border border-amber-200 rounded-lg px-4 py-3 flex items-start gap-2">
+        <svg className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+        </svg>
+        <span>As an admin, you can deactivate or delete any mutual transfer listing. Deactivating hides the listing from public view but keeps it in the database. Deleting permanently removes it.</span>
       </div>
     </div>
   )
