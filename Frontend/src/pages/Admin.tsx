@@ -6,14 +6,14 @@ import Input from '../components/Input'
 import Spinner from '../components/Spinner'
 import { StaggerContainer, StaggerItem } from '../components/StaggerAnimation'
 import { usePageTitle } from '../hooks/usePageTitle'
-import { createCircular, createCourtCase, createEvent, createForumTopic, createManual, deleteCircular, deleteCourtCase, deleteEvent, deleteForumTopic, deleteManual, getCirculars, getCourtCases, getEvents, getForumTopics, getManuals, getSuggestions, updateCircular, updateCourtCase, updateEvent, updateForumTopic, updateManual, adminListUsers, adminUpdateUser, notifyStatsChanged, getBodyMembers, createBodyMember, updateBodyMember, deleteBodyMember } from '../services/api'
-import type { Circular, CourtCase, EventItem, ForumTopic, Manual, Suggestion, Division, BodyMember } from '../types'
+import { createCircular, createCourtCase, createEvent, createForumTopic, createManual, deleteCircular, deleteCourtCase, deleteEvent, deleteForumTopic, deleteManual, getCirculars, getCourtCases, getEvents, getForumTopics, getManuals, getSuggestions, updateCircular, updateCourtCase, updateEvent, updateForumTopic, updateManual, adminListUsers, adminUpdateUser, notifyStatsChanged, getMutualTransfers, createMutualTransfer, updateMutualTransfer, deleteMutualTransfer, getBodyMembers, createBodyMember, updateBodyMember, deleteBodyMember } from '../services/api'
+import type { Circular, CourtCase, EventItem, ForumTopic, Manual, Suggestion, Division, MutualTransfer, BodyMember } from '../types'
 import { DIVISIONS } from '../types'
 import type { MemberUser } from '../services/api'
 
 export default function Admin() {
   usePageTitle('CREA • Admin')
-  const [tab, setTab] = useState<'events'|'manuals'|'circulars'|'forum'|'court-cases'|'suggestions'|'members'|'association-body'>('events')
+  const [tab, setTab] = useState<'events'|'manuals'|'circulars'|'forum'|'court-cases'|'suggestions'|'members'|'about'|'transfers'|'association-body'>('events')
   const [events, setEvents] = useState<EventItem[]>([])
   const [manuals, setManuals] = useState<Manual[]>([])
   const [circulars, setCirculars] = useState<Circular[]>([])
@@ -22,6 +22,7 @@ export default function Admin() {
   const [suggestions, setSuggestions] = useState<Suggestion[]>([])
   const [members, setMembers] = useState<MemberUser[]>([])
   const [memberDivision, setMemberDivision] = useState<Division | ''>('')
+  const [transfers, setTransfers] = useState<MutualTransfer[]>([])
   const navigate = useNavigate()
 
   useEffect(() => {
@@ -33,6 +34,8 @@ export default function Admin() {
   getSuggestions().then(setSuggestions)
     // Preload members (all)
     adminListUsers().then(setMembers).catch(()=>{})
+    // Preload mutual transfers (all including inactive)
+    getMutualTransfers({ includeInactive: true }).then(setTransfers).catch(()=>{})
   }, [])
 
   return (
@@ -225,7 +228,7 @@ export default function Admin() {
 
       {/* Tab Navigation */}
       <div className="flex gap-2 flex-wrap">
-        {(['events','manuals','circulars','forum','court-cases','suggestions','members','association-body'] as const).map(k => (
+        {(['events','manuals','circulars','forum','court-cases','suggestions','members','transfers','association-body'] as const).map(k => (
           <motion.button 
             key={k} 
             onClick={()=>setTab(k)} 
@@ -240,6 +243,18 @@ export default function Admin() {
             {k.split('-').map(word => word[0].toUpperCase() + word.slice(1)).join(' ')}
           </motion.button>
         ))}
+        <motion.button
+          onClick={() => setTab('about')}
+          className={`px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${
+            tab === 'about'
+              ? 'bg-gradient-to-r from-[var(--primary)] to-[#19417d] text-white shadow-lg shadow-[var(--primary)]/30'
+              : 'bg-white text-gray-700 border border-gray-200 hover:border-[var(--primary)] hover:text-[var(--primary)] hover:shadow-md'
+          }`}
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+        >
+          About
+        </motion.button>
       </div>
 
       {tab==='events' && <EventsAdmin data={events} onChange={setEvents} />}
@@ -249,6 +264,8 @@ export default function Admin() {
   {tab==='court-cases' && <CourtCasesAdmin data={cases} onChange={setCases} />}
   {tab==='suggestions' && <SuggestionsAdmin data={suggestions} />}
   {tab==='members' && <MembersAdmin data={members} onReload={async(div?: Division | '')=>{ const list = await adminListUsers(div? { division: div } : undefined); setMembers(list) }} onUpdate={async (id, patch)=>{ const upd = await adminUpdateUser(id, patch); setMembers(members.map(m=>m.id===id?upd:m)) }} division={memberDivision} onDivisionChange={async(d)=>{ setMemberDivision(d); const list = await adminListUsers(d? { division: d } : undefined); setMembers(list) }} />}
+  {tab==='transfers' && <MutualTransfersAdmin data={transfers} onChange={setTransfers} />}
+  {tab==='about' && <AboutAdmin />}
   {tab==='association-body' && <AssociationBodyAdmin />}
     </div>
   )
@@ -1222,6 +1239,121 @@ function AssociationBodyAdmin() {
           </motion.div>
         </div>
       )}
+    </div>
+  )
+}
+
+function MutualTransfersAdmin({ data, onChange }: { data: MutualTransfer[]; onChange: (data: MutualTransfer[]) => void }) {
+  const [openCreate, setOpenCreate] = useState(false)
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [form, setForm] = useState({ post: '', currentLocation: '', desiredLocation: '', contactPhone: '', notes: '' })
+
+  const handleCreate = async () => {
+    try {
+      await createMutualTransfer(form)
+      const refreshed = await getMutualTransfers({ includeInactive: true })
+      onChange(refreshed)
+      setOpenCreate(false)
+      setForm({ post: '', currentLocation: '', desiredLocation: '', contactPhone: '', notes: '' })
+    } catch {
+      alert('Error creating transfer')
+    }
+  }
+
+  const handleUpdate = async () => {
+    if (!editingId) return
+    try {
+      await updateMutualTransfer(editingId, form)
+      const refreshed = await getMutualTransfers({ includeInactive: true })
+      onChange(refreshed)
+      setEditingId(null)
+      setOpenCreate(false)
+      setForm({ post: '', currentLocation: '', desiredLocation: '', contactPhone: '', notes: '' })
+    } catch {
+      alert('Error updating transfer')
+    }
+  }
+
+  const handleDelete = async (id: string) => {
+    if (!confirm('Delete this transfer?')) return
+    try {
+      await deleteMutualTransfer(id)
+      onChange(data.filter(item => item.id !== id))
+    } catch {
+      alert('Error deleting transfer')
+    }
+  }
+
+  const handleEdit = (item: MutualTransfer) => {
+    setEditingId(item.id)
+    setForm({ post: item.post, currentLocation: item.currentLocation, desiredLocation: item.desiredLocation, contactPhone: item.contactPhone, notes: item.notes })
+    setOpenCreate(true)
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="flex justify-between items-center">
+        <h2 className="text-2xl font-bold">Mutual Transfers</h2>
+        <Button onClick={() => setOpenCreate(true)} variant="primary">Add Transfer</Button>
+      </div>
+
+      <div className="grid gap-4">
+        {data.map(item => (
+          <div key={item.id} className="border rounded-lg p-4 bg-white">
+            <div className="flex justify-between items-start">
+              <div>
+                <div className="font-semibold">{item.post}</div>
+                <div className="text-sm text-gray-600">From: {item.currentLocation} → To: {item.desiredLocation}</div>
+                <div className="text-sm text-gray-600">Contact: {item.contactPhone}</div>
+                {item.notes && <div className="text-sm text-gray-500 mt-1">{item.notes}</div>}
+                <div className="text-xs text-gray-400 mt-1">{item.isActive ? 'Active' : 'Inactive'}</div>
+              </div>
+              <div className="flex gap-2">
+                <Button onClick={() => handleEdit(item)} variant="secondary">Edit</Button>
+                <Button onClick={() => handleDelete(item.id)} variant="danger">Delete</Button>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {openCreate && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <motion.div
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            className="bg-white rounded-lg p-6 w-full max-w-md space-y-4"
+          >
+            <h3 className="text-xl font-bold">{editingId ? 'Edit' : 'Add'} Transfer</h3>
+            <Input label="Post" value={form.post} onChange={e => setForm({ ...form, post: e.target.value })} />
+            <Input label="Current Location" value={form.currentLocation} onChange={e => setForm({ ...form, currentLocation: e.target.value })} />
+            <Input label="Desired Location" value={form.desiredLocation} onChange={e => setForm({ ...form, desiredLocation: e.target.value })} />
+            <Input label="Contact Phone" value={form.contactPhone} onChange={e => setForm({ ...form, contactPhone: e.target.value })} />
+            <Input label="Notes" value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} />
+            <div className="flex gap-2">
+              <Button onClick={editingId ? handleUpdate : handleCreate} variant="primary">
+                {editingId ? 'Update' : 'Create'}
+              </Button>
+              <Button onClick={() => { setOpenCreate(false); setEditingId(null); setForm({ post: '', currentLocation: '', desiredLocation: '', contactPhone: '', notes: '' }) }} variant="secondary">
+                Cancel
+              </Button>
+            </div>
+          </motion.div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+function AboutAdmin() {
+  return (
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <h2 className="text-2xl font-bold">About Page Management</h2>
+      </div>
+      <div className="border rounded-lg p-6 bg-white">
+        <p className="text-gray-600">About page content management coming soon. This will allow editing timeline stops and past events.</p>
+      </div>
     </div>
   )
 }
