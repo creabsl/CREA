@@ -31,6 +31,7 @@ const statsRoutes = require('./routes/statsRoutes');
 const mutualTransferRoutes = require('./routes/mutualTransferRoutes');
 const externalLinkRoutes = require('./routes/externalLinkRoutes');
 const bodyMemberRoutes = require('./routes/bodyMemberRoutes');
+const settingRoutes = require('./routes/settingRoutes');
 
 app.use('/api/users', userRoutes);
 app.use('/api/auth', authRoutes);
@@ -45,6 +46,7 @@ app.use('/api/stats', statsRoutes);
 app.use('/api/mutual-transfers', mutualTransferRoutes);
 app.use('/api/external-links', externalLinkRoutes);
 app.use('/api/body-members', bodyMemberRoutes);
+app.use('/api/settings', settingRoutes);
 
 // Health check
 app.get('/health', (_req, res) => res.json({ status: 'ok' }));

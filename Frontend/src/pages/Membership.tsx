@@ -1,18 +1,12 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import Input from '../components/Input'
 import Button from '../components/Button'
-import { submitMembership } from '../services/api'
-import SectionHeader from '../components/SectionHeader'
+import { submitMembership, getMembershipPricing } from '../services/api'
 import { usePageTitle } from '../hooks/usePageTitle'
 import { DIVISIONS } from '../types'
 import type { MembershipFormData } from '../services/api'
 import FileUploader from '../components/FileUploader'
-
-const MEMBERSHIP_FEES = {
-  ordinary: 500,
-  lifetime: 10000
-}
 
 type Form = MembershipFormData
 
@@ -21,6 +15,9 @@ export default function Membership() {
   const [submitting, setSubmitting] = useState(false)
   const [membershipId, setMembershipId] = useState<string | null>(null)
   const [step, setStep] = useState(1)
+  const [isFormValid, setIsFormValid] = useState(false)
+  const [isStep2Valid, setIsStep2Valid] = useState(false)
+  const [membershipFees, setMembershipFees] = useState({ ordinary: 500, lifetime: 10000 })
   const [form, setForm] = useState<Form>({
     name: '', 
     designation: '', 
@@ -42,11 +39,23 @@ export default function Membership() {
   
   usePageTitle('CREA • Choose Your Membership Plan')
 
+  useEffect(() => {
+    const fetchPricing = async () => {
+      try {
+        const pricing = await getMembershipPricing()
+        setMembershipFees(pricing)
+      } catch (error) {
+        console.error('Failed to fetch membership pricing:', error)
+      }
+    }
+    fetchPricing()
+  }, [])
+
   const startApplication = (type: 'ordinary' | 'lifetime') => {
     setForm(f => ({
       ...f,
       type,
-      paymentAmount: type === 'lifetime' ? MEMBERSHIP_FEES.lifetime : MEMBERSHIP_FEES.ordinary
+      paymentAmount: type === 'lifetime' ? membershipFees.lifetime : membershipFees.ordinary
     }))
     setShowForm(true)
   }
@@ -55,9 +64,23 @@ export default function Membership() {
     setForm((f) => ({ 
       ...f, 
       [k]: v,
-      paymentAmount: k === 'type' && v === 'lifetime' ? MEMBERSHIP_FEES.lifetime : MEMBERSHIP_FEES.ordinary
+      paymentAmount: k === 'type' && v === 'lifetime' ? membershipFees.lifetime : membershipFees.ordinary
     }))
   }
+
+  // Validate form whenever Step 1 fields change
+  useEffect(() => {
+    if (step === 1) {
+      validateStep1()
+    }
+  }, [form.name, form.designation, form.department, form.place, form.unit, form.mobile, form.email, form.division, step])
+
+  // Validate form whenever Step 2 fields change
+  useEffect(() => {
+    if (step === 2) {
+      validateStep2()
+    }
+  }, [form.personalDetails.dateOfBirth, form.personalDetails.gender, form.personalDetails.address, form.personalDetails.city, form.personalDetails.state, form.personalDetails.pincode, step])
 
   const onPersonalDetailsChange = (k: keyof Required<Form>['personalDetails'], v: string) => {
     setForm((f) => ({ ...f, personalDetails: { ...f.personalDetails, [k]: v } }))
@@ -69,6 +92,47 @@ export default function Membership() {
 
   const onDocumentsChange = (files: File[]) => {
     setForm((f) => ({ ...f, documents: files }))
+  }
+
+  // Validate Step 1 form fields
+  const validateStep1 = () => {
+    const nameValid = form.name.trim().length >= 3 && /^[a-zA-Z\s]+$/.test(form.name)
+    const designationValid = form.designation.trim().length >= 2 && /^[a-zA-Z\s]+$/.test(form.designation)
+    const departmentValid = form.department.trim().length >= 2 && /^[a-zA-Z\s]+$/.test(form.department)
+    const placeValid = form.place.trim().length >= 2 && /^[a-zA-Z\s]+$/.test(form.place)
+    const unitValid = form.unit.trim().length >= 1 && /^[a-zA-Z\s]+$/.test(form.unit)
+    const mobileValid = /^[6-9][0-9]{9}$/.test(form.mobile)
+    const emailValid = /^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$/i.test(form.email)
+    const divisionValid = form.division.length > 0
+
+    console.log('Validation Results:', {
+      nameValid,
+      designationValid,
+      departmentValid,
+      placeValid,
+      unitValid,
+      mobileValid,
+      emailValid,
+      divisionValid,
+      form
+    })
+
+    const isValid = nameValid && designationValid && departmentValid && placeValid && unitValid && mobileValid && emailValid && divisionValid
+    console.log('Form is valid:', isValid)
+    setIsFormValid(isValid)
+  }
+
+  // Validate Step 2 form fields
+  const validateStep2 = () => {
+    const dobValid = (form.personalDetails.dateOfBirth || '').trim().length > 0
+    const genderValid = (form.personalDetails.gender || '').trim().length > 0
+    const addressValid = (form.personalDetails.address || '').trim().length >= 5
+    const cityValid = (form.personalDetails.city || '').trim().length >= 2 && /^[a-zA-Z\s]+$/.test(form.personalDetails.city || '')
+    const stateValid = (form.personalDetails.state || '').trim().length >= 2 && /^[a-zA-Z\s]+$/.test(form.personalDetails.state || '')
+    const pincodeValid = /^[1-9][0-9]{5}$/.test(form.personalDetails.pincode || '')
+
+    const isValid = dobValid && genderValid && addressValid && cityValid && stateValid && pincodeValid
+    setIsStep2Valid(isValid)
   }
 
   const submit = async () => {
@@ -151,7 +215,7 @@ export default function Membership() {
                 <p className="text-gray-600 mb-6 min-h-[48px]">Ideal for staying connected and accessing annual benefits.</p>
                 
                 <div className="flex items-baseline mb-8">
-                  <span className="text-5xl font-bold bg-gradient-to-r from-[var(--primary)] to-blue-600 bg-clip-text text-transparent">₹500</span>
+                  <span className="text-5xl font-bold bg-gradient-to-r from-[var(--primary)] to-blue-600 bg-clip-text text-transparent">₹{membershipFees.ordinary}</span>
                   <span className="text-gray-500 ml-2 text-lg">/ year</span>
                 </div>
 
@@ -221,7 +285,7 @@ export default function Membership() {
                 <p className="text-gray-700 mb-6 min-h-[48px]">A one-time payment for a lifetime of benefits and support.</p>
                 
                 <div className="flex items-baseline mb-8">
-                  <span className="text-5xl font-bold bg-gradient-to-r from-[var(--accent)] to-yellow-600 bg-clip-text text-transparent">₹10,000</span>
+                  <span className="text-5xl font-bold bg-gradient-to-r from-[var(--accent)] to-yellow-600 bg-clip-text text-transparent">₹{membershipFees.lifetime.toLocaleString()}</span>
                   <span className="text-gray-600 ml-2 text-lg">one-time</span>
                 </div>
 
@@ -298,119 +362,342 @@ export default function Membership() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center gap-4">
-        <button 
-          onClick={() => setShowForm(false)}
-          className="p-2 text-gray-600 hover:text-gray-900"
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-gray-100 py-12">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Header with Back Button */}
+        <motion.div 
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-8"
         >
-          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
-          </svg>
-        </button>
-        <SectionHeader title="Apply for Membership" subtitle="Fill in your details and complete payment." />
-      </div>
+          <button 
+            onClick={() => setShowForm(false)}
+            className="mb-4 flex items-center gap-2 text-[var(--primary)] hover:text-blue-700 transition-colors font-medium"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
+            </svg>
+            Back to Plans
+          </button>
+          <h1 className="text-3xl md:text-4xl font-bold text-[var(--primary)] mb-2">Apply for Membership</h1>
+          <p className="text-gray-600">Fill in your details and complete the payment process.</p>
+        </motion.div>
 
       {membershipId ? (
-        <div className="rounded-md border bg-white p-6">
-          <h2 className="text-lg font-semibold text-green-800">Application Submitted Successfully</h2>
-          <p className="mt-2 text-sm text-gray-700">Membership ID: <span className="font-mono">{membershipId}</span></p>
-          <p className="mt-1 text-sm text-gray-500">Your membership will be activated after payment verification.</p>
-        </div>
-      ) : (
-        <div className="space-y-4">
-          <div className="flex items-center gap-2 text-xs sm:text-sm">
-            {[1,2,3,4].map((i) => (
-              <span key={i} className={`px-2 py-1 rounded ${step>=i?'bg-[var(--primary)] text-white':'bg-gray-200'}`}>{i}. {['Basic','Personal','Professional','Payment'][i-1]}</span>
-            ))}
+        <motion.div 
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="bg-white rounded-2xl shadow-xl p-8 border-2 border-green-500"
+        >
+          <div className="text-center">
+            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+            <h2 className="text-2xl font-bold text-green-800 mb-2">Application Submitted Successfully!</h2>
+            <p className="text-gray-700 mb-4">Membership ID: <span className="font-mono font-bold text-[var(--primary)]">{membershipId}</span></p>
+            <p className="text-sm text-gray-600">Your membership will be activated after payment verification.</p>
           </div>
+        </motion.div>
+      ) : (
+        <div className="space-y-6">
+          {/* Progress Steps */}
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-white rounded-xl shadow-lg p-6"
+          >
+            <div className="flex items-center justify-between">
+              {[
+                { num: 1, label: 'Basic Info', icon: '👤' },
+                { num: 2, label: 'Personal', icon: '📋' },
+                { num: 3, label: 'Professional', icon: '💼' },
+                { num: 4, label: 'Payment', icon: '💳' }
+              ].map((s, idx) => (
+                <div key={s.num} className="flex items-center flex-1">
+                  <div className="flex flex-col items-center flex-1">
+                    <div className={`w-12 h-12 rounded-full flex items-center justify-center text-lg font-bold transition-all duration-300 ${
+                      step >= s.num 
+                        ? 'bg-gradient-to-br from-[var(--primary)] to-blue-600 text-white shadow-lg scale-110' 
+                        : 'bg-gray-200 text-gray-500'
+                    }`}>
+                      {step > s.num ? '✓' : s.icon}
+                    </div>
+                    <span className={`mt-2 text-xs sm:text-sm font-medium ${
+                      step >= s.num ? 'text-[var(--primary)]' : 'text-gray-500'
+                    }`}>
+                      {s.label}
+                    </span>
+                  </div>
+                  {idx < 3 && (
+                    <div className={`h-1 flex-1 mx-2 rounded transition-all duration-300 ${
+                      step > s.num ? 'bg-gradient-to-r from-[var(--primary)] to-blue-600' : 'bg-gray-200'
+                    }`} />
+                  )}
+                </div>
+              ))}
+            </div>
+          </motion.div>
 
+          {/* Form Content */}
           {step === 1 && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <Input label="Name *" value={form.name} onChange={(e)=>onBasicInfoChange('name', e.target.value)} />
-              <Input label="Designation *" value={form.designation} onChange={(e)=>onBasicInfoChange('designation', e.target.value)} />
+            <motion.div
+              key="step1"
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.3 }}
+              className="bg-white rounded-2xl shadow-xl p-8"
+            >
+            <div>
+              <h3 className="text-2xl font-bold text-[var(--primary)] mb-6 flex items-center gap-2">
+                <span className="text-3xl">👤</span>
+                Basic Information
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <Input 
+                label="Name *" 
+                value={form.name} 
+                onChange={(e)=>onBasicInfoChange('name', e.target.value)}
+                onKeyPress={(e) => {
+                  if (!/^[a-zA-Z\s]$/.test(e.key)) {
+                    e.preventDefault()
+                  }
+                }}
+                required
+                minLength={3}
+                maxLength={100}
+                pattern="^[a-zA-Z\s]+$"
+                title="Name must contain only letters and spaces (min 3 characters)"
+              />
+              <Input 
+                label="Designation *" 
+                value={form.designation} 
+                onChange={(e)=>onBasicInfoChange('designation', e.target.value)}
+                onKeyPress={(e) => {
+                  if (!/^[a-zA-Z\s]$/.test(e.key)) {
+                    e.preventDefault()
+                  }
+                }}
+                required
+                minLength={2}
+                maxLength={50}
+                pattern="^[a-zA-Z\s]+$"
+                title="Designation must contain only letters and spaces (min 2 characters)"
+              />
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Division *</label>
                 <select
                   className="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-[var(--primary)]"
                   value={form.division}
                   onChange={(e)=> onBasicInfoChange('division', e.target.value)}
+                  required
                 >
                   {DIVISIONS.map((d)=> (
                     <option key={d} value={d}>{d}</option>
                   ))}
                 </select>
               </div>
-              <Input label="Department *" value={form.department} onChange={(e)=>onBasicInfoChange('department', e.target.value)} />
-              <Input label="Place of working *" value={form.place} onChange={(e)=>onBasicInfoChange('place', e.target.value)} />
-              <Input label="Unit *" value={form.unit} onChange={(e)=>onBasicInfoChange('unit', e.target.value)} />
-              <Input label="Mobile Number *" value={form.mobile} onChange={(e)=>onBasicInfoChange('mobile', e.target.value)} />
-              <Input label="Email ID *" type="email" value={form.email} onChange={(e)=>onBasicInfoChange('email', e.target.value)} />
-              <div className="md:col-span-2 flex justify-end">
+              <Input 
+                label="Department *" 
+                value={form.department} 
+                onChange={(e)=>onBasicInfoChange('department', e.target.value)}
+                onKeyPress={(e) => {
+                  if (!/^[a-zA-Z\s]$/.test(e.key)) {
+                    e.preventDefault()
+                  }
+                }}
+                required
+                minLength={2}
+                maxLength={100}
+                pattern="^[a-zA-Z\s]+$"
+                title="Department must contain only letters and spaces (min 2 characters)"
+              />
+              <Input 
+                label="Place of working *" 
+                value={form.place} 
+                onChange={(e)=>onBasicInfoChange('place', e.target.value)}
+                onKeyPress={(e) => {
+                  if (!/^[a-zA-Z\s]$/.test(e.key)) {
+                    e.preventDefault()
+                  }
+                }}
+                required
+                minLength={2}
+                maxLength={100}
+                pattern="^[a-zA-Z\s]+$"
+                title="Place of working must contain only letters and spaces (min 2 characters)"
+              />
+              <Input 
+                label="Unit *" 
+                value={form.unit} 
+                onChange={(e)=>onBasicInfoChange('unit', e.target.value)}
+                onKeyPress={(e) => {
+                  if (!/^[a-zA-Z\s]$/.test(e.key)) {
+                    e.preventDefault()
+                  }
+                }}
+                required
+                minLength={1}
+                maxLength={50}
+                pattern="^[a-zA-Z\s]+$"
+                title="Unit must contain only letters and spaces"
+              />
+              <Input 
+                label="Mobile Number *" 
+                value={form.mobile} 
+                onChange={(e)=>onBasicInfoChange('mobile', e.target.value)}
+                onKeyPress={(e) => {
+                  if (!/^[0-9]$/.test(e.key)) {
+                    e.preventDefault()
+                  }
+                }}
+                required
+                type="tel"
+                pattern="[6-9][0-9]{9}"
+                minLength={10}
+                maxLength={10}
+                title="Mobile number must be 10 digits starting with 6-9"
+              />
+              <Input 
+                label="Email ID *" 
+                type="email" 
+                value={form.email} 
+                onChange={(e)=>onBasicInfoChange('email', e.target.value)}
+                onKeyPress={(e) => {
+                  if (!/^[a-zA-Z0-9@._+-]$/.test(e.key)) {
+                    e.preventDefault()
+                  }
+                }}
+                required
+                pattern="[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$"
+                title="Please enter a valid email address"
+              />
+              </div>
+              <div className="md:col-span-2 flex justify-end gap-3 pt-4">
                 <Button 
                   onClick={()=> setStep(2)} 
-                  disabled={!form.name || !form.designation || !form.mobile || !form.email || !form.division}
+                  disabled={!isFormValid}
+                  className="px-8"
                 >
-                  Next
+                  Next Step →
                 </Button>
               </div>
             </div>
+            </motion.div>
           )}
 
           {step === 2 && (
-            <div className="space-y-4 rounded-md border bg-white p-6">
-              <h3 className="text-lg font-medium text-gray-900">Personal Details</h3>
+            <motion.div
+              key="step2"
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.3 }}
+              className="bg-white rounded-2xl shadow-xl p-8"
+            >
+              <h3 className="text-2xl font-bold text-[var(--primary)] mb-6 flex items-center gap-2">
+                <span className="text-3xl">📋</span>
+                Personal Details
+              </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <Input 
                   type="date" 
-                  label="Date of Birth" 
+                  label="Date of Birth *" 
                   value={form.personalDetails.dateOfBirth || ''} 
-                  onChange={(e)=>onPersonalDetailsChange('dateOfBirth', e.target.value)} 
+                  onChange={(e)=>onPersonalDetailsChange('dateOfBirth', e.target.value)}
+                  required
+                  max={new Date().toISOString().split('T')[0]}
+                  title="Date of Birth is required"
                 />
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Gender</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Gender *</label>
                   <select
                     className="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-[var(--primary)]"
                     value={form.personalDetails.gender || ''}
                     onChange={(e)=>onPersonalDetailsChange('gender', e.target.value as 'male' | 'female' | 'other')}
+                    required
                   >
-                    <option value="">Select gender...</option>
+                    <option value="">Select gender...</option>  
                     <option value="male">Male</option>
                     <option value="female">Female</option>
                     <option value="other">Other</option>
                   </select>
                 </div>
                 <Input 
-                  label="Address" 
+                  label="Address *" 
                   value={form.personalDetails.address || ''} 
-                  onChange={(e)=>onPersonalDetailsChange('address', e.target.value)} 
+                  onChange={(e)=>onPersonalDetailsChange('address', e.target.value)}
+                  required
+                  minLength={5}
+                  maxLength={200}
+                  title="Address must be at least 5 characters"
                 />
                 <Input 
-                  label="City" 
+                  label="City *" 
                   value={form.personalDetails.city || ''} 
-                  onChange={(e)=>onPersonalDetailsChange('city', e.target.value)} 
+                  onChange={(e)=>onPersonalDetailsChange('city', e.target.value)}
+                  onKeyPress={(e) => {
+                    if (!/^[a-zA-Z\s]$/.test(e.key)) {
+                      e.preventDefault()
+                    }
+                  }}
+                  required
+                  minLength={2}
+                  maxLength={50}
+                  pattern="^[a-zA-Z\s]+$"
+                  title="City must contain only letters and spaces (min 2 characters)"
                 />
                 <Input 
-                  label="State" 
+                  label="State *" 
                   value={form.personalDetails.state || ''} 
-                  onChange={(e)=>onPersonalDetailsChange('state', e.target.value)} 
+                  onChange={(e)=>onPersonalDetailsChange('state', e.target.value)}
+                  onKeyPress={(e) => {
+                    if (!/^[a-zA-Z\s]$/.test(e.key)) {
+                      e.preventDefault()
+                    }
+                  }}
+                  required
+                  minLength={2}
+                  maxLength={50}
+                  pattern="^[a-zA-Z\s]+$"
+                  title="State must contain only letters and spaces (min 2 characters)"
                 />
                 <Input 
-                  label="PIN Code" 
+                  label="PIN Code *" 
                   value={form.personalDetails.pincode || ''} 
-                  onChange={(e)=>onPersonalDetailsChange('pincode', e.target.value)} 
+                  onChange={(e)=>onPersonalDetailsChange('pincode', e.target.value)}
+                  onKeyPress={(e) => {
+                    if (!/^[0-9]$/.test(e.key)) {
+                      e.preventDefault()
+                    }
+                  }}
+                  required
+                  type="tel"
+                  pattern="[1-9][0-9]{5}"
+                  minLength={6}
+                  maxLength={6}
+                  title="PIN Code must be 6 digits and cannot start with 0"
                 />
               </div>
               <div className="flex justify-between pt-4">
-                <Button variant="ghost" onClick={()=>setStep(1)}>Back</Button>
-                <Button onClick={()=>setStep(3)}>Next</Button>
+                <Button variant="ghost" onClick={()=>setStep(1)}>← Back</Button>
+                <Button onClick={()=>setStep(3)} disabled={!isStep2Valid}>Next Step →</Button>
               </div>
-            </div>
+            </motion.div>
           )}
 
           {step === 3 && (
-            <div className="space-y-4 rounded-md border bg-white p-6">
-              <h3 className="text-lg font-medium text-gray-900">Professional Details</h3>
+            <motion.div
+              key="step3"
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.3 }}
+              className="bg-white rounded-2xl shadow-xl p-8"
+            >
+              <h3 className="text-2xl font-bold text-[var(--primary)] mb-6 flex items-center gap-2">
+                <span className="text-3xl">💼</span>
+                Professional Details
+              </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <Input 
                   label="Employee ID" 
@@ -447,16 +734,27 @@ export default function Membership() {
               </div>
 
               <div className="flex justify-between pt-4">
-                <Button variant="ghost" onClick={()=>setStep(2)}>Back</Button>
-                <Button onClick={()=>setStep(4)}>Next</Button>
+                <Button variant="ghost" onClick={()=>setStep(2)}>← Back</Button>
+                <Button onClick={()=>setStep(4)}>Next Step →</Button>
               </div>
-            </div>
+            </motion.div>
           )}
 
           {step === 4 && (
-            <div className="space-y-4">
-              <div className="rounded-md border bg-white p-6">
-                <h3 className="text-lg font-medium text-gray-900 mb-4">Payment Method</h3>
+            <motion.div
+              key="step4"
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.3 }}
+              className="bg-white rounded-2xl shadow-xl p-8"
+            >
+              <h3 className="text-2xl font-bold text-[var(--primary)] mb-6 flex items-center gap-2">
+                <span className="text-3xl">💳</span>
+                Payment
+              </h3>
+              <div className="space-y-6">
+              <div className="rounded-lg border-2 border-gray-200 bg-gray-50 p-6">
+                <h4 className="text-lg font-semibold text-gray-900 mb-4">Payment Method</h4>
                 <div className="grid gap-3 sm:grid-cols-2">
                   {(['upi', 'qr', 'card', 'netbanking'] as const).map((method) => (
                     <label key={method} className="relative flex cursor-pointer rounded-lg border bg-white p-4 shadow-sm focus:outline-none">
@@ -513,16 +811,18 @@ export default function Membership() {
                 </div>
               </div>
 
-              <div className="flex justify-between">
-                <Button variant="ghost" onClick={()=>setStep(3)}>Back</Button>
+              <div className="flex justify-between pt-4">
+                <Button variant="ghost" onClick={()=>setStep(3)}>← Back</Button>
                 <Button onClick={submit} disabled={submitting} loading={submitting}>
                   {submitting ? 'Processing...' : `Pay ₹${form.paymentAmount}`}
                 </Button>
               </div>
-            </div>
+              </div>
+            </motion.div>
           )}
         </div>
       )}
+      </div>
     </div>
   )
 }

@@ -691,3 +691,57 @@ export async function deleteExternalLink(id: string): Promise<{ success: boolean
   await request(`/api/external-links/${id}`, { method: 'DELETE' })
   return { success: true }
 }
+
+// Settings
+export interface Setting {
+  key: string
+  value: any
+  description?: string
+  category?: string
+}
+
+export async function getSettings(category?: string): Promise<Setting[]> {
+  const query = category ? `?category=${category}` : ''
+  const res = await request<{ success: boolean; settings: Setting[] }>(`/api/settings${query}`)
+  return res.settings
+}
+
+export async function getSettingByKey(key: string): Promise<Setting | null> {
+  try {
+    const res = await request<{ success: boolean; setting: Setting }>(`/api/settings/${key}`)
+    return res.setting
+  } catch {
+    return null
+  }
+}
+
+export async function upsertSetting(setting: Setting): Promise<Setting> {
+  const res = await request<{ success: boolean; setting: Setting }>('/api/settings', {
+    method: 'POST',
+    body: JSON.stringify(setting)
+  })
+  return res.setting
+}
+
+export async function updateMultipleSettings(settings: Setting[]): Promise<Setting[]> {
+  const res = await request<{ success: boolean; settings: Setting[] }>('/api/settings/bulk', {
+    method: 'PUT',
+    body: JSON.stringify({ settings })
+  })
+  return res.settings
+}
+
+export async function getMembershipPricing(): Promise<{ ordinary: number; lifetime: number }> {
+  try {
+    const settings = await getSettings('Membership Settings')
+    const ordinaryPrice = settings.find(s => s.key === 'membership_ordinary_price')?.value ?? 500
+    const lifetimePrice = settings.find(s => s.key === 'membership_lifetime_price')?.value ?? 10000
+    return {
+      ordinary: typeof ordinaryPrice === 'number' ? ordinaryPrice : 500,
+      lifetime: typeof lifetimePrice === 'number' ? lifetimePrice : 10000
+    }
+  } catch {
+    return { ordinary: 500, lifetime: 10000 }
+  }
+}
+
