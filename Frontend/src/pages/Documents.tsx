@@ -1,12 +1,18 @@
-import { useState } from 'react'
+import React, { useEffect, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { usePageTitle } from '../hooks/usePageTitle'
+import { useAuth } from '../context/auth'
 import Button from '../components/Button'
-import SegmentedControl from '../components/SegmentedControl'
 import DataTable from '../components/DataTable'
 import FileUploader from '../components/FileUploader'
 import Modal from '../components/Modal'
 import Input from '../components/Input'
 import { format } from 'date-fns'
+import { getCirculars, getManuals, getCourtCases } from '../services/api'
+import type { Circular, Manual, CourtCase } from '../types'
+
+// Backend API URL for file access
+const API_URL = import.meta.env?.VITE_API_URL || 'http://localhost:5001'
 
 type DocumentType = 'circular' | 'manual' | 'court-case'
 
@@ -17,64 +23,126 @@ interface Document extends Record<string, unknown> {
   date: string
   type: DocumentType
   fileUrl: string
-  fileName: string
-  fileSize: string
-  uploadedBy: string
+  // Circular specific
+  boardNumber?: string
+  category?: string
+  // Manual specific
+  section?: string
+  // Court case specific
   status?: string
   caseNumber?: string
   courtName?: string
   nextHearingDate?: string
-  category?: string
-  section?: string
 }
 
-const MOCK_DOCUMENTS: Document[] = [
+const TABS: { value: DocumentType; label: string; icon: React.ReactNode }[] = [
   {
-    id: '1',
-    title: 'Annual Leave Policy Update',
-    description: 'Updated leave policy for the year 2025',
-    date: '2025-10-15',
-    type: 'circular',
-    fileUrl: '#',
-    fileName: 'leave-policy-2025.pdf',
-    fileSize: '2.1 MB',
-    uploadedBy: 'Admin',
-    category: 'Policy'
+    value: 'circular',
+    label: 'Circulars',
+    icon: (
+      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+      </svg>
+    )
   },
   {
-    id: '2',
-    title: 'Safety Manual 2025',
-    description: 'Comprehensive safety guidelines',
-    date: '2025-09-20',
-    type: 'manual',
-    fileUrl: '#',
-    fileName: 'safety-manual.pdf',
-    fileSize: '5.3 MB',
-    uploadedBy: 'Safety Officer',
-    section: 'Safety'
+    value: 'manual',
+    label: 'Manuals',
+    icon: (
+      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+      </svg>
+    )
   },
   {
-    id: '3',
-    title: 'Employee Benefits Case',
-    description: 'Case regarding employee benefits',
-    date: '2025-08-10',
-    type: 'court-case',
-    fileUrl: '#',
-    fileName: 'case-documents.pdf',
-    fileSize: '3.7 MB',
-    uploadedBy: 'Legal Team',
-    status: 'Ongoing',
-    caseNumber: 'CC-2025-123',
-    courtName: 'High Court',
-    nextHearingDate: '2025-11-15'
+    value: 'court-case',
+    label: 'Court Cases',
+    icon: (
+      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3" />
+      </svg>
+    )
   }
 ]
 
 export default function Documents() {
-  const [activeTab, setActiveTab] = useState<DocumentType>('circular')
+  const [searchParams] = useSearchParams()
+  const tabFromUrl = searchParams.get('tab') as DocumentType | null
+  const [activeTab, setActiveTab] = useState<DocumentType>(tabFromUrl && ['circular', 'manual', 'court-case'].includes(tabFromUrl) ? tabFromUrl : 'circular')
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
-  const [documents] = useState<Document[]>(MOCK_DOCUMENTS)
+  const [documents, setDocuments] = useState<Document[]>([])
+  const [loading, setLoading] = useState(true)
+  const { user } = useAuth()
+  const isAdmin = user?.role === 'admin'
+
+  // Fetch documents from API
+  useEffect(() => {
+    async function fetchDocuments() {
+      setLoading(true)
+      try {
+        const [circulars, manuals, courtCases] = await Promise.all([
+          getCirculars(),
+          getManuals(),
+          getCourtCases()
+        ])
+
+        // Helper to build full URL for files
+        const getFullUrl = (url: string | undefined): string => {
+          if (!url || url === '#') return '#'
+          // If it's already a full URL (http/https), return as-is
+          if (url.startsWith('http://') || url.startsWith('https://')) return url
+          // Otherwise, prepend the API URL
+          return `${API_URL}${url}`
+        }
+
+        const allDocs: Document[] = [
+          // Transform circulars
+          ...circulars.map((c: Circular): Document => ({
+            id: c.id,
+            title: c.subject,
+            description: `Board Number: ${c.boardNumber}`,
+            date: c.dateOfIssue,
+            type: 'circular',
+            fileUrl: getFullUrl(c.url),
+            boardNumber: c.boardNumber
+          })),
+          // Transform manuals
+          ...manuals.map((m: Manual): Document => ({
+            id: m.id,
+            title: m.title,
+            description: 'Manual document',
+            date: '',
+            type: 'manual',
+            fileUrl: getFullUrl(m.url)
+          })),
+          // Transform court cases
+          ...courtCases.map((cc: CourtCase): Document => ({
+            id: cc.id,
+            title: cc.subject,
+            description: `Case Number: ${cc.caseNumber}`,
+            date: cc.date,
+            type: 'court-case',
+            fileUrl: '#',
+            caseNumber: cc.caseNumber
+          }))
+        ]
+        setDocuments(allDocs)
+      } catch (error) {
+        console.error('Failed to fetch documents:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchDocuments()
+  }, [])
+
+  // Update tab when URL changes
+  useEffect(() => {
+    if (tabFromUrl && ['circular', 'manual', 'court-case'].includes(tabFromUrl)) {
+      setActiveTab(tabFromUrl)
+    }
+  }, [tabFromUrl])
 
   usePageTitle('CREA • Documents')
 
@@ -99,18 +167,26 @@ export default function Documents() {
       {
         key: 'date' as keyof Document,
         header: 'Date',
-        render: (row: Document) => format(new Date(row.date), 'MMM d, yyyy')
+        render: (row: Document) => row.date ? format(new Date(row.date), 'MMM d, yyyy') : '-'
       },
       {
         key: 'fileUrl' as keyof Document,
         header: 'File',
-        render: (row: Document) => (
-          <a href={row.fileUrl} className="text-[var(--primary)] hover:text-[var(--accent)] flex items-center gap-2">
+        render: (row: Document) => row.fileUrl && row.fileUrl !== '#' ? (
+          <button 
+            onClick={() => window.open(row.fileUrl, '_blank', 'noopener,noreferrer')}
+            className="text-[var(--primary)] hover:text-[var(--accent)] flex items-center gap-2 transition-colors cursor-pointer"
+          >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
             </svg>
-            <span>{row.fileName}</span>
-          </a>
+            <span>View Document</span>
+            <svg className="w-3 h-3 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+            </svg>
+          </button>
+        ) : (
+          <span className="text-gray-400">No file</span>
         )
       }
     ]
@@ -119,49 +195,24 @@ export default function Documents() {
       return [
         ...baseColumns,
         { 
-          key: 'category' as keyof Document,
-          header: 'Category', 
-          render: (row: Document) => row.category 
+          key: 'boardNumber' as keyof Document,
+          header: 'Board Number', 
+          render: (row: Document) => row.boardNumber || '-'
         }
       ]
     }
 
     if (type === 'manual') {
-      return [
-        ...baseColumns,
-        { 
-          key: 'section' as keyof Document,
-          header: 'Section', 
-          render: (row: Document) => row.section 
-        }
-      ]
+      return baseColumns
     }
 
     if (type === 'court-case') {
       return [
         ...baseColumns,
         { 
-          key: 'status' as keyof Document,
-          header: 'Status', 
-          render: (row: Document) => (
-            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
-              ${row.status === 'Ongoing' ? 'bg-yellow-100 text-yellow-800' : 
-                row.status === 'Closed' ? 'bg-green-100 text-green-800' : 
-                'bg-gray-100 text-gray-800'}`}>
-              {row.status}
-            </span>
-          )
-        },
-        { 
           key: 'caseNumber' as keyof Document,
           header: 'Case Number', 
-          render: (row: Document) => row.caseNumber 
-        },
-        { 
-          key: 'nextHearingDate' as keyof Document,
-          header: 'Next Hearing', 
-          render: (row: Document) => 
-            row.nextHearingDate ? format(new Date(row.nextHearingDate), 'MMM d, yyyy') : '-'
+          render: (row: Document) => row.caseNumber || '-'
         }
       ]
     }
@@ -225,107 +276,82 @@ export default function Documents() {
         <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl"></div>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-md">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-[var(--secondary)] mb-1">Circulars</p>
-              <p className="text-3xl font-bold text-[var(--primary)]">{documents.filter(d => d.type === 'circular').length}</p>
-            </div>
-            <div className="p-3 bg-[var(--primary)] rounded-xl text-white">
-              {getTabIcon('circular')}
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-md">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-[var(--secondary)] mb-1">Manuals</p>
-              <p className="text-3xl font-bold text-[var(--primary)]">{documents.filter(d => d.type === 'manual').length}</p>
-            </div>
-            <div className="p-3 bg-[var(--accent)] rounded-xl text-white">
-              {getTabIcon('manual')}
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-md">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-[var(--secondary)] mb-1">Court Cases</p>
-              <p className="text-3xl font-bold text-[var(--primary)]">{documents.filter(d => d.type === 'court-case').length}</p>
-            </div>
-            <div className="p-3 bg-[var(--secondary)] rounded-xl text-white">
-              {getTabIcon('court-case')}
-            </div>
-          </div>
-        </div>
-      </div>
-
       {/* Enhanced Controls */}
-      <div className="bg-white rounded-xl shadow-lg border p-6">
-        <div className="flex flex-col lg:flex-row lg:items-center gap-4">
-          <div className="flex-1">
-            <SegmentedControl
-              value={activeTab}
-              onChange={(value) => setActiveTab(value as DocumentType)}
-              options={[
-                { value: 'circular', label: 'Circulars' },
-                { value: 'manual', label: 'Manuals' },
-                { value: 'court-case', label: 'Court Cases' }
-              ]}
+      <div className="bg-white rounded-2xl shadow-xl p-6">
+        {/* Tab Navigation */}
+        <div className="flex justify-center gap-2 mb-6">
+          {TABS.map((tab) => (
+            <button
+              key={tab.value}
+              onClick={() => setActiveTab(tab.value)}
+              className={`flex items-center gap-2 px-5 py-2.5 rounded-lg font-medium text-sm transition-all duration-200 ${
+                activeTab === tab.value
+                  ? 'bg-[var(--primary)] text-white shadow-lg'
+                  : 'text-[var(--secondary)] hover:text-[var(--primary)] hover:bg-brand-50'
+              }`}
+            >
+              <span className={activeTab === tab.value ? 'text-white' : 'text-[var(--secondary)]'}>
+                {tab.icon}
+              </span>
+              {tab.label}
+              <span className={`ml-2 px-2 py-0.5 text-xs rounded-full ${
+                activeTab === tab.value
+                  ? 'bg-white/20 text-white'
+                  : 'bg-brand-50 text-brand'
+              }`}>
+                {documents.filter(d => d.type === tab.value).length}
+              </span>
+            </button>
+          ))}
+        </div>
+
+        {/* Search Bar and Add Button */}
+        <div className="flex items-center gap-4">
+          <div className="relative flex-1">
+            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+              <svg className="h-5 w-5 text-[var(--secondary)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </div>
+            <input
+              type="search"
+              placeholder="Search documents..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="block w-full pl-12 pr-4 py-3 rounded-xl leading-5 bg-brand-50 placeholder-[var(--secondary)] text-[var(--text-dark)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:bg-white transition-all"
             />
           </div>
-          <div className="flex-1 max-w-md">
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                </svg>
-              </div>
-              <input
-                type="search"
-                placeholder="Search documents..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent"
-              />
-            </div>
-          </div>
-          <Button 
-            onClick={() => setIsAddModalOpen(true)}
-            className="whitespace-nowrap"
-          >
-            <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
-            </svg>
-            {getAddButtonText(activeTab)}
-          </Button>
-        </div>
-
-        {/* Document Count Badge */}
-        <div className="mt-4 inline-flex items-center gap-2 px-3 py-1 bg-gray-50 rounded-full text-sm text-gray-600">
-          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-            <path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z" />
-            <path fillRule="evenodd" d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3zm-3 4a1 1 0 100 2h.01a1 1 0 100-2H7zm3 0a1 1 0 100 2h3a1 1 0 100-2h-3z" clipRule="evenodd" />
-          </svg>
-          <span className="font-medium">{filteredDocuments.length}</span>
-          <span>document{filteredDocuments.length !== 1 ? 's' : ''} found</span>
+          {isAdmin && (
+            <Button 
+              onClick={() => setIsAddModalOpen(true)}
+              className="whitespace-nowrap"
+            >
+              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
+              </svg>
+              {getAddButtonText(activeTab)}
+            </Button>
+          )}
         </div>
       </div>
 
       {/* Enhanced Document Table */}
-      {filteredDocuments.length > 0 ? (
-        <div className="bg-white rounded-xl shadow-lg border overflow-hidden">
+      {loading ? (
+        <div className="bg-white rounded-2xl shadow-xl p-12">
+          <div className="text-center">
+            <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-[var(--primary)] border-t-transparent mb-4"></div>
+            <p className="text-gray-500">Loading documents...</p>
+          </div>
+        </div>
+      ) : filteredDocuments.length > 0 ? (
+        <div className="bg-white rounded-2xl shadow-xl p-6">
           <DataTable
             columns={getColumns(activeTab)}
             data={filteredDocuments}
           />
         </div>
       ) : (
-        <div className="bg-white rounded-xl border-2 border-dashed border-gray-300 p-12">
+        <div className="bg-white rounded-2xl shadow-inner p-12">
           <div className="text-center">
             <div className={`inline-flex p-4 bg-gradient-to-br ${getTypeColor(activeTab)} rounded-2xl mb-4`}>
               <div className="text-white">
@@ -339,7 +365,7 @@ export default function Documents() {
                 : `No ${activeTab === 'circular' ? 'circulars' : activeTab === 'manual' ? 'manuals' : 'court cases'} available yet`
               }
             </p>
-            {!searchQuery && (
+            {!searchQuery && isAdmin && (
               <Button onClick={() => setIsAddModalOpen(true)}>
                 <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />

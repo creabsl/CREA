@@ -14,8 +14,16 @@ app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
-// Static files for uploaded assets
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+// Static files for uploaded assets with proper headers for PDF viewing
+app.use('/uploads', express.static(path.join(__dirname, 'uploads'), {
+  setHeaders: (res, filePath) => {
+    // Set Content-Disposition to inline for PDFs so browsers display them instead of downloading
+    if (filePath.endsWith('.pdf')) {
+      res.setHeader('Content-Disposition', 'inline');
+      res.setHeader('Content-Type', 'application/pdf');
+    }
+  }
+}));
 
 // Routes
 const userRoutes = require('./routes/userRoutes');
