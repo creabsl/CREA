@@ -1205,18 +1205,25 @@ function SettingsAdmin({ data, onChange }: { data: Setting[]; onChange: (s: Sett
                 <p className="text-sm text-gray-500 mb-4">The settings need to be initialized in the database.</p>
                 <Button onClick={async () => {
                   try {
-                    await fetch(`${import.meta.env?.VITE_API_URL || 'http://localhost:5001'}/api/settings/initialize`, {
+                    const response = await fetch(`${import.meta.env?.VITE_API_URL || 'http://localhost:5001'}/api/settings/initialize`, {
                       method: 'POST',
                       headers: {
                         'Authorization': `Bearer ${localStorage.getItem('crea:token')}`,
                         'Content-Type': 'application/json'
                       }
                     })
+                    
+                    if (!response.ok) {
+                      const errorData = await response.json().catch(() => ({ message: 'Unknown error' }))
+                      throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`)
+                    }
+                    
+                    alert('Settings initialized successfully!')
                     const newSettings = await getSettings()
                     onChange(newSettings)
                   } catch (error) {
                     console.error('Failed to initialize settings:', error)
-                    alert('Failed to initialize settings')
+                    alert(`Failed to initialize settings: ${error.message}`)
                   }
                 }}>
                   Initialize Default Settings
@@ -1293,26 +1300,6 @@ function SettingsAdmin({ data, onChange }: { data: Setting[]; onChange: (s: Sett
             </Button>
           </div>
           )}
-        </div>
-      </motion.div>
-
-      {/* Info Card */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.1 }}
-        className="rounded-lg bg-blue-50 border border-blue-200 p-5"
-      >
-        <div className="flex items-start gap-3">
-          <svg className="w-6 h-6 text-blue-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-          <div>
-            <h3 className="font-semibold text-blue-900 mb-1">Membership Pricing Management</h3>
-            <p className="text-sm text-blue-700">
-              You can update the pricing for both ordinary and lifetime membership plans. Changes will be reflected immediately on the membership application page for all users.
-            </p>
-          </div>
         </div>
       </motion.div>
     </div>
