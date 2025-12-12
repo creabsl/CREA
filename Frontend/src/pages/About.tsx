@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { defaultTimelineStops, defaultPastEvents, type PastEvent } from '../data/aboutDefaults'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
 import SectionHeader from '../components/SectionHeader'
@@ -21,33 +22,8 @@ const ChevronRightIcon = ({ className }: { className?: string }) => (
   </svg>
 )
 
-// Timeline data for the interactive train journey
-const timelineStops = [
-  {
-    year: '1950',
-    title: 'Formation of CREA',
-    description: 'The Central Railway Engineers Association was established to unite engineering professionals and advocate for their rights and welfare.',
-    icon: '🚂'
-  },
-  {
-    year: '1975',
-    title: 'Major Expansion & First All-India Convention',
-    description: 'CREA expanded its reach across all divisions, hosting the first All-India Convention bringing together engineers nationwide.',
-    icon: '🎯'
-  },
-  {
-    year: '2000',
-    title: 'Digitalization Initiative & Online Resource Launch',
-    description: 'Embracing technology, CREA launched its digital platform providing online resources and communication tools for members.',
-    icon: '💻'
-  },
-  {
-    year: '2020',
-    title: 'Centenary Celebrations & New Welfare Programs',
-    description: 'Marking decades of service, CREA introduced enhanced welfare programs and expanded member benefits significantly.',
-    icon: '🎊'
-  }
-]
+// Timeline data for the interactive train journey (initial values)
+type TimelineStop = { year: string; title: string; description: string; icon: string }
 
 const aims = [
   {
@@ -93,24 +69,19 @@ const faqs = [
   }
 ]
 
-const pastEvents = [
-  { id: 1, title: 'Annual Technical Seminar 2024', type: 'photo', thumbnail: 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=400' },
-  { id: 2, title: 'Safety Workshop Mumbai Division', type: 'photo', thumbnail: 'https://images.unsplash.com/photo-1511578314322-379afb476865?w=400' },
-  { id: 3, title: 'Railway Modernization Conference', type: 'video', thumbnail: 'https://images.unsplash.com/photo-1464047736614-af63643285bf?w=400' },
-  { id: 4, title: 'Member Felicitation Ceremony', type: 'photo', thumbnail: 'https://images.unsplash.com/photo-1511632765486-a01980e01a18?w=400' },
-  { id: 5, title: 'High-Speed Rail Discussion Panel', type: 'video', thumbnail: 'https://images.unsplash.com/photo-1475503572774-15a45e5d60b9?w=400' },
-  { id: 6, title: 'Engineers Day Celebration 2024', type: 'photo', thumbnail: 'https://images.unsplash.com/photo-1523580494863-6f3031224c94?w=400' }
-]
+const pastEvents = defaultPastEvents
 
 export default function About() {
   usePageTitle('CREA • About Us')
   const { user } = useAuth()
   const navigate = useNavigate()
+  const [timelineStops, setTimelineStops] = useState<TimelineStop[]>(defaultTimelineStops)
   const [activeStop, setActiveStop] = useState(0)
   const [trainFacingRight, setTrainFacingRight] = useState(true) // Track train direction
   const [expandedFaq, setExpandedFaq] = useState<number | null>(null)
   const [showUploadModal, setShowUploadModal] = useState(false)
   const [charterPdfUrl, setCharterPdfUrl] = useState('/charter-of-demand-demo.pdf')
+  // Admin milestone creation moved to Admin Panel
 
   const isAdmin = user?.role === 'admin'
 
@@ -161,6 +132,58 @@ export default function About() {
     // If clicking same stop, maintain current direction
     setActiveStop(idx)
   }
+
+  // handleAddMilestone removed (handled in Admin Panel)
+
+  // Load any admin-added milestones and removed-defaults from localStorage and merge
+  const loadMilestonesFromStorage = () => {
+    try {
+      const raw = localStorage.getItem('crea_timeline_milestones')
+      const extra: TimelineStop[] = raw ? JSON.parse(raw) : []
+      const removedRaw = localStorage.getItem('crea_timeline_removed_defaults')
+      const removed: string[] = removedRaw ? JSON.parse(removedRaw) : []
+      const removedSet = new Set(removed)
+      const defaultsFiltered = defaultTimelineStops.filter(m => !removedSet.has(`${m.year}|${m.title}`))
+      const merged = [...defaultsFiltered, ...(Array.isArray(extra) ? extra : [])].sort(
+        (a, b) => parseInt(a.year) - parseInt(b.year)
+      )
+      setTimelineStops(merged)
+    } catch {}
+  }
+
+  useEffect(() => {
+    loadMilestonesFromStorage()
+    const handler = () => loadMilestonesFromStorage()
+    window.addEventListener('crea_milestones_updated' as any, handler)
+    return () => window.removeEventListener('crea_milestones_updated' as any, handler)
+  }, [])
+
+  // Gallery state that reacts to Admin updates
+  const [gallery, setGallery] = useState<PastEvent[]>(pastEvents)
+
+  const loadGalleryFromStorage = () => {
+    try {
+      const rawGal = localStorage.getItem('crea_past_events')
+      const extra: PastEvent[] = rawGal ? JSON.parse(rawGal) : []
+      const removedRaw = localStorage.getItem('crea_past_events_removed_defaults')
+      const removed: number[] = removedRaw ? JSON.parse(removedRaw) : []
+      const removedSet = new Set(removed)
+      const defaultsFiltered = defaultPastEvents.filter(e => !removedSet.has(e.id))
+      const baseIds = new Set(defaultsFiltered.map(e => e.id))
+      const merged = [...defaultsFiltered, ...(Array.isArray(extra) ? extra.filter(e => !baseIds.has(e.id)) : [])]
+      setGallery(merged)
+    } catch {
+      setGallery(pastEvents)
+    }
+  }
+
+  useEffect(() => {
+    loadGalleryFromStorage()
+    const handler = () => loadGalleryFromStorage()
+    // Listen for Admin side updates
+    window.addEventListener('crea_gallery_updated' as any, handler)
+    return () => window.removeEventListener('crea_gallery_updated' as any, handler)
+  }, [])
 
   return (
     <div className="space-y-12">
@@ -315,7 +338,7 @@ export default function About() {
 
         <div className="relative z-10">
           <div className="text-center mb-12">
-            <h2 className="text-4xl md:text-5xl font-bold text-white mb-4" style={{ textShadow: '0 2px 4px rgba(0,0,0,0.3)' }}>Our Journey Through Time</h2>
+            <h2 className="text-4xl md:text-5xl font-bold text-white mb-4" style={{ color: '#ffffff', textShadow: '0 2px 4px rgba(221, 212, 212, 0.3)' }}>Our Journey Through Time</h2>
             <p className="text-xl text-gray-200">Milestones in CREA's history</p>
           </div>
           
@@ -504,6 +527,8 @@ export default function About() {
         </div>
       </div>
 
+      {/* Add Milestone moved to Admin Panel */}
+
       {/* Charter of Demand */}
       <div>
         <SectionHeader title="Charter of Demand" subtitle="Our key demands and advocacy points" />
@@ -628,7 +653,7 @@ export default function About() {
       <div>
         <SectionHeader title="Past Events Gallery" subtitle="Moments captured from our events and activities" />
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mt-6">
-          {pastEvents.map((event) => (
+          {gallery.map((event) => (
             <motion.div
               key={event.id}
               whileHover={{ scale: 1.05 }}
