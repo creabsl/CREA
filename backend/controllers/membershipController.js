@@ -69,11 +69,13 @@ exports.updateMembershipStatus = async (req, res) => {
     const { id } = req.params;
     const { status, paymentStatus, paymentReference } = req.body;
 
-    const membership = await Membership.findById(id);
+    const membership = await Membership.findById(id).populate('userId');
     if (!membership) {
       return res.status(404).json({ success: false, message: 'Membership not found' });
     }
 
+    const previousStatus = membership.status;
+    
     if (status) membership.status = status;
     if (paymentStatus) {
       membership.paymentStatus = paymentStatus;
@@ -85,6 +87,31 @@ exports.updateMembershipStatus = async (req, res) => {
     }
 
     await membership.save();
+    
+    // Send notification on status change
+    const { createNotification } = require('./notificationController');
+    if (membership.userId && previousStatus !== membership.status) {
+      let notifMessage = '';
+      if (membership.status === 'active') {
+        notifMessage = 'Your membership application has been approved and is now active!';
+      } else if (membership.status === 'rejected') {
+        notifMessage = 'Your membership application has been reviewed. Please contact admin for more details.';
+      } else if (membership.status === 'pending') {
+        notifMessage = 'Your membership application is under review.';
+      }
+      
+      if (notifMessage) {
+        await createNotification(
+          membership.userId._id || membership.userId,
+          'membership',
+          'Membership Status Updated',
+          notifMessage,
+          '/profile',
+          { membershipId: membership._id, status: membership.status }
+        );
+      }
+    }
+    
     return res.json({ success: true, membership });
   } catch (err) {
     console.error('Update membership status error:', err);

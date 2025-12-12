@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
 import { getForumPosts, getForumTopics, loadDemoData, createForumPost, toggleLikePost, addCommentToPost, deleteForumPost, deletePostComment } from '../services/api'
-import type { ForumPost, ForumTopic } from '../types'
+import type { ForumPost, ForumTopic, ForumCategory } from '../types'
 import Button from '../components/Button'
 import { usePageTitle } from '../hooks/usePageTitle'
 import { useAuth } from '../context/auth'
@@ -13,16 +13,19 @@ export default function Forum() {
   const [query, setQuery] = useState('')
   const [reply, setReply] = useState('')
   const [commentInputs, setCommentInputs] = useState<Record<string,string>>({})
+  const [selectedCategory, setSelectedCategory] = useState<ForumCategory | 'all'>('all')
   usePageTitle('CREA • Forum')
   const { user } = useAuth()
 
   useEffect(() => {
     (async () => {
       await loadDemoData()
-      const ts = await getForumTopics()
+      const ts = await getForumTopics(selectedCategory)
       setTopics(ts)
+      // Clear active topic when changing categories
+      setActive(null)
     })()
-  }, [])
+  }, [selectedCategory])
   useEffect(() => { if (active) getForumPosts(active.id).then(setPosts) }, [active])
 
   const filtered = useMemo(() => {
@@ -103,6 +106,50 @@ export default function Forum() {
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-bold text-[var(--primary)]">Discussion Topics</h2>
               <span className="bg-[var(--primary)]/10 text-[var(--primary)] text-xs font-semibold px-2.5 py-1 rounded-full">{filtered.length}</span>
+            </div>
+            
+            {/* Category Tabs */}
+            <div className="flex flex-wrap gap-2 mb-4">
+              <button
+                onClick={() => setSelectedCategory('all')}
+                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                  selectedCategory === 'all'
+                    ? 'bg-[var(--primary)] text-white shadow-md'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                All
+              </button>
+              <button
+                onClick={() => setSelectedCategory('technical')}
+                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                  selectedCategory === 'technical'
+                    ? 'bg-[var(--primary)] text-white shadow-md'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                Technical
+              </button>
+              <button
+                onClick={() => setSelectedCategory('social')}
+                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                  selectedCategory === 'social'
+                    ? 'bg-[var(--primary)] text-white shadow-md'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                Social
+              </button>
+              <button
+                onClick={() => setSelectedCategory('organizational')}
+                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                  selectedCategory === 'organizational'
+                    ? 'bg-[var(--primary)] text-white shadow-md'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                Organizational
+              </button>
             </div>
             
             {/* Search Input */}

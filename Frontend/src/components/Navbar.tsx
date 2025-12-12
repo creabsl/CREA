@@ -6,6 +6,7 @@ import logo from '../assets/crea-logo.svg'
 import EnhancedNavLink from './EnhancedNavLink'
 import NavDropdown from './NavDropdown'
 import { useAuth } from '../context/auth'
+import { getPendingForumPosts, getPendingForumComments, getUnreadNotificationCount } from '../services/api'
 
 const navLinkClass = ({ isActive }: { isActive: boolean }) =>
   `px-3 py-2 rounded-md text-sm font-medium no-underline ${isActive ? 'bg-[var(--primary)] !text-white' : 'text-[var(--primary)] hover:bg-gray-100'}`
@@ -15,6 +16,8 @@ export default function Navbar() {
   const { user, logout } = useAuth()
   const [menuOpen, setMenuOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
+  const [pendingCount, setPendingCount] = useState(0)
+  const [userNotifCount, setUserNotifCount] = useState(0)
   
   useEffect(() => {
     function onDoc(e: MouseEvent){
@@ -24,6 +27,45 @@ export default function Navbar() {
     document.addEventListener('click', onDoc)
     return () => document.removeEventListener('click', onDoc)
   }, [])
+
+  // Load pending forum items count for admin
+  useEffect(() => {
+    if (user?.role === 'admin') {
+      const loadPendingCount = async () => {
+        try {
+          const [posts, comments] = await Promise.all([
+            getPendingForumPosts(),
+            getPendingForumComments()
+          ])
+          setPendingCount(posts.length + comments.length)
+        } catch (error) {
+          console.error('Error loading pending count:', error)
+        }
+      }
+      loadPendingCount()
+      // Refresh every 30 seconds
+      const interval = setInterval(loadPendingCount, 30000)
+      return () => clearInterval(interval)
+    }
+  }, [user])
+
+  // Load user notification count
+  useEffect(() => {
+    if (user) {
+      const loadUserNotifications = async () => {
+        try {
+          const { count } = await getUnreadNotificationCount()
+          setUserNotifCount(count)
+        } catch (error) {
+          console.error('Error loading user notifications:', error)
+        }
+      }
+      loadUserNotifications()
+      // Refresh every 10 seconds
+      const interval = setInterval(loadUserNotifications, 10000)
+      return () => clearInterval(interval)
+    }
+  }, [user])
   
   return (
     /*
@@ -64,7 +106,18 @@ export default function Navbar() {
             {!user ? (
               <NavLink to="/login" className={navLinkClass}>Login</NavLink>
             ) : (
-              <div className="relative" ref={menuRef}>
+              <>
+                <NavLink to="/notifications" className="relative p-2 rounded-lg hover:bg-brand-50 transition-colors">
+                  <svg className="w-6 h-6 text-[var(--primary)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                  </svg>
+                  {userNotifCount > 0 && (
+                    <span className="absolute -top-1 -right-1 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white bg-red-600 rounded-full animate-pulse">
+                      {userNotifCount}
+                    </span>
+                  )}
+                </NavLink>
+                <div className="relative" ref={menuRef}>
                 <button onClick={()=>setMenuOpen(o=>!o)} className="flex items-center gap-2 rounded-full border border-brand-900 border-opacity-10 px-2 py-1 hover:bg-brand-50">
                   <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-brand-700 text-white font-semibold">{user.name?.[0]?.toUpperCase() || 'U'}</span>
                   <span className="text-sm text-brand-900 font-medium">{user.name}</span>
@@ -79,6 +132,16 @@ export default function Navbar() {
                       transition={TWEEN.fast}
                     >
                       {user.role==='admin' && <Link to="/admin" className="block px-3 py-2 text-sm rounded-lg text-[var(--primary)] hover:bg-gray-100 no-underline" onClick={()=>setMenuOpen(false)}>Admin</Link>}
+                      {user.role==='admin' && (
+                        <Link to="/forum-moderation" className="flex items-center justify-between px-3 py-2 text-sm rounded-lg text-[var(--primary)] hover:bg-gray-100 no-underline" onClick={()=>setMenuOpen(false)}>
+                          <span>Forum Moderation</span>
+                          {pendingCount > 0 && (
+                            <span className="inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white bg-red-600 rounded-full animate-pulse">
+                              {pendingCount}
+                            </span>
+                          )}
+                        </Link>
+                      )}
                       <Link to="/profile" className="block px-3 py-2 text-sm rounded-lg text-[var(--primary)] hover:bg-gray-100 no-underline" onClick={()=>setMenuOpen(false)}>Profile</Link>
                       <Link to="/files" className="block px-3 py-2 text-sm rounded-lg text-[var(--primary)] hover:bg-gray-100 no-underline" onClick={()=>setMenuOpen(false)}>Files</Link>
                       <hr className="my-1 border-t border-gray-200" />
@@ -87,6 +150,7 @@ export default function Navbar() {
                   )}
                 </AnimatePresence>
               </div>
+              </>
             )}
           </div>
           
@@ -129,6 +193,24 @@ export default function Navbar() {
               ) : (
                 <>
                   {user.role === 'admin' && <NavLink to="/admin" className={navLinkClass} onClick={()=>setOpen(false)}>Admin</NavLink>}
+                  {user.role === 'admin' && (
+                    <NavLink to="/forum-moderation" className={(props) => `${navLinkClass(props)} flex items-center justify-between`} onClick={()=>setOpen(false)}>
+                      <span>Forum Moderation</span>
+                      {pendingCount > 0 && (
+                        <span className="inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white bg-red-600 rounded-full animate-pulse">
+                          {pendingCount}
+                        </span>
+                      )}
+                    </NavLink>
+                  )}
+                  <NavLink to="/notifications" className={(props) => `${navLinkClass(props)} flex items-center justify-between`} onClick={()=>setOpen(false)}>
+                    <span>Notifications</span>
+                    {userNotifCount > 0 && (
+                      <span className="inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white bg-red-600 rounded-full animate-pulse">
+                        {userNotifCount}
+                      </span>
+                    )}
+                  </NavLink>
                   <NavLink to="/profile" className={navLinkClass} onClick={()=>setOpen(false)}>Profile</NavLink>
                   <NavLink to="/files" className={navLinkClass} onClick={()=>setOpen(false)}>Files</NavLink>
                   <button onClick={() => { logout(); setOpen(false); }} className="text-left px-3 py-2 rounded-md text-sm font-medium text-red-600 hover:bg-red-50">Logout</button>

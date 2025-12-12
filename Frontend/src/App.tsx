@@ -22,6 +22,8 @@ import Profile from './pages/Profile'
 import Files from './pages/Files'
 import MutualTransfers from './pages/MutualTransfers'
 import About from './pages/About'
+import ForumModeration from './pages/ForumModeration'
+import Notifications from './pages/Notifications'
 
 function AnimatedRoutes() {
   const location = useLocation()
@@ -33,6 +35,7 @@ function AnimatedRoutes() {
         <Route path="/forgot-password" element={<PageTransition><ForgotPassword /></PageTransition>} />
         <Route path="/signup" element={<PageTransition><Signup /></PageTransition>} />
         <Route path="/admin" element={<RequireRole role="admin"><PageTransition><Admin /></PageTransition></RequireRole>} />
+        <Route path="/forum-moderation" element={<RequireRole role="admin"><PageTransition><ForumModeration /></PageTransition></RequireRole>} />
         <Route path="/" element={<PageTransition><Dashboard /></PageTransition>} />
         <Route path="/about" element={<PageTransition><About /></PageTransition>} />
         <Route path="/events" element={<RequireAuth><PageTransition><Events /></PageTransition></RequireAuth>} />
@@ -45,6 +48,7 @@ function AnimatedRoutes() {
         <Route path="/files" element={<RequireAuth><PageTransition><Files /></PageTransition></RequireAuth>} />
         <Route path="/mutual-transfers" element={<RequireAuth><PageTransition><MutualTransfers /></PageTransition></RequireAuth>} />
         <Route path="/external-links" element={<RequireAuth><PageTransition><ExternalLinks /></PageTransition></RequireAuth>} />
+        <Route path="/notifications" element={<RequireAuth><PageTransition><Notifications /></PageTransition></RequireAuth>} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </AnimatePresence>

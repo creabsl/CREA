@@ -31,6 +31,7 @@ const statsRoutes = require('./routes/statsRoutes');
 const mutualTransferRoutes = require('./routes/mutualTransferRoutes');
 const externalLinkRoutes = require('./routes/externalLinkRoutes');
 const bodyMemberRoutes = require('./routes/bodyMemberRoutes');
+const notificationRoutes = require('./routes/notificationRoutes');
 
 let settingRoutes;
 try {
@@ -54,6 +55,7 @@ app.use('/api/stats', statsRoutes);
 app.use('/api/mutual-transfers', mutualTransferRoutes);
 app.use('/api/external-links', externalLinkRoutes);
 app.use('/api/body-members', bodyMemberRoutes);
+app.use('/api/notifications', notificationRoutes);
 app.use('/api/settings', settingRoutes);
 console.log('✓ Settings route mounted at /api/settings');
 

@@ -1,4 +1,6 @@
 const Event = require('../models/eventModel');
+const { createNotificationForUsers } = require('./notificationController');
+const User = require('../models/userModel');
 
 // @desc    Get all events
 // @route   GET /api/events
@@ -32,6 +34,23 @@ exports.createEvent = async (req, res) => {
       location,
       photos: Array.isArray(photos) ? photos : [],
     });
+    
+    // Notify all users about new event
+    try {
+      const allUsers = await User.find({}, '_id');
+      const userIds = allUsers.map(u => u._id);
+      await createNotificationForUsers(
+        userIds,
+        'event',
+        'New Event Published',
+        `A new event "${title}" has been scheduled. Check it out!`,
+        '/events',
+        { eventId: event._id }
+      );
+    } catch (notifError) {
+      console.error('Error creating notifications:', notifError);
+    }
+    
     return res.status(201).json(event);
   } catch (error) {
     console.error('Create event error:', error);

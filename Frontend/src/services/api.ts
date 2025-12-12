@@ -308,10 +308,11 @@ export async function getAllMutualTransfers(): Promise<MutualTransfer[]> {
 }
 
 // Forum
-type ForumTopicDTO = { _id: string; title: string; author: string; createdAt: string; createdAtStr?: string; replies?: number }
-export async function getForumTopics(): Promise<ForumTopic[]> {
-  const list = await request<ForumTopicDTO[]>('/api/forum/topics')
-  return list.map(t => ({ id: t._id, title: t.title, author: t.author, createdAt: t.createdAtStr || new Date(t.createdAt).toISOString(), replies: t.replies ?? 0 }))
+type ForumTopicDTO = { _id: string; title: string; author: string; createdAt: string; createdAtStr?: string; replies?: number; category?: string }
+export async function getForumTopics(category?: string): Promise<ForumTopic[]> {
+  const queryParam = category && category !== 'all' ? `?category=${category}` : ''
+  const list = await request<ForumTopicDTO[]>(`/api/forum/topics${queryParam}`)
+  return list.map(t => ({ id: t._id, title: t.title, author: t.author, createdAt: t.createdAtStr || new Date(t.createdAt).toISOString(), replies: t.replies ?? 0, category: t.category as any }))
 }
 type ForumPostDTO = { _id: string; author: string; content: string; createdAt: string; createdAtStr?: string; likesCount?: number; comments?: Array<{ author: string; content: string; createdAtStr?: string }> }
 export async function getForumPosts(topicId: string): Promise<ForumPost[]> {
@@ -352,14 +353,107 @@ export async function deletePostComment(topicId: string, postId: string, comment
 
 export async function createForumTopic(input: Omit<ForumTopic, 'id' | 'replies' | 'createdAt'> & { createdAt?: string; replies?: number }): Promise<ForumTopic> {
   const t = await request<ForumTopicDTO>('/api/forum/topics', { method: 'POST', body: JSON.stringify(input) })
-  return { id: t._id, title: t.title, author: t.author, createdAt: t.createdAtStr || new Date(t.createdAt).toISOString(), replies: t.replies ?? 0 }
+  return { id: t._id, title: t.title, author: t.author, createdAt: t.createdAtStr || new Date(t.createdAt).toISOString(), replies: t.replies ?? 0, category: t.category as any }
 }
 export async function updateForumTopic(id: string, patch: Partial<ForumTopic>): Promise<ForumTopic> {
   const t = await request<ForumTopicDTO>(`/api/forum/topics/${id}`, { method: 'PUT', body: JSON.stringify(patch) })
-  return { id: t._id, title: t.title, author: t.author, createdAt: t.createdAtStr || new Date(t.createdAt).toISOString(), replies: t.replies ?? 0 }
+  return { id: t._id, title: t.title, author: t.author, createdAt: t.createdAtStr || new Date(t.createdAt).toISOString(), replies: t.replies ?? 0, category: t.category as any }
 }
 export async function deleteForumTopic(id: string): Promise<{ success: boolean }> {
   await request(`/api/forum/topics/${id}`, { method: 'DELETE' })
+  return { success: true }
+}
+
+// Forum Approval (Admin)
+export type PendingForumPost = {
+  _id: string
+  topicId: string
+  topicTitle: string
+  author: string
+  content: string
+  createdAt: string
+  createdAtStr?: string
+  approved: boolean
+}
+
+export type PendingForumComment = {
+  postId: string
+  topicId: string
+  topicTitle: string
+  postContent: string
+  commentIndex: number
+  author: string
+  content: string
+  createdAt: string
+}
+
+export async function getPendingForumPosts(): Promise<PendingForumPost[]> {
+  return await request<PendingForumPost[]>('/api/forum/admin/pending-posts')
+}
+
+export async function getPendingForumComments(): Promise<PendingForumComment[]> {
+  return await request<PendingForumComment[]>('/api/forum/admin/pending-comments')
+}
+
+export async function approveForumPost(postId: string): Promise<{ success: boolean }> {
+  await request(`/api/forum/admin/posts/${postId}/approve`, { method: 'PATCH' })
+  return { success: true }
+}
+
+export async function rejectForumPost(postId: string): Promise<{ success: boolean }> {
+  await request(`/api/forum/admin/posts/${postId}`, { method: 'DELETE' })
+  return { success: true }
+}
+
+export async function approveForumComment(postId: string, commentIndex: number): Promise<{ success: boolean }> {
+  await request(`/api/forum/admin/posts/${postId}/comments/${commentIndex}/approve`, { method: 'PATCH' })
+  return { success: true }
+}
+
+export async function rejectForumComment(postId: string, commentIndex: number): Promise<{ success: boolean }> {
+  await request(`/api/forum/admin/posts/${postId}/comments/${commentIndex}`, { method: 'DELETE' })
+  return { success: true }
+}
+
+// Notifications
+export type Notification = {
+  _id: string
+  userId: string
+  type: 'forum' | 'event' | 'document' | 'membership' | 'transfer' | 'suggestion' | 'system' | 'association'
+  title: string
+  message: string
+  link?: string
+  read: boolean
+  metadata?: any
+  createdAt: string
+  updatedAt: string
+}
+
+export async function getUserNotifications(unread?: boolean): Promise<Notification[]> {
+  const query = unread ? '?unread=true' : ''
+  return await request<Notification[]>(`/api/notifications${query}`)
+}
+
+export async function getUnreadNotificationCount(): Promise<{ count: number }> {
+  return await request<{ count: number }>('/api/notifications/unread-count')
+}
+
+export async function markNotificationAsRead(id: string): Promise<Notification> {
+  return await request<Notification>(`/api/notifications/${id}/read`, { method: 'PATCH' })
+}
+
+export async function markAllNotificationsAsRead(): Promise<{ success: boolean }> {
+  await request('/api/notifications/mark-all-read', { method: 'POST' })
+  return { success: true }
+}
+
+export async function deleteNotification(id: string): Promise<{ success: boolean }> {
+  await request(`/api/notifications/${id}`, { method: 'DELETE' })
+  return { success: true }
+}
+
+export async function clearAllNotifications(): Promise<{ success: boolean }> {
+  await request('/api/notifications', { method: 'DELETE' })
   return { success: true }
 }
 
