@@ -48,25 +48,25 @@ export default function DataTable<T extends Record<string, unknown>>({ data, col
   }
 
   return (
-    <div className="space-y-3">
-      <div className="flex items-center justify-between gap-3">
+    <div className="space-y-4">
+      <div className="flex items-center justify-between gap-4 px-2">
         <input
           placeholder="Search..."
           value={query}
           onChange={(e) => { setQuery(e.target.value); setPage(1) }}
-          className="input"
+          className="input max-w-sm"
         />
-        <div className="hidden sm:block text-xs text-gray-500 whitespace-nowrap">{filtered.length} result(s)</div>
+        <div className="hidden sm:block text-sm text-gray-500 whitespace-nowrap">{filtered.length} result(s)</div>
       </div>
-      <div className="overflow-x-auto rounded-md border border-default">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-brand-50/50">
-            <tr>
+      <div className="overflow-x-auto">
+        <table className="min-w-full">
+          <thead>
+            <tr className="border-b border-gray-200">
               {columns.map((c) => {
                 const key = c.key
                 const active = sortKey===key
                 return (
-                  <th key={String(key)} className="px-4 py-2 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                  <th key={String(key)} className="px-6 py-4 text-left text-xs font-semibold text-[var(--primary)] uppercase tracking-wider">
                     <button className="inline-flex items-center gap-1 no-underline text-brand hover:text-brand-900" onClick={()=>onSort(key)}>
                       {c.header}
                       {active && <span>{sortDir==='asc'?'▲':'▼'}</span>}
@@ -76,12 +76,12 @@ export default function DataTable<T extends Record<string, unknown>>({ data, col
               })}
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-100 bg-white">
+          <tbody className="bg-white">
             <AnimatePresence mode="popLayout">
       {current.map((row, idx) => (
                 <motion.tr 
                   key={idx} 
-                  className="hover:bg-brand-50/60"
+                  className="border-b border-gray-100 hover:bg-brand-50/40 transition-colors"
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -20 }}
@@ -93,7 +93,7 @@ export default function DataTable<T extends Record<string, unknown>>({ data, col
                   layout
                 >
                   {columns.map((c) => (
-                    <td key={String(c.key)} className="px-4 py-2 text-sm text-gray-800 whitespace-nowrap">
+                    <td key={String(c.key)} className="px-6 py-5 text-sm text-gray-700">
                       {c.render ? c.render(row) : String(row[c.key] ?? '')}
                     </td>
                   ))}
@@ -102,7 +102,7 @@ export default function DataTable<T extends Record<string, unknown>>({ data, col
             </AnimatePresence>
             {current.length === 0 && (
               <tr>
-                <td colSpan={columns.length} className="px-4 py-6 text-center text-sm text-gray-500">
+                <td colSpan={columns.length} className="px-6 py-12 text-center text-sm text-gray-500">
                   No records found.
                 </td>
               </tr>
@@ -111,10 +111,10 @@ export default function DataTable<T extends Record<string, unknown>>({ data, col
         </table>
       </div>
       {totalPages>1 && (
-        <div className="flex items-center justify-end gap-2 text-sm">
-          <button className="rounded border px-2 py-1 hover:bg-gray-50 disabled:opacity-50" disabled={page===1} onClick={()=>setPage(p=>Math.max(1,p-1))}>Prev</button>
+        <div className="flex items-center justify-end gap-3 text-sm pt-4">
+          <button className="rounded-lg border border-gray-200 px-4 py-2 hover:bg-brand-50 disabled:opacity-50 transition-colors" disabled={page===1} onClick={()=>setPage(p=>Math.max(1,p-1))}>Prev</button>
           <span className="text-gray-600">Page {page} of {totalPages}</span>
-          <button className="rounded border px-2 py-1 hover:bg-gray-50 disabled:opacity-50" disabled={page===totalPages} onClick={()=>setPage(p=>Math.min(totalPages,p+1))}>Next</button>
+          <button className="rounded-lg border border-gray-200 px-4 py-2 hover:bg-brand-50 disabled:opacity-50 transition-colors" disabled={page===totalPages} onClick={()=>setPage(p=>Math.min(totalPages,p+1))}>Next</button>
         </div>
       )}
     </div>

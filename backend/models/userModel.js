@@ -10,11 +10,13 @@ const userSchema = new mongoose.Schema(
     division: { type: String },
     department: { type: String },
     mobile: { type: String },
+    memberId: { type: String, unique: true, sparse: true }, // Unique Member ID (ORD-XXXX or LIF-XXXX)
     membershipType: {
       type: String,
       enum: ['Ordinary', 'Lifetime', 'None'],
       default: 'None',
     },
+    isMember: { type: Boolean, default: false }, // True when membership is active
     role: {
       type: String,
       enum: ['member', 'admin'],

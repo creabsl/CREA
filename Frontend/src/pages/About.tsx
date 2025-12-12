@@ -228,6 +228,7 @@ export default function About() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.4, duration: 0.8 }}
                 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold mb-6 text-white"
+                style={{ color: 'white' }}
               >
                 About CREA
               </motion.h1>

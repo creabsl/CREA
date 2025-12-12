@@ -14,8 +14,16 @@ app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
-// Static files for uploaded assets
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+// Static files for uploaded assets with proper headers for PDF viewing
+app.use('/uploads', express.static(path.join(__dirname, 'uploads'), {
+  setHeaders: (res, filePath) => {
+    // Set Content-Disposition to inline for PDFs so browsers display them instead of downloading
+    if (filePath.endsWith('.pdf')) {
+      res.setHeader('Content-Disposition', 'inline');
+      res.setHeader('Content-Type', 'application/pdf');
+    }
+  }
+}));
 
 // Routes
 const userRoutes = require('./routes/userRoutes');
@@ -32,15 +40,7 @@ const mutualTransferRoutes = require('./routes/mutualTransferRoutes');
 const externalLinkRoutes = require('./routes/externalLinkRoutes');
 const bodyMemberRoutes = require('./routes/bodyMemberRoutes');
 const notificationRoutes = require('./routes/notificationRoutes');
-
-let settingRoutes;
-try {
-	settingRoutes = require('./routes/settingRoutes');
-	console.log('✓ Setting routes loaded successfully');
-} catch (error) {
-	console.error('✗ Error loading setting routes:', error.message);
-	process.exit(1);
-}
+const settingRoutes = require('./routes/settingRoutes');
 
 app.use('/api/users', userRoutes);
 app.use('/api/auth', authRoutes);
@@ -57,7 +57,6 @@ app.use('/api/external-links', externalLinkRoutes);
 app.use('/api/body-members', bodyMemberRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/settings', settingRoutes);
-console.log('✓ Settings route mounted at /api/settings');
 
 // Health check
 app.get('/health', (_req, res) => res.json({ status: 'ok' }));
@@ -90,12 +89,6 @@ const start = async () => {
 
 start();
 
-process.on('unhandledRejection', (reason, promise) => {
-	console.error('Unhandled promise rejection at:', promise);
-	console.error('Reason:', reason);
-});
-
-process.on('uncaughtException', (error) => {
-	console.error('Uncaught exception:', error);
-	process.exit(1);
+process.on('unhandledRejection', (reason) => {
+	console.error('Unhandled promise rejection:', reason);
 });

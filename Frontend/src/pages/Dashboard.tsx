@@ -243,14 +243,14 @@ export default function Dashboard() {
                 title="Circulars" 
                 icon={<CircularIcon />} 
                 items={circulars.map(c => ({ id: c.id, title: c.subject, subtitle: c.boardNumber, date: c.dateOfIssue }))} 
-                onViewAll={()=>navigate('/circulars')} 
+                onViewAll={()=>navigate('/documents?tab=circular')} 
                 delay={2} 
               />
               <QuickPreviewCard 
                 title="Court Cases" 
                 icon={<CourtCaseIcon />} 
                 items={cases.map(cc => ({ id: cc.id, title: cc.caseNumber, subtitle: cc.subject, date: cc.date }))} 
-                onViewAll={()=>navigate('/court-cases')} 
+                onViewAll={()=>navigate('/documents?tab=court-case')} 
                 delay={3} 
               />
             </div>

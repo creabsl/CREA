@@ -294,6 +294,13 @@ export default function Profile(){
                 <div className="text-base font-medium text-gray-900">{user?.membershipType || 'None'}</div>
               </div>
 
+              {user?.memberId && (
+                <div className="space-y-1">
+                  <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Member ID</div>
+                  <div className="text-lg font-bold text-[var(--primary)]">{user.memberId}</div>
+                </div>
+              )}
+
               <div className="space-y-1">
                 <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Role</div>
                 <div className="text-base font-medium text-gray-900 capitalize">{user?.role || 'member'}</div>

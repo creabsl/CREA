@@ -14,7 +14,7 @@ import { defaultTimelineStops, defaultPastEvents, type TimelineStop, type PastEv
 
 export default function Admin() {
   usePageTitle('CREA • Admin')
-  const [tab, setTab] = useState<'events'|'manuals'|'circulars'|'forum'|'court-cases'|'suggestions'|'members'|'settings'|'about'|'transfers'|'association-body'>('events')
+  const [tab, setTab] = useState<'events'|'documents'|'forum'|'suggestions'|'members'|'settings'|'about'|'transfers'|'association-body'>('events')
   const [events, setEvents] = useState<EventItem[]>([])
   const [manuals, setManuals] = useState<Manual[]>([])
   const [circulars, setCirculars] = useState<Circular[]>([])
@@ -28,17 +28,15 @@ export default function Admin() {
   const navigate = useNavigate()
 
   useEffect(() => {
-    getEvents().then(setEvents)
-    getManuals().then(setManuals)
-    getCirculars().then(setCirculars)
-  getForumTopics().then(setTopics)
-  getCourtCases().then(setCases)
-  getSuggestions().then(setSuggestions)
-    getSettings().then(setSettings).catch(()=>{})
-    // Preload members (all)
-    adminListUsers().then(setMembers).catch(()=>{})
-    // Preload mutual transfers (all including inactive)
-    getMutualTransfers({ includeInactive: true }).then(setTransfers).catch(()=>{})
+    getEvents().then(setEvents).catch(console.error)
+    getManuals().then(setManuals).catch(console.error)
+    getCirculars().then(setCirculars).catch(console.error)
+    getForumTopics().then(setTopics).catch(console.error)
+    getCourtCases().then(setCases).catch(console.error)
+    getSuggestions().then(setSuggestions).catch(console.error)
+    getSettings().then(setSettings).catch(console.error)
+    adminListUsers().then(setMembers).catch(console.error)
+    getMutualTransfers({ includeInactive: true }).then(setTransfers).catch(console.error)
   }, [])
 
   return (
@@ -178,12 +176,12 @@ export default function Admin() {
                   </span>
                   Circulars
                 </h3>
-                <button className="text-xs text-[var(--primary)] hover:underline font-medium" onClick={() => navigate('/circulars')}>View all →</button>
+                <button className="text-xs text-[var(--primary)] hover:underline font-medium" onClick={() => navigate('/documents?tab=circular')}>View all →</button>
               </div>
               <ul className="space-y-2">
                 {circulars.slice(0,2).map(c => (
                   <li key={c.id}>
-                    <button onClick={() => navigate('/circulars')} className="w-full text-left rounded-lg px-3 py-2 hover:bg-gray-50 transition-colors">
+                    <button onClick={() => navigate('/documents?tab=circular')} className="w-full text-left rounded-lg px-3 py-2 hover:bg-gray-50 transition-colors">
                       <div className="text-sm font-medium text-gray-800 truncate">{c.subject}</div>
                       <div className="text-xs text-gray-600">{c.boardNumber} • {new Date(c.dateOfIssue).toLocaleDateString()}</div>
                     </button>
@@ -211,12 +209,12 @@ export default function Admin() {
                   </span>
                   Court Cases
                 </h3>
-                <button className="text-xs text-[var(--primary)] hover:underline font-medium" onClick={() => navigate('/court-cases')}>View all →</button>
+                <button className="text-xs text-[var(--primary)] hover:underline font-medium" onClick={() => navigate('/documents?tab=court-case')}>View all →</button>
               </div>
               <ul className="space-y-2">
                 {cases.slice(0,2).map(cc => (
                   <li key={cc.id}>
-                    <button onClick={() => navigate('/court-cases')} className="w-full text-left rounded-lg px-3 py-2 hover:bg-gray-50 transition-colors">
+                    <button onClick={() => navigate('/documents?tab=court-case')} className="w-full text-left rounded-lg px-3 py-2 hover:bg-gray-50 transition-colors">
                       <div className="text-sm font-medium text-gray-800 truncate">{cc.caseNumber}</div>
                       <div className="text-xs text-gray-600">{new Date(cc.date).toLocaleDateString()} • {cc.subject}</div>
                     </button>
@@ -231,7 +229,7 @@ export default function Admin() {
 
       {/* Tab Navigation */}
       <div className="flex gap-2 flex-wrap">
-        {(['events','manuals','circulars','forum','court-cases','suggestions','members','settings','transfers','association-body'] as const).map(k => (
+        {(['events','documents','forum','suggestions','members','settings','transfers','association-body'] as const).map(k => (
           <motion.button 
             key={k} 
             onClick={()=>setTab(k)} 
@@ -262,10 +260,8 @@ export default function Admin() {
       </div>
 
       {tab==='events' && <EventsAdmin data={events} onChange={setEvents} />}
-      {tab==='manuals' && <ManualsAdmin data={manuals} onChange={setManuals} />}
-      {tab==='circulars' && <CircularsAdmin data={circulars} onChange={setCirculars} />}
+      {tab==='documents' && <DocumentsAdmin manuals={manuals} circulars={circulars} courtCases={cases} onManualsChange={setManuals} onCircularsChange={setCirculars} onCourtCasesChange={setCases} />}
   {tab==='forum' && <ForumAdmin data={topics} onChange={setTopics} />}
-  {tab==='court-cases' && <CourtCasesAdmin data={cases} onChange={setCases} />}
   {tab==='suggestions' && <SuggestionsAdmin data={suggestions} />}
   {tab==='members' && <MembersAdmin data={members} onReload={async(div?: Division | '')=>{ const list = await adminListUsers(div? { division: div } : undefined); setMembers(list) }} onUpdate={async (id, patch)=>{ const upd = await adminUpdateUser(id, patch); setMembers(members.map(m=>m.id===id?upd:m)) }} division={memberDivision} onDivisionChange={async(d)=>{ setMemberDivision(d); const list = await adminListUsers(d? { division: d } : undefined); setMembers(list) }} />}
   {tab==='settings' && <SettingsAdmin data={settings} onChange={setSettings} />}
@@ -648,6 +644,37 @@ function MembersAdmin({ data, onReload, onUpdate, division, onDivisionChange }: 
               Refresh
             </span>
           </Button>
+          <Button variant="secondary" onClick={()=> {
+            const csvData = [
+              ['Name', 'Email', 'Mobile', 'Designation', 'Division', 'Department', 'Membership Type', 'Member ID', 'Role'].join(','),
+              ...data.map(m => [
+                m.name || '',
+                m.email || '',
+                m.mobile || '',
+                m.designation || '',
+                m.division || '',
+                m.department || '',
+                m.membershipType || 'None',
+                m.memberId || '',
+                m.role || 'member'
+              ].map(v => `"${String(v).replace(/"/g, '""')}"`).join(','))
+            ].join('\n')
+            
+            const blob = new Blob([csvData], { type: 'text/csv;charset=utf-8;' })
+            const link = document.createElement('a')
+            const url = URL.createObjectURL(blob)
+            link.setAttribute('href', url)
+            link.setAttribute('download', `members_${division || 'all'}_${new Date().toISOString().split('T')[0]}.csv`)
+            link.style.visibility = 'hidden'
+            document.body.appendChild(link)
+            link.click()
+            document.body.removeChild(link)
+          }}>
+            <span className="flex items-center gap-2">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+              Export CSV
+            </span>
+          </Button>
         </div>
       </motion.div>
 
@@ -709,8 +736,9 @@ function MembersAdmin({ data, onReload, onUpdate, division, onDivisionChange }: 
                 <th className="px-4 py-3 text-left font-semibold text-gray-700">Division</th>
                 <th className="px-4 py-3 text-left font-semibold text-gray-700">Department</th>
                 <th className="px-4 py-3 text-left font-semibold text-gray-700">Membership</th>
+                <th className="px-4 py-3 text-left font-semibold text-gray-700">Member ID</th>
                 <th className="px-4 py-3 text-left font-semibold text-gray-700">Role</th>
-                <th className="px-4 py-3 text-left font-semibold text-gray-700">Status</th>
+                <th className="px-4 py-3 text-left font-semibold text-gray-700">Actions</th>
               </tr>
             </thead>
           <tbody className="divide-y divide-gray-100">
@@ -740,6 +768,71 @@ function MembersAdmin({ data, onReload, onUpdate, division, onDivisionChange }: 
                     <select className="w-36 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/20" value={(e.membershipType ?? u.membershipType) as string} onChange={(ev)=> setEdit(u.id, { membershipType: ev.target.value as MemberUser['membershipType'] })}>
                       {['None','Ordinary','Lifetime'].map(m => <option key={m} value={m}>{m}</option>)}
                     </select>
+                  </td>
+                  <td className="px-4 py-3">
+                    {(() => {
+                      const membershipType = (e.membershipType ?? u.membershipType) as string
+                      const needsNewId = membershipType !== 'None' && (
+                        !u.memberId || 
+                        (membershipType === 'Lifetime' && u.memberId.startsWith('ORD-')) ||
+                        (membershipType === 'Ordinary' && u.memberId.startsWith('LIF-'))
+                      )
+                      
+                      if (u.memberId && !needsNewId) {
+                        return <span className="text-sm font-bold text-[var(--primary)]">{u.memberId}</span>
+                      } else if (needsNewId) {
+                        return (
+                          <button 
+                            onClick={async () => {
+                              const currentDbType = u.membershipType
+                              const targetType = membershipType
+                              const currentId = u.memberId
+                              
+                              const action = currentId ? `Upgrade ${u.name} from ${currentId} to ${targetType} membership` : `Generate ${targetType} Member ID for ${u.name}`
+                              
+                              if (confirm(`${action}?\n\nThis will ${currentId ? 'invalidate the old ID and generate a new one' : 'create a new Member ID'}.`)) {
+                                try {
+                                  // If membership type has changed in editing state, save it first
+                                  if (e.membershipType && e.membershipType !== currentDbType) {
+                                    await onUpdate(u.id, { membershipType: e.membershipType })
+                                    await new Promise(resolve => setTimeout(resolve, 500))
+                                  }
+                                  
+                                  const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5001'}/api/users/${u.id}/generate-member-id`, {
+                                    method: 'POST',
+                                    headers: {
+                                      'Authorization': `Bearer ${localStorage.getItem('crea:token')}`,
+                                      'Content-Type': 'application/json'
+                                    },
+                                    body: JSON.stringify({ membershipType: targetType })
+                                  })
+                                  
+                                  const data = await res.json()
+                                  
+                                  if (res.ok && data.success) {
+                                    const message = data.isUpgrade 
+                                      ? `✅ Member ID upgraded successfully!\n\nOld ID: ${data.oldMemberId} (no longer valid)\nNew ID: ${data.memberId}\nType: ${data.membershipType}`
+                                      : `✅ Member ID generated successfully!\n\nNew ID: ${data.memberId}\nType: ${data.membershipType}`
+                                    alert(message)
+                                    onReload(division)
+                                  } else {
+                                    alert(data.message || 'Failed to generate Member ID')
+                                  }
+                                } catch (err) {
+                                  console.error('Generate Member ID error:', err)
+                                  alert('Error: ' + (err as Error).message)
+                                }
+                              }
+                            }}
+                            className="text-xs px-2 py-1 bg-green-600 text-white rounded hover:bg-green-700 whitespace-nowrap"
+                          >
+                            {u.memberId ? 'Upgrade ID' : 'Generate ID'}
+                          </button>
+                        )
+                      } else {
+                        return <span className="text-xs text-gray-400">No membership</span>
+                      }
+                    })()}
                   </td>
                   <td className="px-4 py-3">
                     <select className="w-28 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/20" value={(e.role ?? u.role) as string} onChange={(ev)=> setEdit(u.id, { role: ev.target.value as 'admin'|'member' })}>
@@ -881,6 +974,332 @@ function EventsAdmin({ data, onChange }: { data: EventItem[]; onChange: (d: Even
   )
 }
 
+// ==================== UNIFIED DOCUMENTS ADMIN ====================
+type DocumentSubTab = 'circulars' | 'manuals' | 'court-cases'
+
+function DocumentsAdmin({ 
+  manuals, 
+  circulars, 
+  courtCases, 
+  onManualsChange, 
+  onCircularsChange, 
+  onCourtCasesChange 
+}: { 
+  manuals: Manual[]
+  circulars: Circular[]
+  courtCases: CourtCase[]
+  onManualsChange: (d: Manual[]) => void
+  onCircularsChange: (d: Circular[]) => void
+  onCourtCasesChange: (d: CourtCase[]) => void
+}) {
+  const [subTab, setSubTab] = useState<DocumentSubTab>('circulars')
+
+  // Circular state
+  const [circularBoardNumber, setCircularBoardNumber] = useState('')
+  const [circularSubject, setCircularSubject] = useState('')
+  const [circularDateOfIssue, setCircularDateOfIssue] = useState('')
+  const [circularUrl, setCircularUrl] = useState('')
+  const [circularFile, setCircularFile] = useState<File | null>(null)
+  const [editingCircular, setEditingCircular] = useState<Circular | null>(null)
+
+  // Manual state
+  const [manualTitle, setManualTitle] = useState('')
+  const [manualUrl, setManualUrl] = useState('')
+  const [manualFile, setManualFile] = useState<File | null>(null)
+  const [editingManual, setEditingManual] = useState<Manual | null>(null)
+
+  // Court case state
+  const [caseCaseNumber, setCaseCaseNumber] = useState('')
+  const [caseDate, setCaseDate] = useState('')
+  const [caseSubject, setCaseSubject] = useState('')
+  const [editingCourtCase, setEditingCourtCase] = useState<CourtCase | null>(null)
+
+  const resetCircularForm = () => {
+    setCircularBoardNumber('')
+    setCircularSubject('')
+    setCircularDateOfIssue('')
+    setCircularUrl('')
+    setCircularFile(null)
+    setEditingCircular(null)
+  }
+
+  const resetManualForm = () => {
+    setManualTitle('')
+    setManualUrl('')
+    setManualFile(null)
+    setEditingManual(null)
+  }
+
+  const resetCourtCaseForm = () => {
+    setCaseCaseNumber('')
+    setCaseDate('')
+    setCaseSubject('')
+    setEditingCourtCase(null)
+  }
+
+  const handleEditCircular = (c: Circular) => {
+    setCircularBoardNumber(c.boardNumber)
+    setCircularSubject(c.subject)
+    setCircularDateOfIssue(c.dateOfIssue)
+    setCircularUrl(c.url || '')
+    setCircularFile(null)
+    setEditingCircular(c)
+  }
+
+  const handleEditManual = (m: Manual) => {
+    setManualTitle(m.title)
+    setManualUrl(m.url || '')
+    setManualFile(null)
+    setEditingManual(m)
+  }
+
+  const handleEditCourtCase = (cc: CourtCase) => {
+    setCaseCaseNumber(cc.caseNumber)
+    setCaseDate(cc.date)
+    setCaseSubject(cc.subject)
+    setEditingCourtCase(cc)
+  }
+
+  const handleSaveCircular = async () => {
+    if (editingCircular) {
+      const upd = await updateCircular(editingCircular.id, { 
+        boardNumber: circularBoardNumber, 
+        subject: circularSubject, 
+        dateOfIssue: circularDateOfIssue,
+        url: circularUrl || undefined,
+        file: circularFile || undefined
+      })
+      onCircularsChange(circulars.map(d => d.id === editingCircular.id ? upd : d))
+      resetCircularForm()
+    } else {
+      const c = await createCircular({ 
+        boardNumber: circularBoardNumber, 
+        subject: circularSubject, 
+        dateOfIssue: circularDateOfIssue, 
+        url: circularUrl || undefined, 
+        file: circularFile || undefined 
+      })
+      onCircularsChange([...circulars, c])
+      resetCircularForm()
+    }
+  }
+
+  const handleSaveManual = async () => {
+    if (editingManual) {
+      const upd = await updateManual(editingManual.id, { 
+        title: manualTitle, 
+        url: manualUrl || undefined,
+        file: manualFile || undefined
+      })
+      onManualsChange(manuals.map(d => d.id === editingManual.id ? upd : d))
+      resetManualForm()
+    } else {
+      const m = await createManual({ 
+        title: manualTitle, 
+        url: manualUrl || undefined, 
+        file: manualFile || undefined 
+      })
+      onManualsChange([...manuals, m])
+      resetManualForm()
+    }
+  }
+
+  const handleSaveCourtCase = async () => {
+    if (editingCourtCase) {
+      const upd = await updateCourtCase(editingCourtCase.id, { 
+        caseNumber: caseCaseNumber, 
+        date: caseDate, 
+        subject: caseSubject 
+      })
+      onCourtCasesChange(courtCases.map(d => d.id === editingCourtCase.id ? upd : d))
+      resetCourtCaseForm()
+    } else {
+      const cc = await createCourtCase({ 
+        caseNumber: caseCaseNumber, 
+        date: caseDate, 
+        subject: caseSubject 
+      })
+      onCourtCasesChange([cc, ...courtCases])
+      resetCourtCaseForm()
+    }
+  }
+
+  return (
+    <div className="space-y-5">
+      {/* Sub-tab Navigation */}
+      <div className="flex gap-2 p-1 bg-gray-100 rounded-xl w-fit">
+        {(['circulars', 'manuals', 'court-cases'] as const).map(st => (
+          <button
+            key={st}
+            onClick={() => setSubTab(st)}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+              subTab === st
+                ? 'bg-white text-[var(--primary)] shadow-sm'
+                : 'text-gray-600 hover:text-[var(--primary)]'
+            }`}
+          >
+            {st === 'court-cases' ? 'Court Cases' : st.charAt(0).toUpperCase() + st.slice(1)}
+            <span className={`ml-2 px-2 py-0.5 text-xs rounded-full ${
+              subTab === st ? 'bg-[var(--primary)] text-white' : 'bg-gray-200 text-gray-600'
+            }`}>
+              {st === 'circulars' ? circulars.length : st === 'manuals' ? manuals.length : courtCases.length}
+            </span>
+          </button>
+        ))}
+      </div>
+
+      {/* Circulars Sub-Tab */}
+      {subTab === 'circulars' && (
+        <div className="space-y-5">
+          <motion.div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+            <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+              <span className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
+                <svg className="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+              </span>
+              {editingCircular ? 'Edit Circular' : 'Add New Circular'}
+            </h3>
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Input label="Board Number" value={circularBoardNumber} onChange={(e) => setCircularBoardNumber(e.target.value)} />
+                <Input label="Date of Issue" type="date" value={circularDateOfIssue} onChange={(e) => setCircularDateOfIssue(e.target.value)} />
+              </div>
+              <Input label="Subject" value={circularSubject} onChange={(e) => setCircularSubject(e.target.value)} />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Input label="URL (optional)" value={circularUrl} onChange={(e) => setCircularUrl(e.target.value)} />
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">File (PDF or Image)</label>
+                  <input type="file" accept="application/pdf,image/*" className="block w-full text-sm text-gray-600 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100" onChange={(e) => setCircularFile(e.target.files?.[0] || null)} />
+                  <div className="text-xs text-gray-500 mt-1">Provide either a URL or upload a file.</div>
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <Button onClick={handleSaveCircular}>{editingCircular ? 'Update Circular' : 'Add Circular'}</Button>
+                {editingCircular && <Button variant="ghost" onClick={resetCircularForm}>Cancel</Button>}
+              </div>
+            </div>
+          </motion.div>
+          <motion.div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
+            <div className="bg-gradient-to-r from-gray-50 to-gray-100 px-6 py-4 border-b border-gray-200">
+              <h3 className="text-lg font-semibold text-gray-800">Existing Circulars ({circulars.length})</h3>
+            </div>
+            <div className="divide-y divide-gray-100">
+              {circulars.map(c => (
+                <div key={c.id} className="p-5 flex items-center gap-4 hover:bg-gray-50 transition-colors">
+                  <div className="flex-1">
+                    <div className="font-semibold text-gray-800">{c.subject}</div>
+                    <div className="text-sm text-gray-600 mt-1">{c.boardNumber} • {c.dateOfIssue}</div>
+                    {c.url && <div className="text-sm text-[var(--primary)] mt-1"><a className="underline hover:text-[var(--accent)]" href={c.url} target="_blank" rel="noreferrer">View Document →</a></div>}
+                  </div>
+                  <div className="flex gap-2">
+                    <Button variant="secondary" onClick={() => handleEditCircular(c)}>Edit</Button>
+                    <Button variant="danger" onClick={async () => { await deleteCircular(c.id); onCircularsChange(circulars.filter(d => d.id !== c.id)) }}>Delete</Button>
+                  </div>
+                </div>
+              ))}
+              {circulars.length === 0 && <div className="p-8 text-center text-gray-500">No circulars found. Add your first circular above.</div>}
+            </div>
+          </motion.div>
+        </div>
+      )}
+
+      {/* Manuals Sub-Tab */}
+      {subTab === 'manuals' && (
+        <div className="space-y-5">
+          <motion.div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+            <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+              <span className="w-8 h-8 bg-orange-100 rounded-lg flex items-center justify-center">
+                <svg className="w-4 h-4 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>
+              </span>
+              {editingManual ? 'Edit Manual' : 'Add New Manual'}
+            </h3>
+            <div className="space-y-4">
+              <Input label="Title" value={manualTitle} onChange={(e) => setManualTitle(e.target.value)} />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Input label="URL (optional)" value={manualUrl} onChange={(e) => setManualUrl(e.target.value)} />
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">File (PDF or Image)</label>
+                  <input type="file" accept="application/pdf,image/*" className="block w-full text-sm text-gray-600 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100" onChange={(e) => setManualFile(e.target.files?.[0] || null)} />
+                  <div className="text-xs text-gray-500 mt-1">Provide either a URL or upload a file.</div>
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <Button onClick={handleSaveManual}>{editingManual ? 'Update Manual' : 'Add Manual'}</Button>
+                {editingManual && <Button variant="ghost" onClick={resetManualForm}>Cancel</Button>}
+              </div>
+            </div>
+          </motion.div>
+          <motion.div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
+            <div className="bg-gradient-to-r from-gray-50 to-gray-100 px-6 py-4 border-b border-gray-200">
+              <h3 className="text-lg font-semibold text-gray-800">Existing Manuals ({manuals.length})</h3>
+            </div>
+            <div className="divide-y divide-gray-100">
+              {manuals.map(m => (
+                <div key={m.id} className="p-5 flex items-center gap-4 hover:bg-gray-50 transition-colors">
+                  <div className="flex-1">
+                    <div className="font-semibold text-gray-800">{m.title}</div>
+                    {m.url && <div className="text-sm text-[var(--primary)] mt-1"><a className="underline hover:text-[var(--accent)]" href={m.url} target="_blank" rel="noreferrer">View Document →</a></div>}
+                  </div>
+                  <div className="flex gap-2">
+                    <Button variant="secondary" onClick={() => handleEditManual(m)}>Edit</Button>
+                    <Button variant="danger" onClick={async () => { await deleteManual(m.id); onManualsChange(manuals.filter(d => d.id !== m.id)) }}>Delete</Button>
+                  </div>
+                </div>
+              ))}
+              {manuals.length === 0 && <div className="p-8 text-center text-gray-500">No manuals found. Add your first manual above.</div>}
+            </div>
+          </motion.div>
+        </div>
+      )}
+
+      {/* Court Cases Sub-Tab */}
+      {subTab === 'court-cases' && (
+        <div className="space-y-5">
+          <motion.div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+            <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+              <span className="w-8 h-8 bg-red-100 rounded-lg flex items-center justify-center">
+                <svg className="w-4 h-4 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3" /></svg>
+              </span>
+              {editingCourtCase ? 'Edit Court Case' : 'Add New Court Case'}
+            </h3>
+            <div className="space-y-4">
+              <Input label="Case Number" value={caseCaseNumber} onChange={(e) => setCaseCaseNumber(e.target.value)} />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Input label="Date" type="date" value={caseDate} onChange={(e) => setCaseDate(e.target.value)} />
+                <Input label="Subject" value={caseSubject} onChange={(e) => setCaseSubject(e.target.value)} />
+              </div>
+              <div className="flex gap-2">
+                <Button onClick={handleSaveCourtCase}>{editingCourtCase ? 'Update Case' : 'Add Case'}</Button>
+                {editingCourtCase && <Button variant="ghost" onClick={resetCourtCaseForm}>Cancel</Button>}
+              </div>
+            </div>
+          </motion.div>
+          <motion.div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
+            <div className="bg-gradient-to-r from-gray-50 to-gray-100 px-6 py-4 border-b border-gray-200">
+              <h3 className="text-lg font-semibold text-gray-800">Existing Court Cases ({courtCases.length})</h3>
+            </div>
+            <div className="divide-y divide-gray-100">
+              {courtCases.map(c => (
+                <div key={c.id} className="p-5 flex items-center gap-4 hover:bg-gray-50 transition-colors">
+                  <div className="flex-1">
+                    <div className="font-semibold text-gray-800">{c.caseNumber}</div>
+                    <div className="text-sm text-gray-600 mt-1">{new Date(c.date).toLocaleDateString()} • {c.subject}</div>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button variant="secondary" onClick={() => handleEditCourtCase(c)}>Edit</Button>
+                    <Button variant="danger" onClick={async () => { await deleteCourtCase(c.id); onCourtCasesChange(courtCases.filter(d => d.id !== c.id)) }}>Delete</Button>
+                  </div>
+                </div>
+              ))}
+              {courtCases.length === 0 && <div className="p-8 text-center text-gray-500">No court cases found. Add your first case above.</div>}
+            </div>
+          </motion.div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// Keep old functions for backward compatibility but they're no longer used
 function ManualsAdmin({ data, onChange }: { data: Manual[]; onChange: (d: Manual[])=>void }){
   const [title, setTitle] = useState('')
   const [url, setUrl] = useState('')
@@ -1242,7 +1661,7 @@ function SettingsAdmin({ data, onChange }: { data: Setting[]; onChange: (s: Sett
                     onChange(newSettings)
                   } catch (error) {
                     console.error('Failed to initialize settings:', error)
-                    alert(`Failed to initialize settings: ${error.message}`)
+                    alert(`Failed to initialize settings: ${(error as Error).message}`)
                   }
                 }}>
                   Initialize Default Settings
