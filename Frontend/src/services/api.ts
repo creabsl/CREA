@@ -440,6 +440,8 @@ export type User = {
   department?: string
   mobile?: string
   membershipType?: string
+  memberId?: string
+  isMember?: boolean
 }
 
 type AuthDTO = { 
@@ -453,6 +455,8 @@ type AuthDTO = {
   department?: string
   mobile?: string
   membershipType?: string
+  memberId?: string
+  isMember?: boolean
 }
 export async function register(username: string, name: string, password: string): Promise<User> {
   if (!username || !name || !password) throw new Error('All fields are required')
@@ -469,7 +473,9 @@ export async function register(username: string, name: string, password: string)
     division: res.division,
     department: res.department,
     mobile: res.mobile,
-    membershipType: res.membershipType
+    membershipType: res.membershipType,
+    memberId: res.memberId,
+    isMember: res.isMember
   }
 }
 
@@ -487,7 +493,9 @@ export async function login(username: string, password: string): Promise<User> {
     division: res.division,
     department: res.department,
     mobile: res.mobile,
-    membershipType: res.membershipType
+    membershipType: res.membershipType,
+    memberId: res.memberId,
+    isMember: res.isMember
   }
 }
 
@@ -502,7 +510,7 @@ export async function requestOtp(email: string, name?: string): Promise<{ succes
   return request('/api/auth/request-otp', { method: 'POST', body: JSON.stringify({ email, name }) })
 }
 
-type VerifyOtpDTO = { _id: string; name: string; email: string; role?: 'admin' | 'member'; token?: string; designation?: string; division?: string; department?: string; mobile?: string; membershipType?: string }
+type VerifyOtpDTO = { _id: string; name: string; email: string; role?: 'admin' | 'member'; token?: string; designation?: string; division?: string; department?: string; mobile?: string; membershipType?: string; memberId?: string; isMember?: boolean }
 export async function verifyOtp(email: string, code: string, name?: string, password?: string): Promise<User> {
   if (!email || !code) throw new Error('Email and OTP code are required')
   const res = await request<VerifyOtpDTO>('/api/auth/verify-otp', { method: 'POST', body: JSON.stringify({ email, code, name, password }) })
@@ -517,7 +525,9 @@ export async function verifyOtp(email: string, code: string, name?: string, pass
     division: res.division,
     department: res.department,
     mobile: res.mobile,
-    membershipType: res.membershipType
+    membershipType: res.membershipType,
+    memberId: res.memberId,
+    isMember: res.isMember
   }
 }
 
@@ -533,7 +543,9 @@ export async function updateProfile(data: { name?: string; designation?: string;
     division: res.division,
     department: res.department,
     mobile: res.mobile,
-    membershipType: res.membershipType
+    membershipType: res.membershipType,
+    memberId: res.memberId,
+    isMember: res.isMember
   }
 }
 
@@ -549,7 +561,9 @@ export async function getProfile(): Promise<User> {
     division: res.division,
     department: res.department,
     mobile: res.mobile,
-    membershipType: res.membershipType
+    membershipType: res.membershipType,
+    memberId: res.memberId,
+    isMember: res.isMember
   }
 }
 
@@ -591,7 +605,7 @@ export function notifyStatsChanged(): void {
 }
 
 // Admin: Users
-type UserDTO = { _id: string; name: string; email: string; role: 'admin' | 'member'; designation?: string; division?: string; department?: string; mobile?: string; membershipType?: 'Ordinary' | 'Lifetime' | 'None' }
+type UserDTO = { _id: string; name: string; email: string; role: 'admin' | 'member'; designation?: string; division?: string; department?: string; mobile?: string; memberId?: string; membershipType?: 'Ordinary' | 'Lifetime' | 'None'; isMember?: boolean }
 export type MemberUser = { id: string; name: string; email: string; role: 'admin' | 'member'; designation: string; division: Division | ''; department: string; mobile?: string; memberId?: string; membershipType: 'Ordinary' | 'Lifetime' | 'None'; isMember?: boolean }
 
 function toMemberUser(u: UserDTO): MemberUser {
@@ -604,7 +618,9 @@ function toMemberUser(u: UserDTO): MemberUser {
     division: (u.division as Division) || '',
     department: u.department || '',
     mobile: u.mobile,
+    memberId: u.memberId,
     membershipType: (u.membershipType || 'None'),
+    isMember: u.isMember,
   }
 }
 

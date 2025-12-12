@@ -741,39 +741,69 @@ function MembersAdmin({ data, onReload, onUpdate, division, onDivisionChange }: 
                     </select>
                   </td>
                   <td className="px-4 py-3">
-                    {u.memberId ? (
-                      <span className="text-sm font-bold text-[var(--primary)]">{u.memberId}</span>
-                    ) : u.membershipType !== 'None' ? (
-                      <button 
-                        onClick={async () => {
-                          if (confirm(`Generate Member ID for ${u.name}?`)) {
-                            try {
-                              const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5001'}/api/users/${u.id}/generate-member-id`, {
-                                method: 'POST',
-                                headers: {
-                                  'Authorization': `Bearer ${localStorage.getItem('crea:token')}`,
-                                  'Content-Type': 'application/json'
+                    {(() => {
+                      const membershipType = (e.membershipType ?? u.membershipType) as string
+                      const needsNewId = membershipType !== 'None' && (
+                        !u.memberId || 
+                        (membershipType === 'Lifetime' && u.memberId.startsWith('ORD-')) ||
+                        (membershipType === 'Ordinary' && u.memberId.startsWith('LIF-'))
+                      )
+                      
+                      if (u.memberId && !needsNewId) {
+                        return <span className="text-sm font-bold text-[var(--primary)]">{u.memberId}</span>
+                      } else if (needsNewId) {
+                        return (
+                          <button 
+                            onClick={async () => {
+                              const currentDbType = u.membershipType
+                              const targetType = membershipType
+                              const currentId = u.memberId
+                              
+                              const action = currentId ? `Upgrade ${u.name} from ${currentId} to ${targetType} membership` : `Generate ${targetType} Member ID for ${u.name}`
+                              
+                              if (confirm(`${action}?\n\nThis will ${currentId ? 'invalidate the old ID and generate a new one' : 'create a new Member ID'}.`)) {
+                                try {
+                                  // If membership type has changed in editing state, save it first
+                                  if (e.membershipType && e.membershipType !== currentDbType) {
+                                    await onUpdate(u.id, { membershipType: e.membershipType })
+                                    await new Promise(resolve => setTimeout(resolve, 500))
+                                  }
+                                  
+                                  const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5001'}/api/users/${u.id}/generate-member-id`, {
+                                    method: 'POST',
+                                    headers: {
+                                      'Authorization': `Bearer ${localStorage.getItem('crea:token')}`,
+                                      'Content-Type': 'application/json'
+                                    },
+                                    body: JSON.stringify({ membershipType: targetType })
+                                  })
+                                  
+                                  const data = await res.json()
+                                  
+                                  if (res.ok && data.success) {
+                                    const message = data.isUpgrade 
+                                      ? `✅ Member ID upgraded successfully!\n\nOld ID: ${data.oldMemberId} (no longer valid)\nNew ID: ${data.memberId}\nType: ${data.membershipType}`
+                                      : `✅ Member ID generated successfully!\n\nNew ID: ${data.memberId}\nType: ${data.membershipType}`
+                                    alert(message)
+                                    onReload(division)
+                                  } else {
+                                    alert(data.message || 'Failed to generate Member ID')
+                                  }
+                                } catch (err) {
+                                  console.error('Generate Member ID error:', err)
+                                  alert('Error: ' + (err as Error).message)
                                 }
-                              })
-                              if (res.ok) {
-                                const data = await res.json()
-                                alert(`Member ID generated: ${data.memberId}`)
-                                onReload(division)
-                              } else {
-                                alert('Failed to generate Member ID')
                               }
-                            } catch (err) {
-                              alert('Error: ' + (err as Error).message)
-                            }
-                          }
-                        }}
-                        className="text-xs px-2 py-1 bg-green-600 text-white rounded hover:bg-green-700"
-                      >
-                        Generate ID
-                      </button>
-                    ) : (
-                      <span className="text-xs text-gray-400">No membership</span>
-                    )}
+                            }}
+                            className="text-xs px-2 py-1 bg-green-600 text-white rounded hover:bg-green-700 whitespace-nowrap"
+                          >
+                            {u.memberId ? 'Upgrade ID' : 'Generate ID'}
+                          </button>
+                        )
+                      } else {
+                        return <span className="text-xs text-gray-400">No membership</span>
+                      }
+                    })()}
                   </td>
                   <td className="px-4 py-3">
                     <select className="w-28 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/20" value={(e.role ?? u.role) as string} onChange={(ev)=> setEdit(u.id, { role: ev.target.value as 'admin'|'member' })}>
@@ -1257,7 +1287,7 @@ function SettingsAdmin({ data, onChange }: { data: Setting[]; onChange: (s: Sett
                     onChange(newSettings)
                   } catch (error) {
                     console.error('Failed to initialize settings:', error)
-                    alert(`Failed to initialize settings: ${error.message}`)
+                    alert(`Failed to initialize settings: ${(error as Error).message}`)
                   }
                 }}>
                   Initialize Default Settings
