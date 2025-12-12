@@ -644,6 +644,37 @@ function MembersAdmin({ data, onReload, onUpdate, division, onDivisionChange }: 
               Refresh
             </span>
           </Button>
+          <Button variant="secondary" onClick={()=> {
+            const csvData = [
+              ['Name', 'Email', 'Mobile', 'Designation', 'Division', 'Department', 'Membership Type', 'Member ID', 'Role'].join(','),
+              ...data.map(m => [
+                m.name || '',
+                m.email || '',
+                m.mobile || '',
+                m.designation || '',
+                m.division || '',
+                m.department || '',
+                m.membershipType || 'None',
+                m.memberId || '',
+                m.role || 'member'
+              ].map(v => `"${String(v).replace(/"/g, '""')}"`).join(','))
+            ].join('\n')
+            
+            const blob = new Blob([csvData], { type: 'text/csv;charset=utf-8;' })
+            const link = document.createElement('a')
+            const url = URL.createObjectURL(blob)
+            link.setAttribute('href', url)
+            link.setAttribute('download', `members_${division || 'all'}_${new Date().toISOString().split('T')[0]}.csv`)
+            link.style.visibility = 'hidden'
+            document.body.appendChild(link)
+            link.click()
+            document.body.removeChild(link)
+          }}>
+            <span className="flex items-center gap-2">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+              Export CSV
+            </span>
+          </Button>
         </div>
       </motion.div>
 
