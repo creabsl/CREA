@@ -592,7 +592,7 @@ export function notifyStatsChanged(): void {
 
 // Admin: Users
 type UserDTO = { _id: string; name: string; email: string; role: 'admin' | 'member'; designation?: string; division?: string; department?: string; mobile?: string; membershipType?: 'Ordinary' | 'Lifetime' | 'None' }
-export type MemberUser = { id: string; name: string; email: string; role: 'admin' | 'member'; designation: string; division: Division | ''; department: string; mobile?: string; membershipType: 'Ordinary' | 'Lifetime' | 'None' }
+export type MemberUser = { id: string; name: string; email: string; role: 'admin' | 'member'; designation: string; division: Division | ''; department: string; mobile?: string; memberId?: string; membershipType: 'Ordinary' | 'Lifetime' | 'None'; isMember?: boolean }
 
 function toMemberUser(u: UserDTO): MemberUser {
   return {

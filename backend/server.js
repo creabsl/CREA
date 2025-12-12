@@ -31,15 +31,7 @@ const statsRoutes = require('./routes/statsRoutes');
 const mutualTransferRoutes = require('./routes/mutualTransferRoutes');
 const externalLinkRoutes = require('./routes/externalLinkRoutes');
 const bodyMemberRoutes = require('./routes/bodyMemberRoutes');
-
-let settingRoutes;
-try {
-	settingRoutes = require('./routes/settingRoutes');
-	console.log('✓ Setting routes loaded successfully');
-} catch (error) {
-	console.error('✗ Error loading setting routes:', error.message);
-	process.exit(1);
-}
+const settingRoutes = require('./routes/settingRoutes');
 
 app.use('/api/users', userRoutes);
 app.use('/api/auth', authRoutes);
@@ -55,7 +47,6 @@ app.use('/api/mutual-transfers', mutualTransferRoutes);
 app.use('/api/external-links', externalLinkRoutes);
 app.use('/api/body-members', bodyMemberRoutes);
 app.use('/api/settings', settingRoutes);
-console.log('✓ Settings route mounted at /api/settings');
 
 // Health check
 app.get('/health', (_req, res) => res.json({ status: 'ok' }));
@@ -88,12 +79,6 @@ const start = async () => {
 
 start();
 
-process.on('unhandledRejection', (reason, promise) => {
-	console.error('Unhandled promise rejection at:', promise);
-	console.error('Reason:', reason);
-});
-
-process.on('uncaughtException', (error) => {
-	console.error('Uncaught exception:', error);
-	process.exit(1);
+process.on('unhandledRejection', (reason) => {
+	console.error('Unhandled promise rejection:', reason);
 });

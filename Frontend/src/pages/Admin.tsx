@@ -28,17 +28,15 @@ export default function Admin() {
   const navigate = useNavigate()
 
   useEffect(() => {
-    getEvents().then(setEvents)
-    getManuals().then(setManuals)
-    getCirculars().then(setCirculars)
-  getForumTopics().then(setTopics)
-  getCourtCases().then(setCases)
-  getSuggestions().then(setSuggestions)
-    getSettings().then(setSettings).catch(()=>{})
-    // Preload members (all)
-    adminListUsers().then(setMembers).catch(()=>{})
-    // Preload mutual transfers (all including inactive)
-    getMutualTransfers({ includeInactive: true }).then(setTransfers).catch(()=>{})
+    getEvents().then(setEvents).catch(console.error)
+    getManuals().then(setManuals).catch(console.error)
+    getCirculars().then(setCirculars).catch(console.error)
+    getForumTopics().then(setTopics).catch(console.error)
+    getCourtCases().then(setCases).catch(console.error)
+    getSuggestions().then(setSuggestions).catch(console.error)
+    getSettings().then(setSettings).catch(console.error)
+    adminListUsers().then(setMembers).catch(console.error)
+    getMutualTransfers({ includeInactive: true }).then(setTransfers).catch(console.error)
   }, [])
 
   return (
@@ -709,8 +707,9 @@ function MembersAdmin({ data, onReload, onUpdate, division, onDivisionChange }: 
                 <th className="px-4 py-3 text-left font-semibold text-gray-700">Division</th>
                 <th className="px-4 py-3 text-left font-semibold text-gray-700">Department</th>
                 <th className="px-4 py-3 text-left font-semibold text-gray-700">Membership</th>
+                <th className="px-4 py-3 text-left font-semibold text-gray-700">Member ID</th>
                 <th className="px-4 py-3 text-left font-semibold text-gray-700">Role</th>
-                <th className="px-4 py-3 text-left font-semibold text-gray-700">Status</th>
+                <th className="px-4 py-3 text-left font-semibold text-gray-700">Actions</th>
               </tr>
             </thead>
           <tbody className="divide-y divide-gray-100">
@@ -740,6 +739,41 @@ function MembersAdmin({ data, onReload, onUpdate, division, onDivisionChange }: 
                     <select className="w-36 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/20" value={(e.membershipType ?? u.membershipType) as string} onChange={(ev)=> setEdit(u.id, { membershipType: ev.target.value as MemberUser['membershipType'] })}>
                       {['None','Ordinary','Lifetime'].map(m => <option key={m} value={m}>{m}</option>)}
                     </select>
+                  </td>
+                  <td className="px-4 py-3">
+                    {u.memberId ? (
+                      <span className="text-sm font-bold text-[var(--primary)]">{u.memberId}</span>
+                    ) : u.membershipType !== 'None' ? (
+                      <button 
+                        onClick={async () => {
+                          if (confirm(`Generate Member ID for ${u.name}?`)) {
+                            try {
+                              const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5001'}/api/users/${u.id}/generate-member-id`, {
+                                method: 'POST',
+                                headers: {
+                                  'Authorization': `Bearer ${localStorage.getItem('crea:token')}`,
+                                  'Content-Type': 'application/json'
+                                }
+                              })
+                              if (res.ok) {
+                                const data = await res.json()
+                                alert(`Member ID generated: ${data.memberId}`)
+                                onReload(division)
+                              } else {
+                                alert('Failed to generate Member ID')
+                              }
+                            } catch (err) {
+                              alert('Error: ' + (err as Error).message)
+                            }
+                          }
+                        }}
+                        className="text-xs px-2 py-1 bg-green-600 text-white rounded hover:bg-green-700"
+                      >
+                        Generate ID
+                      </button>
+                    ) : (
+                      <span className="text-xs text-gray-400">No membership</span>
+                    )}
                   </td>
                   <td className="px-4 py-3">
                     <select className="w-28 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/20" value={(e.role ?? u.role) as string} onChange={(ev)=> setEdit(u.id, { role: ev.target.value as 'admin'|'member' })}>

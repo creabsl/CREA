@@ -5,6 +5,17 @@ exports.submitMembership = async (req, res) => {
   try {
     const payload = req.body || {};
     
+    // Validate required fields before attempting to save
+    const requiredFields = ['name', 'email', 'mobile', 'designation', 'division', 'department', 'type'];
+    const missingFields = requiredFields.filter(field => !payload[field]);
+    
+    if (missingFields.length > 0) {
+      return res.status(400).json({ 
+        success: false, 
+        message: `Missing required fields: ${missingFields.join(', ')}` 
+      });
+    }
+    
     // Create new membership
     const membership = new Membership({
       ...payload,
@@ -25,11 +36,17 @@ exports.submitMembership = async (req, res) => {
       paymentStatus: membership.paymentStatus
     });
   } catch (err) {
-    console.error('Submit membership error:', err);
+    console.error('Submit membership error:', err.message || err);
     if (err.code === 11000) { // Duplicate key error
       return res.status(400).json({ 
         success: false, 
         message: 'Email already registered for membership' 
+      });
+    }
+    if (err.name === 'ValidationError') {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Validation error: ' + Object.keys(err.errors).join(', ') 
       });
     }
     return res.status(500).json({ success: false, message: 'Server error' });
