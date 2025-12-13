@@ -10,8 +10,14 @@ const toDto = (doc) => {
 
   return {
     id: plain._id?.toString?.() || plain.id,
-    post: plain.post,
+    // Legacy field for backward compatibility
+    post: plain.post || plain.currentDesignation,
+    // New structured fields
+    currentDesignation: plain.currentDesignation || plain.post,
+    currentDivision: plain.currentDivision || '',
+    currentDepartment: plain.currentDepartment || '',
     currentLocation: plain.currentLocation,
+    desiredDesignation: plain.desiredDesignation || plain.post,
     desiredLocation: plain.desiredLocation,
     availabilityDate: plain.availabilityDate ? new Date(plain.availabilityDate).toISOString() : null,
     notes: plain.notes || '',
@@ -42,12 +48,22 @@ exports.listTransfers = async (req, res) => {
     const filter = {};
 
     if (!includeInactive || includeInactive === 'false') filter.isActive = true;
-    if (post) filter.post = { $regex: escapeRegex(String(post).trim()), $options: 'i' };
+    
+    // Search in both legacy 'post' field and new designation fields for backward compatibility
+    if (post) {
+      const postRegex = { $regex: escapeRegex(String(post).trim()), $options: 'i' };
+      filter.$or = [
+        { post: postRegex },
+        { currentDesignation: postRegex },
+        { desiredDesignation: postRegex }
+      ];
+    }
+    
     if (current) filter.currentLocation = { $regex: escapeRegex(String(current).trim()), $options: 'i' };
     if (desired) filter.desiredLocation = { $regex: escapeRegex(String(desired).trim()), $options: 'i' };
 
     const transfers = await MutualTransfer.find(filter)
-      .populate('user', 'name email designation division role')
+      .populate('user', 'name email designation division department role')
       .sort({ isActive: -1, updatedAt: -1 });
 
     return res.json(transfers.map(toDto));
@@ -59,11 +75,29 @@ exports.listTransfers = async (req, res) => {
 
 exports.createTransfer = async (req, res) => {
   try {
-    const { post, currentLocation, desiredLocation, notes, contactPhone, contactEmail, contactName, availabilityDate } = req.body;
+    const { 
+      post, // legacy field
+      currentDesignation,
+      desiredDesignation,
+      currentLocation, 
+      desiredLocation, 
+      notes, 
+      contactPhone, 
+      contactEmail, 
+      contactName, 
+      availabilityDate 
+    } = req.body;
 
     if (!req.user) return res.status(401).json({ message: 'Not authorized' });
-    if (!post || !currentLocation || !desiredLocation) {
-      return res.status(400).json({ message: 'Post, current location, and desired location are required' });
+    
+    // Auto-populate current position from user profile
+    const currDesig = currentDesignation || req.user.designation || post;
+    const desDesig = desiredDesignation || post;
+    
+    if (!currDesig || !currentLocation || !desiredLocation || !desDesig) {
+      return res.status(400).json({ 
+        message: 'Current designation, desired designation, current location, and desired location are required' 
+      });
     }
 
     let availability;
@@ -77,8 +111,12 @@ exports.createTransfer = async (req, res) => {
 
     const record = await MutualTransfer.create({
       user: req.user._id,
-      post: String(post).trim(),
+      // Auto-populate current position from user profile
+      currentDesignation: String(currDesig).trim(),
+      currentDivision: req.user.division || '',
+      currentDepartment: req.user.department || '',
       currentLocation: String(currentLocation).trim(),
+      desiredDesignation: String(desDesig).trim(),
       desiredLocation: String(desiredLocation).trim(),
       notes: notes ? String(notes).trim() : undefined,
       contactPhone: contactPhone ? String(contactPhone).trim() : undefined,
@@ -86,9 +124,11 @@ exports.createTransfer = async (req, res) => {
       contactName: contactName ? String(contactName).trim() : req.user.name,
       availabilityDate: availability,
       isActive: true,
+      // Keep legacy field for backward compatibility
+      post: String(currDesig).trim(),
     });
 
-    const populated = await record.populate('user', 'name email designation division role');
+    const populated = await record.populate('user', 'name email designation division department role');
     return res.status(201).json(toDto(populated));
   } catch (error) {
     console.error('Create mutual transfer error:', error);

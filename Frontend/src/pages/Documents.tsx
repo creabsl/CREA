@@ -114,7 +114,8 @@ export default function Documents() {
             description: 'Manual document',
             date: '',
             type: 'manual',
-            fileUrl: getFullUrl(m.url)
+            fileUrl: getFullUrl(m.url),
+            category: m.category
           })),
           // Transform court cases
           ...courtCases.map((cc: CourtCase): Document => ({
@@ -203,7 +204,21 @@ export default function Documents() {
     }
 
     if (type === 'manual') {
-      return baseColumns
+      return [
+        ...baseColumns.slice(0, 1), // Title column
+        { 
+          key: 'category' as keyof Document,
+          header: 'Category', 
+          render: (row: Document) => row.category ? (
+            <span className="inline-flex px-2 py-1 text-xs font-medium bg-gray-200 text-gray-700 rounded-full">
+              {row.category.charAt(0).toUpperCase() + row.category.slice(1)}
+            </span>
+          ) : (
+            <span className="text-gray-400">General</span>
+          )
+        },
+        ...baseColumns.slice(1) // Date and File columns
+      ]
     }
 
     if (type === 'court-case') {

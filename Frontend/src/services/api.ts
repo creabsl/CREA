@@ -236,8 +236,12 @@ export async function deleteSuggestion(id: string): Promise<void> {
 type MutualTransferDTO = {
   id?: string
   _id?: string
-  post: string
+  post: string // Legacy field
+  currentDesignation?: string
+  currentDivision?: string
+  currentDepartment?: string
   currentLocation: string
+  desiredDesignation?: string
   desiredLocation: string
   availabilityDate?: string | null
   notes?: string
@@ -254,8 +258,12 @@ type MutualTransferDTO = {
 
 const toMutual = (dto: MutualTransferDTO): MutualTransfer => ({
   id: dto.id || dto._id || '',
-  post: dto.post,
+  post: dto.post || dto.currentDesignation || '', // Legacy field
+  currentDesignation: dto.currentDesignation || dto.post || '',
+  currentDivision: dto.currentDivision ?? '',
+  currentDepartment: dto.currentDepartment ?? '',
   currentLocation: dto.currentLocation,
+  desiredDesignation: dto.desiredDesignation || dto.post || '',
   desiredLocation: dto.desiredLocation,
   availabilityDate: dto.availabilityDate ?? null,
   notes: dto.notes ?? '',
@@ -287,7 +295,9 @@ export async function getMyMutualTransfers(): Promise<MutualTransfer[]> {
 }
 
 type MutualTransferPayload = {
-  post: string
+  post?: string // Legacy field for backward compatibility
+  currentDesignation?: string
+  desiredDesignation: string
   currentLocation: string
   desiredLocation: string
   notes?: string

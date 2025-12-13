@@ -56,6 +56,7 @@ const exploreLinks = [
   { label: "Body Details", to: "/body-details" },
   { label: "Suggestions", to: "/suggestions" },
   { label: "Mutual Transfers", to: "/mutual-transfers" },
+  { label: "Donations", to: "/donations" },
 ];
 
 

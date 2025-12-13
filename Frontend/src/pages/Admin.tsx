@@ -14,7 +14,7 @@ import { defaultTimelineStops, defaultPastEvents, type TimelineStop, type PastEv
 
 export default function Admin() {
   usePageTitle('CREA • Admin')
-  const [tab, setTab] = useState<'events'|'documents'|'forum'|'suggestions'|'members'|'settings'|'about'|'transfers'|'association-body'>('events')
+  const [tab, setTab] = useState<'events'|'documents'|'forum'|'suggestions'|'members'|'settings'|'about'|'transfers'|'association-body'|'donations'>('events')
   const [events, setEvents] = useState<EventItem[]>([])
   const [manuals, setManuals] = useState<Manual[]>([])
   const [circulars, setCirculars] = useState<Circular[]>([])
@@ -229,7 +229,7 @@ export default function Admin() {
 
       {/* Tab Navigation */}
       <div className="flex gap-2 flex-wrap">
-        {(['events','documents','forum','suggestions','members','settings','transfers','association-body'] as const).map(k => (
+        {(['events','documents','forum','suggestions','members','settings','transfers','association-body','donations'] as const).map(k => (
           <motion.button 
             key={k} 
             onClick={()=>setTab(k)} 
@@ -268,6 +268,7 @@ export default function Admin() {
   {tab==='transfers' && <MutualTransfersAdmin data={transfers} onChange={setTransfers} />}
   {tab==='about' && <AboutAdmin />}
   {tab==='association-body' && <AssociationBodyAdmin />}
+  {tab==='donations' && <DonationsAdmin />}
     </div>
   )
 }
@@ -1152,6 +1153,7 @@ function DocumentsAdmin({
   const [manualTitle, setManualTitle] = useState('')
   const [manualUrl, setManualUrl] = useState('')
   const [manualFile, setManualFile] = useState<File | null>(null)
+  const [manualCategory, setManualCategory] = useState<'technical' | 'social' | 'organizational' | 'general'>('general')
   const [editingManual, setEditingManual] = useState<Manual | null>(null)
 
   // Court case state
@@ -1173,6 +1175,7 @@ function DocumentsAdmin({
     setManualTitle('')
     setManualUrl('')
     setManualFile(null)
+    setManualCategory('general')
     setEditingManual(null)
   }
 
@@ -1196,6 +1199,7 @@ function DocumentsAdmin({
     setManualTitle(m.title)
     setManualUrl(m.url || '')
     setManualFile(null)
+    setManualCategory(m.category || 'general')
     setEditingManual(m)
   }
 
@@ -1235,7 +1239,8 @@ function DocumentsAdmin({
       const upd = await updateManual(editingManual.id, { 
         title: manualTitle, 
         url: manualUrl || undefined,
-        file: manualFile || undefined
+        file: manualFile || undefined,
+        category: manualCategory
       })
       onManualsChange(manuals.map(d => d.id === editingManual.id ? upd : d))
       resetManualForm()
@@ -1243,7 +1248,8 @@ function DocumentsAdmin({
       const m = await createManual({ 
         title: manualTitle, 
         url: manualUrl || undefined, 
-        file: manualFile || undefined 
+        file: manualFile || undefined,
+        category: manualCategory
       })
       onManualsChange([...manuals, m])
       resetManualForm()
@@ -1505,6 +1511,19 @@ function DocumentsAdmin({
             </h3>
             <div className="space-y-4">
               <Input label="Title" value={manualTitle} onChange={(e) => setManualTitle(e.target.value)} />
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Category</label>
+                <select
+                  value={manualCategory}
+                  onChange={(e) => setManualCategory(e.target.value as 'technical' | 'social' | 'organizational' | 'general')}
+                  className="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-[var(--primary)] focus:ring-1 focus:ring-[var(--primary)]"
+                >
+                  <option value="general">General</option>
+                  <option value="technical">Technical</option>
+                  <option value="social">Social</option>
+                  <option value="organizational">Organizational</option>
+                </select>
+              </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <Input label="URL (optional)" value={manualUrl} onChange={(e) => setManualUrl(e.target.value)} />
                 <div>
@@ -1590,7 +1609,14 @@ function DocumentsAdmin({
                     />
                   )}
                   <div className="flex-1">
-                    <div className="font-semibold text-gray-800">{m.title}</div>
+                    <div className="flex items-center gap-2">
+                      <div className="font-semibold text-gray-800">{m.title}</div>
+                      {m.category && (
+                        <span className="text-xs px-2 py-0.5 bg-gray-200 text-gray-700 rounded-full">
+                          {m.category.charAt(0).toUpperCase() + m.category.slice(1)}
+                        </span>
+                      )}
+                    </div>
                     {m.url && <div className="text-sm text-[var(--primary)] mt-1"><a className="underline hover:text-[var(--accent)]" href={m.url} target="_blank" rel="noreferrer">View Document →</a></div>}
                   </div>
                   <div className="flex gap-2">
@@ -3505,5 +3531,348 @@ function ForumApprovalAdmin({
         </div>
       </motion.div>
     </div>
+  )
+}
+
+function DonationsAdmin() {
+  const [donations, setDonations] = useState<import('../types').Donation[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    fetchDonations()
+  }, [])
+
+  const fetchDonations = async () => {
+    try {
+      setLoading(true)
+      const token = localStorage.getItem('token')
+      const response = await fetch('http://localhost:5001/api/donations', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      })
+      const data = await response.json()
+      if (data.success) {
+        setDonations(data.data)
+      }
+    } catch (error) {
+      console.error('Error fetching donations:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const exportToCSV = () => {
+    const headers = [
+      'Date',
+      'Name',
+      'Email',
+      'Mobile',
+      'Amount',
+      'Purpose',
+      'Anonymous',
+      'Employee',
+      'Employee ID',
+      'Designation',
+      'Division',
+      'Department',
+      'Address',
+      'City',
+      'State',
+      'Pincode',
+      'Message',
+      'Payment Status'
+    ]
+
+    const rows = donations.map(d => [
+      new Date(d.createdAt).toLocaleDateString(),
+      d.isAnonymous ? 'Anonymous' : d.fullName,
+      d.isAnonymous ? '' : d.email,
+      d.isAnonymous ? '' : d.mobile,
+      d.amount,
+      d.purpose,
+      d.isAnonymous ? 'Yes' : 'No',
+      d.isEmployee ? 'Yes' : 'No',
+      d.employeeId || '',
+      d.designation || '',
+      d.division || '',
+      d.department || '',
+      d.address || '',
+      d.city || '',
+      d.state || '',
+      d.pincode || '',
+      d.message || '',
+      d.paymentStatus
+    ])
+
+    const csvContent = [
+      headers.join(','),
+      ...rows.map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(','))
+    ].join('\n')
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+    const link = document.createElement('a')
+    const url = URL.createObjectURL(blob)
+    link.setAttribute('href', url)
+    link.setAttribute('download', `donations_${new Date().toISOString().split('T')[0]}.csv`)
+    link.style.visibility = 'hidden'
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+  }
+
+  const exportToExcel = () => {
+    // Create HTML table for Excel
+    const headers = [
+      'Date',
+      'Name',
+      'Email',
+      'Mobile',
+      'Amount',
+      'Purpose',
+      'Anonymous',
+      'Employee',
+      'Employee ID',
+      'Designation',
+      'Division',
+      'Department',
+      'Address',
+      'City',
+      'State',
+      'Pincode',
+      'Message',
+      'Payment Status'
+    ]
+
+    const rows = donations.map(d => [
+      new Date(d.createdAt).toLocaleDateString(),
+      d.isAnonymous ? 'Anonymous' : d.fullName,
+      d.isAnonymous ? '' : d.email,
+      d.isAnonymous ? '' : d.mobile,
+      d.amount,
+      d.purpose,
+      d.isAnonymous ? 'Yes' : 'No',
+      d.isEmployee ? 'Yes' : 'No',
+      d.employeeId || '',
+      d.designation || '',
+      d.division || '',
+      d.department || '',
+      d.address || '',
+      d.city || '',
+      d.state || '',
+      d.pincode || '',
+      d.message || '',
+      d.paymentStatus
+    ])
+
+    const htmlTable = `
+      <table>
+        <thead>
+          <tr>${headers.map(h => `<th>${h}</th>`).join('')}</tr>
+        </thead>
+        <tbody>
+          ${rows.map(row => `<tr>${row.map(cell => `<td>${cell}</td>`).join('')}</tr>`).join('')}
+        </tbody>
+      </table>
+    `
+
+    const blob = new Blob([htmlTable], { type: 'application/vnd.ms-excel' })
+    const link = document.createElement('a')
+    const url = URL.createObjectURL(blob)
+    link.setAttribute('href', url)
+    link.setAttribute('download', `donations_${new Date().toISOString().split('T')[0]}.xls`)
+    link.style.visibility = 'hidden'
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+  }
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-IN', {
+      style: 'currency',
+      currency: 'INR',
+      maximumFractionDigits: 0
+    }).format(amount)
+  }
+
+  const totalDonations = donations.reduce((sum, d) => sum + d.amount, 0)
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Spinner />
+      </div>
+    )
+  }
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      className="space-y-6"
+    >
+      {/* Summary Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="bg-gradient-to-br from-[var(--primary)] to-[#19417d] rounded-xl p-6 text-white shadow-lg">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-white/90 text-sm font-medium">Total Donations</span>
+            <svg className="w-8 h-8 text-white/80" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+          <div className="text-3xl font-bold !text-white" style={{ color: 'white' }}>{formatCurrency(totalDonations)}</div>
+          <div className="text-white/80 text-sm mt-1">{donations.length} donation{donations.length !== 1 ? 's' : ''}</div>
+        </div>
+
+        <div className="bg-gradient-to-br from-[var(--accent)] to-yellow-500 rounded-xl p-6 text-white shadow-lg">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-white/90 text-sm font-medium">Anonymous Donors</span>
+            <svg className="w-8 h-8 text-white/80" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+            </svg>
+          </div>
+          <div className="text-3xl font-bold !text-white" style={{ color: 'white' }}>{donations.filter(d => d.isAnonymous).length}</div>
+          <div className="text-white/80 text-sm mt-1">out of {donations.length} total</div>
+        </div>
+
+        <div className="bg-gradient-to-br from-[var(--secondary)] to-[#2a5f8f] rounded-xl p-6 text-white shadow-lg">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-white/90 text-sm font-medium">Employee Donations</span>
+            <svg className="w-8 h-8 text-white/80" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+            </svg>
+          </div>
+          <div className="text-3xl font-bold !text-white" style={{ color: 'white' }}>{donations.filter(d => d.isEmployee).length}</div>
+          <div className="text-white/80 text-sm mt-1">from organization members</div>
+        </div>
+      </div>
+
+      {/* Export Buttons */}
+      <div className="flex gap-3">
+        <Button
+          onClick={exportToCSV}
+          variant="primary"
+          className="flex items-center gap-2"
+        >
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+          </svg>
+          Export to CSV
+        </Button>
+        <Button
+          onClick={exportToExcel}
+          variant="secondary"
+          className="flex items-center gap-2"
+        >
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+          </svg>
+          Export to Excel
+        </Button>
+      </div>
+
+      {/* Donations Table */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead className="bg-gray-50 border-b border-gray-200">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Donor</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contact</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Purpose</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {donations.length === 0 ? (
+                <tr>
+                  <td colSpan={7} className="px-6 py-12 text-center text-gray-500">
+                    No donations yet
+                  </td>
+                </tr>
+              ) : (
+                donations.map((donation) => (
+                  <tr key={donation._id} className="hover:bg-gray-50 transition-colors">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {new Date(donation.createdAt).toLocaleDateString('en-IN', {
+                        day: '2-digit',
+                        month: 'short',
+                        year: 'numeric'
+                      })}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center gap-2">
+                        <div>
+                          <div className="text-sm font-medium text-gray-900">
+                            {donation.isAnonymous ? 'Anonymous Donor' : donation.fullName}
+                          </div>
+                          {donation.isEmployee && donation.designation && (
+                            <div className="text-xs text-gray-500">{donation.designation}</div>
+                          )}
+                        </div>
+                        {donation.isAnonymous && (
+                          <span className="px-2 py-0.5 bg-gray-100 text-gray-600 text-xs rounded-full font-medium">
+                            Anonymous
+                          </span>
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      {donation.isAnonymous ? (
+                        <span className="text-sm text-gray-400">Hidden</span>
+                      ) : (
+                        <div className="text-sm text-gray-900">
+                          <div>{donation.email}</div>
+                          <div className="text-gray-500">{donation.mobile}</div>
+                        </div>
+                      )}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm font-bold text-[var(--accent)]">
+                        {formatCurrency(donation.amount)}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className={`px-2 py-1 text-xs rounded-full font-medium ${
+                        donation.purpose === 'education' ? 'bg-[var(--primary)]/10 text-[var(--primary)]' :
+                        donation.purpose === 'welfare' ? 'bg-[var(--secondary)]/10 text-[var(--secondary)]' :
+                        donation.purpose === 'infrastructure' ? 'bg-[var(--accent)]/10 text-[var(--accent)]' :
+                        'bg-gray-100 text-gray-700'
+                      }`}>
+                        {donation.purpose.charAt(0).toUpperCase() + donation.purpose.slice(1)}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex flex-col gap-1">
+                        <span className={`px-2 py-1 text-xs rounded-full font-medium inline-block w-fit ${
+                          donation.isEmployee ? 'bg-[var(--primary)]/10 text-[var(--primary)]' : 'bg-gray-100 text-gray-600'
+                        }`}>
+                          {donation.isEmployee ? 'Employee' : 'Public'}
+                        </span>
+                        {donation.isEmployee && donation.division && (
+                          <span className="text-xs text-gray-500">{donation.division}</span>
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className={`px-2 py-1 text-xs rounded-full font-medium ${
+                        donation.paymentStatus === 'completed' ? 'bg-green-100 text-green-700' :
+                        donation.paymentStatus === 'failed' ? 'bg-red-100 text-red-700' :
+                        'bg-yellow-100 text-yellow-700'
+                      }`}>
+                        {donation.paymentStatus.charAt(0).toUpperCase() + donation.paymentStatus.slice(1)}
+                      </span>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </motion.div>
   )
 }

@@ -6,6 +6,11 @@ const manualSchema = new mongoose.Schema(
     fileName: { type: String },
     mimeType: { type: String },
     size: { type: Number },
+    category: { 
+      type: String, 
+      enum: ['technical', 'social', 'organizational', 'general'], 
+      default: 'general' 
+    },
   },
   { timestamps: true }
 );

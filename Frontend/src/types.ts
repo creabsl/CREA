@@ -32,7 +32,8 @@ export type CourtCase = {
   subject: string
 }
 
-export type Manual = { id: string; title: string; url?: string }
+export type ManualCategory = 'technical' | 'social' | 'organizational' | 'general'
+export type Manual = { id: string; title: string; url?: string; category?: ManualCategory }
 
 export type BodyMember = { id: string; name: string; designation: string; photoUrl: string; division: Division }
 
@@ -52,8 +53,12 @@ export type Suggestion = {
 
 export type MutualTransfer = {
   id: string
-  post: string
+  post: string // Legacy field for backward compatibility
+  currentDesignation: string
+  currentDivision: string
+  currentDepartment: string
   currentLocation: string
+  desiredDesignation: string
   desiredLocation: string
   availabilityDate: string | null
   notes: string
@@ -132,4 +137,31 @@ export type ExternalLink = {
   description?: string
   order: number
   isActive: boolean
+}
+
+export type DonationPurpose = 'general' | 'education' | 'welfare' | 'infrastructure'
+
+export type Donation = {
+  _id: string
+  fullName: string
+  email: string
+  mobile: string
+  isEmployee: boolean
+  employeeId?: string
+  designation?: string
+  division?: string
+  department?: string
+  amount: number
+  purpose: DonationPurpose
+  isAnonymous: boolean
+  address?: string
+  city?: string
+  state?: string
+  pincode?: string
+  message?: string
+  paymentStatus: 'pending' | 'completed' | 'failed'
+  paymentReference?: string
+  paymentDate?: string
+  createdAt: string
+  updatedAt: string
 }

@@ -24,6 +24,7 @@ import MutualTransfers from './pages/MutualTransfers'
 import About from './pages/About'
 import ForumModeration from './pages/ForumModeration'
 import Notifications from './pages/Notifications'
+import Donations from './pages/Donations'
 
 function AnimatedRoutes() {
   const location = useLocation()
@@ -49,6 +50,7 @@ function AnimatedRoutes() {
         <Route path="/mutual-transfers" element={<RequireAuth><PageTransition><MutualTransfers /></PageTransition></RequireAuth>} />
         <Route path="/external-links" element={<RequireAuth><PageTransition><ExternalLinks /></PageTransition></RequireAuth>} />
         <Route path="/notifications" element={<RequireAuth><PageTransition><Notifications /></PageTransition></RequireAuth>} />
+        <Route path="/donations" element={<PageTransition><Donations /></PageTransition>} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </AnimatePresence>

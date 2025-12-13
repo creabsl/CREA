@@ -7,6 +7,7 @@ import { usePageTitle } from '../hooks/usePageTitle'
 import { DIVISIONS } from '../types'
 import type { MembershipFormData } from '../services/api'
 import FileUploader from '../components/FileUploader'
+import { STATES, getCitiesForState } from '../data/statesAndCities'
 
 type Form = MembershipFormData
 
@@ -127,8 +128,8 @@ export default function Membership() {
     const dobValid = (form.personalDetails.dateOfBirth || '').trim().length > 0
     const genderValid = (form.personalDetails.gender || '').trim().length > 0
     const addressValid = (form.personalDetails.address || '').trim().length >= 5
-    const cityValid = (form.personalDetails.city || '').trim().length >= 2 && /^[a-zA-Z\s]+$/.test(form.personalDetails.city || '')
-    const stateValid = (form.personalDetails.state || '').trim().length >= 2 && /^[a-zA-Z\s]+$/.test(form.personalDetails.state || '')
+    const stateValid = (form.personalDetails.state || '').trim().length > 0
+    const cityValid = (form.personalDetails.city || '').trim().length > 0
     const pincodeValid = /^[1-9][0-9]{5}$/.test(form.personalDetails.pincode || '')
 
     const isValid = dobValid && genderValid && addressValid && cityValid && stateValid && pincodeValid
@@ -632,36 +633,42 @@ export default function Membership() {
                   maxLength={200}
                   title="Address must be at least 5 characters"
                 />
-                <Input 
-                  label="City *" 
-                  value={form.personalDetails.city || ''} 
-                  onChange={(e)=>onPersonalDetailsChange('city', e.target.value)}
-                  onKeyPress={(e) => {
-                    if (!/^[a-zA-Z\s]$/.test(e.key)) {
-                      e.preventDefault()
-                    }
-                  }}
-                  required
-                  minLength={2}
-                  maxLength={50}
-                  pattern="^[a-zA-Z\s]+$"
-                  title="City must contain only letters and spaces (min 2 characters)"
-                />
-                <Input 
-                  label="State *" 
-                  value={form.personalDetails.state || ''} 
-                  onChange={(e)=>onPersonalDetailsChange('state', e.target.value)}
-                  onKeyPress={(e) => {
-                    if (!/^[a-zA-Z\s]$/.test(e.key)) {
-                      e.preventDefault()
-                    }
-                  }}
-                  required
-                  minLength={2}
-                  maxLength={50}
-                  pattern="^[a-zA-Z\s]+$"
-                  title="State must contain only letters and spaces (min 2 characters)"
-                />
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">State *</label>
+                  <select
+                    className="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-[var(--primary)]"
+                    value={form.personalDetails.state || ''}
+                    onChange={(e)=>{
+                      onPersonalDetailsChange('state', e.target.value)
+                      // Reset city when state changes
+                      onPersonalDetailsChange('city', '')
+                    }}
+                    required
+                  >
+                    <option value="">Select state...</option>
+                    {STATES.map((state) => (
+                      <option key={state} value={state}>{state}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">City *</label>
+                  <select
+                    className="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-[var(--primary)] disabled:bg-gray-100 disabled:cursor-not-allowed"
+                    value={form.personalDetails.city || ''}
+                    onChange={(e)=>onPersonalDetailsChange('city', e.target.value)}
+                    disabled={!form.personalDetails.state}
+                    required
+                  >
+                    <option value="">{!form.personalDetails.state ? 'Select state first...' : 'Select city...'}</option>
+                    {form.personalDetails.state && getCitiesForState(form.personalDetails.state).map((city) => (
+                      <option key={city} value={city}>{city}</option>
+                    ))}
+                  </select>
+                  {!form.personalDetails.state && (
+                    <p className="text-xs text-gray-500 mt-1">Please select a state first</p>
+                  )}
+                </div>
                 <Input 
                   label="PIN Code *" 
                   value={form.personalDetails.pincode || ''} 

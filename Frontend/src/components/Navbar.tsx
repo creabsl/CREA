@@ -100,6 +100,7 @@ export default function Navbar() {
               { to: '/suggestions', label: 'Suggestions' },
               { to: '/external-links', label: 'External Links' },
               { to: '/body-details', label: 'Association Body' },
+              { to: '/donations', label: 'Donations' },
             ]} />
             
             {/* --- AUTH LOGIC IS UNTOUCHED --- */}
@@ -187,6 +188,7 @@ export default function Navbar() {
               <NavLink to="/suggestions" className={navLinkClass} onClick={()=>setOpen(false)}>Suggestions</NavLink>
               <NavLink to="/external-links" className={navLinkClass} onClick={()=>setOpen(false)}>External Links</NavLink>
               <NavLink to="/body-details" className={navLinkClass} onClick={()=>setOpen(false)}>Association Body</NavLink>
+              <NavLink to="/donations" className={navLinkClass} onClick={()=>setOpen(false)}>Donations</NavLink>
               
               {!user ? (
                 <NavLink to="/login" className={navLinkClass} onClick={()=>setOpen(false)}>Login</NavLink>

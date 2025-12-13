@@ -9,7 +9,11 @@ import { createMutualTransfer, getMutualTransfers, getMyMutualTransfers, updateM
 type Listing = {
   id: string
   post: string
+  currentDesignation?: string
+  currentDivision?: string
+  currentDepartment?: string
   currentLocation: string
+  desiredDesignation?: string
   desiredLocation: string
   division?: string
   availabilityDate?: string | null
@@ -34,7 +38,7 @@ export default function MutualTransfers() {
   // New Request form
   const [showForm, setShowForm] = useState(false)
   const [form, setForm] = useState({
-    post: '',
+    desiredDesignation: '',
     currentLocation: '',
     desiredLocation: '',
     availabilityDate: '',
@@ -44,14 +48,14 @@ export default function MutualTransfers() {
     contactPhone: ''
   })
   const canSubmit = useMemo(() => {
-    const postOk = form.post.trim().length >= 3 && form.post.trim().length <= 80
+    const desigOk = form.desiredDesignation.trim().length >= 3 && form.desiredDesignation.trim().length <= 80
     const currOk = !!form.currentLocation.trim()
     const desOk = !!form.desiredLocation.trim()
     const emailOk = !form.contactEmail || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.contactEmail)
     const phoneOk = !form.contactPhone || /^\+?\d[\d\s-]{7,}$/.test(form.contactPhone)
     const dateOk = !form.availabilityDate || new Date(form.availabilityDate).setHours(0,0,0,0) >= new Date().setHours(0,0,0,0)
     const notesOk = form.notes.length <= 500
-    return postOk && currOk && desOk && emailOk && phoneOk && dateOk && notesOk
+    return desigOk && currOk && desOk && emailOk && phoneOk && dateOk && notesOk
   }, [form])
 
   useEffect(() => {
@@ -73,7 +77,11 @@ export default function MutualTransfers() {
       const mapped: Listing[] = list.map(l => ({
         id: l.id,
         post: l.post,
+        currentDesignation: l.currentDesignation,
+        currentDivision: l.currentDivision,
+        currentDepartment: l.currentDepartment,
         currentLocation: l.currentLocation,
+        desiredDesignation: l.desiredDesignation,
         desiredLocation: l.desiredLocation,
         division: l.ownerDivision,
         availabilityDate: l.availabilityDate || null,
@@ -100,7 +108,11 @@ export default function MutualTransfers() {
       setMyListings(mine.map(l => ({
         id: l.id,
         post: l.post,
+        currentDesignation: l.currentDesignation,
+        currentDivision: l.currentDivision,
+        currentDepartment: l.currentDepartment,
         currentLocation: l.currentLocation,
+        desiredDesignation: l.desiredDesignation,
         desiredLocation: l.desiredLocation,
         division: l.ownerDivision,
         availabilityDate: l.availabilityDate || null,
@@ -293,7 +305,7 @@ export default function MutualTransfers() {
                 if (!canSubmit) return alert('Please fix validation errors and try again.')
                 try {
                   const payload = {
-                    post: form.post.trim(),
+                    desiredDesignation: form.desiredDesignation.trim(),
                     currentLocation: form.currentLocation.trim(),
                     desiredLocation: form.desiredLocation.trim(),
                     availabilityDate: form.availabilityDate ? form.availabilityDate : null,
@@ -303,7 +315,7 @@ export default function MutualTransfers() {
                     contactPhone: form.contactPhone.trim() || undefined,
                   }
                   await createMutualTransfer(payload)
-                  setForm({ post:'', currentLocation:'', desiredLocation:'', availabilityDate:'', notes:'', contactName: user?.name || '', contactEmail: user?.email || '', contactPhone: user?.mobile || '' })
+                  setForm({ desiredDesignation:'', currentLocation:'', desiredLocation:'', availabilityDate:'', notes:'', contactName: user?.name || '', contactEmail: user?.email || '', contactPhone: user?.mobile || '' })
                   alert('Transfer request created successfully!')
                   await refreshListings()
                   await refreshMyListings()
@@ -311,29 +323,121 @@ export default function MutualTransfers() {
                   alert((e as Error).message || 'Failed to create transfer request')
                 }
               }}
-              className="space-y-4"
+              className="space-y-5"
             >
-              <div className="grid gap-4 md:grid-cols-2">
-                <Input label="Post" value={form.post} onChange={(e)=> setForm({ ...form, post: e.target.value })} placeholder="e.g. Junior Engineer" />
-                <Input label="Availability Date" type="date" value={form.availabilityDate} onChange={(e)=> setForm({ ...form, availabilityDate: e.target.value })} />
+              {/* Current Position Info - Read-only display */}
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <div className="flex items-center gap-2 mb-3">
+                  <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <h4 className="text-sm font-bold text-blue-900">Your Current Position (from profile)</h4>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
+                  <div>
+                    <span className="text-blue-700 font-medium">Designation:</span>
+                    <span className="ml-2 text-blue-900 font-semibold">{user?.designation || 'Not set'}</span>
+                  </div>
+                  <div>
+                    <span className="text-blue-700 font-medium">Division:</span>
+                    <span className="ml-2 text-blue-900 font-semibold">{user?.division || 'Not set'}</span>
+                  </div>
+                  <div>
+                    <span className="text-blue-700 font-medium">Department:</span>
+                    <span className="ml-2 text-blue-900 font-semibold">{user?.department || 'Not set'}</span>
+                  </div>
+                </div>
+                {(!user?.designation || !user?.division) && (
+                  <p className="text-xs text-blue-700 mt-2 flex items-center gap-1">
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                    Please update your profile with complete position details for better matching
+                  </p>
+                )}
               </div>
-              <div className="grid gap-4 md:grid-cols-2">
-                <Input label="Current Location" value={form.currentLocation} onChange={(e)=> setForm({ ...form, currentLocation: e.target.value })} placeholder="e.g. Mumbai Central" />
-                <Input label="Desired Location" value={form.desiredLocation} onChange={(e)=> setForm({ ...form, desiredLocation: e.target.value })} placeholder="e.g. Pune Division" />
+
+              {/* Transfer Request Details */}
+              <div className="space-y-4">
+                <div className="border-l-4 border-[var(--primary)] pl-4">
+                  <h4 className="text-sm font-bold text-[var(--primary)] mb-1">Transfer Request Details</h4>
+                  <p className="text-xs text-gray-600">Specify the position and locations for mutual transfer</p>
+                </div>
+                
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div>
+                    <Input 
+                      label="Desired Position/Designation *" 
+                      value={form.desiredDesignation} 
+                      onChange={(e)=> setForm({ ...form, desiredDesignation: e.target.value })} 
+                      placeholder="e.g. Junior Engineer, Senior Clerk" 
+                    />
+                    <p className="text-xs text-gray-500 mt-1">The position you want to transfer to</p>
+                  </div>
+                  <Input 
+                    label="Availability Date" 
+                    type="date" 
+                    value={form.availabilityDate} 
+                    onChange={(e)=> setForm({ ...form, availabilityDate: e.target.value })} 
+                  />
+                </div>
+                
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div>
+                    <Input 
+                      label="Current Location *" 
+                      value={form.currentLocation} 
+                      onChange={(e)=> setForm({ ...form, currentLocation: e.target.value })} 
+                      placeholder="e.g. Mumbai Central, Kalyan" 
+                    />
+                    <p className="text-xs text-gray-500 mt-1">Your current work location</p>
+                  </div>
+                  <div>
+                    <Input 
+                      label="Desired Location *" 
+                      value={form.desiredLocation} 
+                      onChange={(e)=> setForm({ ...form, desiredLocation: e.target.value })} 
+                      placeholder="e.g. Pune Division, Nashik" 
+                    />
+                    <p className="text-xs text-gray-500 mt-1">Where you want to transfer</p>
+                  </div>
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Additional Notes (optional)</label>
+                  <textarea 
+                    className="w-full rounded-md border border-gray-300 p-2 focus:outline-none focus:ring-2 focus:ring-[var(--primary)]" 
+                    rows={3} 
+                    value={form.notes} 
+                    onChange={(e)=> setForm({ ...form, notes: e.target.value })} 
+                    placeholder="Any special requirements, preferences, or additional information (max 500 chars)" 
+                  />
+                  <div className="text-xs text-gray-500 mt-1">{form.notes.length}/500</div>
+                </div>
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Notes (optional)</label>
-                <textarea className="w-full rounded-md border border-gray-300 p-2 focus:outline-none focus:ring-2 focus:ring-[var(--primary)]" rows={3} value={form.notes} onChange={(e)=> setForm({ ...form, notes: e.target.value })} placeholder="Additional info (max 500 chars)" />
-                <div className="text-xs text-gray-500 mt-1">{form.notes.length}/500</div>
+
+              {/* Contact Information */}
+              <div className="space-y-4">
+                <div className="border-l-4 border-green-500 pl-4">
+                  <h4 className="text-sm font-bold text-green-700 mb-1">Contact Information</h4>
+                  <p className="text-xs text-gray-600">How others can reach you (auto-filled from your profile)</p>
+                </div>
+                
+                <div className="grid gap-4 md:grid-cols-3">
+                  <Input label="Contact Name" value={form.contactName} onChange={(e)=> setForm({ ...form, contactName: e.target.value })} />
+                  <Input label="Contact Email" type="email" value={form.contactEmail} onChange={(e)=> setForm({ ...form, contactEmail: e.target.value })} />
+                  <Input label="Contact Phone" value={form.contactPhone} onChange={(e)=> setForm({ ...form, contactPhone: e.target.value })} placeholder="e.g. +91 98765 43210" />
+                </div>
               </div>
-              <div className="grid gap-4 md:grid-cols-3">
-                <Input label="Contact Name" value={form.contactName} onChange={(e)=> setForm({ ...form, contactName: e.target.value })} />
-                <Input label="Contact Email" type="email" value={form.contactEmail} onChange={(e)=> setForm({ ...form, contactEmail: e.target.value })} />
-                <Input label="Contact Phone" value={form.contactPhone} onChange={(e)=> setForm({ ...form, contactPhone: e.target.value })} placeholder="e.g. +91 98765 43210" />
-              </div>
-              <div className="flex items-center gap-2">
-                <Button type="submit" disabled={!canSubmit}>Create Request</Button>
-                {!canSubmit && <span className="text-xs text-red-600">Please fill required fields correctly.</span>}
+
+              <div className="flex items-center gap-2 pt-2">
+                <Button type="submit" disabled={!canSubmit}>
+                  <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
+                  </svg>
+                  Create Transfer Request
+                </Button>
+                {!canSubmit && <span className="text-xs text-red-600">Please fill all required fields (*) correctly.</span>}
               </div>
             </form>
           )}
@@ -364,9 +468,21 @@ export default function MutualTransfers() {
               {myListings.map(item => (
                 <div key={item.id} className="border border-gray-200 rounded-lg p-4 flex flex-wrap items-center justify-between gap-3">
                   <div className="flex-1 min-w-[200px]">
-                    <div className="text-sm font-semibold text-[var(--primary)]">{item.post}</div>
-                    <div className="text-xs text-gray-600">{item.currentLocation} → {item.desiredLocation}</div>
-                    <div className="mt-1">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-xs font-semibold text-gray-500 uppercase">Current:</span>
+                      <span className="text-sm font-semibold text-gray-700">{item.currentDesignation || item.post}</span>
+                    </div>
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="text-xs font-semibold text-[var(--primary)] uppercase">Desired:</span>
+                      <span className="text-sm font-bold text-[var(--primary)]">{item.desiredDesignation || item.post}</span>
+                    </div>
+                    <div className="text-xs text-gray-600 flex items-center gap-2">
+                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                      </svg>
+                      {item.currentLocation} → {item.desiredLocation}
+                    </div>
+                    <div className="mt-2">
                       {item.isActive ? (
                         <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-green-100 text-green-700 text-xs font-semibold rounded-full">
                           <span className="w-1.5 h-1.5 bg-green-500 rounded-full"></span>
@@ -464,13 +580,20 @@ export default function MutualTransfers() {
                   <div className="flex-1 min-w-[300px]">
                     <div className="flex items-start gap-3 mb-4">
                       <div className="w-12 h-12 bg-gradient-to-br from-[var(--primary)] to-[#1a4d8f] rounded-lg flex items-center justify-center text-white font-bold shadow-md">
-                        {listing.post.substring(0, 2).toUpperCase()}
+                        {(listing.currentDesignation || listing.post).substring(0, 2).toUpperCase()}
                       </div>
                       <div className="flex-1">
-                        <h4 className="text-lg font-bold text-[var(--primary)] mb-1">{listing.post}</h4>
-                        {listing.division && (
-                          <span className="inline-block px-2.5 py-0.5 bg-[var(--primary)]/10 text-[var(--primary)] text-xs font-semibold rounded-full">
-                            {listing.division} Division
+                        <div className="mb-2">
+                          <div className="text-xs text-gray-500 font-medium mb-0.5">Current Position:</div>
+                          <h4 className="text-base font-bold text-gray-700">{listing.currentDesignation || listing.post}</h4>
+                        </div>
+                        <div>
+                          <div className="text-xs text-[var(--primary)] font-medium mb-0.5">Seeking Position:</div>
+                          <h4 className="text-lg font-bold text-[var(--primary)]">{listing.desiredDesignation || listing.post}</h4>
+                        </div>
+                        {(listing.currentDivision || listing.division) && (
+                          <span className="inline-block mt-2 px-2.5 py-0.5 bg-[var(--primary)]/10 text-[var(--primary)] text-xs font-semibold rounded-full">
+                            {listing.currentDivision || listing.division} Division
                           </span>
                         )}
                       </div>

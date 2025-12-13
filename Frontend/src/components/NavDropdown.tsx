@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { TWEEN } from '../animations'
@@ -8,23 +8,16 @@ type Item = { to: string; label: string }
 
 export default function NavDropdown({ label, items }: { label: string; items: Item[] }) {
 	const [open, setOpen] = useState(false)
-	const ref = useRef<HTMLDivElement>(null)
-
-	useEffect(() => {
-		function onDoc(e: MouseEvent) {
-			if (!ref.current) return
-			if (!ref.current.contains(e.target as Node)) setOpen(false)
-		}
-		document.addEventListener('click', onDoc)
-		return () => document.removeEventListener('click', onDoc)
-	}, [])
 
 	return (
-		<div className="relative" ref={ref}>
+		<div 
+			className="relative" 
+			onMouseEnter={() => setOpen(true)}
+			onMouseLeave={() => setOpen(false)}
+		>
 			<button
 				type="button"
-				className="px-3 py-2 rounded-md text-sm font-medium text-[var(--primary)] hover:bg-gray-50 no-underline inline-flex items-center gap-1"
-				onClick={() => setOpen((o) => !o)}
+				className="px-3 py-2 rounded-md text-sm font-medium text-[var(--primary)] hover:bg-[var(--primary)]/10 hover:text-[var(--primary)] transition-colors no-underline inline-flex items-center gap-1"
 				aria-haspopup="menu"
 				aria-expanded={open}
 			>
@@ -42,7 +35,7 @@ export default function NavDropdown({ label, items }: { label: string; items: It
 			<AnimatePresence>
 				{open && (
 					<motion.div
-						className="absolute right-0 mt-2 w-56 rounded-md border bg-white shadow-md py-1 z-50"
+						className="absolute right-0 mt-2 w-56 rounded-lg border border-gray-200 bg-white shadow-lg py-1 z-50"
 						initial={{ opacity: 0, scale: 0.95, y: -8 }}
 						animate={{ opacity: 1, scale: 1, y: 0 }}
 						exit={{ opacity: 0, scale: 0.95, y: -8 }}
@@ -53,8 +46,7 @@ export default function NavDropdown({ label, items }: { label: string; items: It
 							<Link
 								key={it.to}
 								to={it.to}
-								onClick={() => setOpen(false)}
-								className="block px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 no-underline"
+								className="block px-4 py-2.5 text-sm text-[var(--primary)] hover:bg-[var(--primary)]/10 hover:text-[var(--primary)] font-medium transition-colors no-underline"
 								role="menuitem"
 							>
 								{it.label}

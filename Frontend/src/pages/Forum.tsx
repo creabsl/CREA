@@ -414,13 +414,13 @@ export default function Forum() {
                   <svg className="w-5 h-5 text-[var(--primary)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                   </svg>
-                  Post a Reply
+                  Create a Post
                 </h4>
                 <textarea 
                   value={reply} 
                   onChange={(e)=>setReply(e.target.value)} 
                   rows={4} 
-                  placeholder={user ? "Share your thoughts..." : "Please login to post a reply"} 
+                  placeholder={user ? "Share your thoughts..." : "Please login to Create a Post"} 
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent resize-none" 
                   disabled={!user}
                 />
@@ -445,10 +445,10 @@ export default function Forum() {
                     }} 
                     disabled={!user}
                   >
-                    <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    {/* <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
-                    </svg>
-                    Post Reply
+                    </svg> */}
+                    Post
                   </Button>
                 </div>
               </motion.div>
