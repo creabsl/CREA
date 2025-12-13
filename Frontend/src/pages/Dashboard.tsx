@@ -164,7 +164,7 @@ export default function Dashboard() {
         >
           <BreakingNews
             title={breaking.title}
-            content={`Scheduled event at ${breaking.location}`}
+            content={breaking.description}
             date={breaking.date}
             location={breaking.location}
           />

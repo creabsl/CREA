@@ -35,15 +35,22 @@ exports.createEvent = async (req, res) => {
       photos: Array.isArray(photos) ? photos : [],
     });
     
-    // Notify all users about new event
+    // Notify all users about new event or breaking news
     try {
       const allUsers = await User.find({}, '_id');
       const userIds = allUsers.map(u => u._id);
+      
+      const isBreaking = Boolean(isBreakingNews || breaking);
+      const notificationTitle = isBreaking ? '🚨 Breaking News Alert' : 'New Event Published';
+      const notificationMessage = isBreaking 
+        ? `Breaking News: "${title}" - ${description}`
+        : `A new event "${title}" has been scheduled. Check it out!`;
+      
       await createNotificationForUsers(
         userIds,
-        'event',
-        'New Event Published',
-        `A new event "${title}" has been scheduled. Check it out!`,
+        isBreaking ? 'breaking' : 'event',
+        notificationTitle,
+        notificationMessage,
         '/events',
         { eventId: event._id }
       );

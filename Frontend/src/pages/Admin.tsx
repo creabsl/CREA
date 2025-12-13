@@ -908,6 +908,9 @@ function EventsAdmin({ data, onChange }: { data: EventItem[]; onChange: (d: Even
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [deleting, setDeleting] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
+  
+  // Breaking News Announcement state
+  const [breakingNewsForm, setBreakingNewsForm] = useState({ title: '', description: '' })
 
   const filteredEvents = data.filter(e => 
     e.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -952,6 +955,73 @@ function EventsAdmin({ data, onChange }: { data: EventItem[]; onChange: (d: Even
 
   return (
     <div className="space-y-5">
+      {/* Breaking News Announcement Section */}
+      <motion.div 
+        className="rounded-xl border-2 border-red-200 bg-gradient-to-br from-red-50 to-orange-50 p-6 shadow-sm"
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+      >
+        <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+          <span className="w-8 h-8 bg-red-100 rounded-lg flex items-center justify-center">
+            <svg className="w-4 h-4 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z" />
+            </svg>
+          </span>
+          <span>Publish Breaking News Announcement</span>
+          <span className="ml-2 px-2 py-0.5 bg-red-100 text-red-700 text-xs font-bold rounded-full">STANDALONE</span>
+        </h3>
+        <div className="bg-white/80 rounded-lg p-4 mb-3">
+          <p className="text-sm text-gray-600 mb-2">
+            <strong>📢 Quick Announcement:</strong> Use this to publish urgent information or announcements as breaking news without creating a full event. 
+            Perfect for notices, alerts, or important updates that don't require event details.
+          </p>
+        </div>
+        <div className="space-y-4">
+          <Input 
+            label="Announcement Title" 
+            value={breakingNewsForm.title} 
+            onChange={(e)=>setBreakingNewsForm({...breakingNewsForm, title:e.target.value})}
+            placeholder="e.g., Important Notice, Urgent Update, Alert"
+          />
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Announcement Message</label>
+            <textarea
+              value={breakingNewsForm.description}
+              onChange={(e)=>setBreakingNewsForm({...breakingNewsForm, description:e.target.value})}
+              placeholder="Enter your breaking news message here..."
+              rows={4}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent resize-none"
+            />
+          </div>
+          <Button 
+            onClick={async()=>{ 
+              if (!breakingNewsForm.title.trim() || !breakingNewsForm.description.trim()) {
+                alert('Please fill in both title and message');
+                return;
+              }
+              const created = await createEvent({ 
+                title: breakingNewsForm.title, 
+                date: new Date().toISOString().split('T')[0], 
+                location: 'Announcement', 
+                description: breakingNewsForm.description, 
+                photos: [], 
+                breaking: true 
+              }); 
+              onChange([...data, created]); 
+              setBreakingNewsForm({ title: '', description: '' });
+            }}
+            className="bg-red-600 hover:bg-red-700 text-white"
+          >
+            <span className="flex items-center gap-2">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z" />
+              </svg>
+              Publish Breaking News
+            </span>
+          </Button>
+        </div>
+      </motion.div>
+
       <motion.div 
         className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm"
         initial={{ opacity: 0, y: 10 }}
