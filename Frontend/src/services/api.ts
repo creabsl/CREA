@@ -216,9 +216,20 @@ export async function getSuggestions(): Promise<Suggestion[]> {
   return list.map(s => ({ id: s._id, userId: s.userId, userName: s.userName, text: s.text, fileNames: s.fileNames || [], createdAt: new Date(s.createdAt).toISOString() }))
 }
 export async function submitSuggestion(payload: { text: string; files: File[]; userId: string; userName: string }): Promise<{ success: boolean }> {
-  const body = { userId: payload.userId, userName: payload.userName, text: payload.text, fileNames: (payload.files || []).map(f => f.name) }
-  await request('/api/suggestions', { method: 'POST', body: JSON.stringify(body) })
+  const formData = new FormData()
+  formData.append('userId', payload.userId)
+  formData.append('userName', payload.userName)
+  formData.append('text', payload.text)
+  // Append each file to FormData
+  for (const file of payload.files || []) {
+    formData.append('files', file)
+  }
+  await request('/api/suggestions', { method: 'POST', body: formData })
   return { success: true }
+}
+
+export async function deleteSuggestion(id: string): Promise<void> {
+  await request(`/api/suggestions/${id}`, { method: 'DELETE' })
 }
 
 // Mutual transfers

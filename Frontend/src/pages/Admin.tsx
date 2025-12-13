@@ -6,7 +6,7 @@ import Input from '../components/Input'
 import Spinner from '../components/Spinner'
 import { StaggerContainer, StaggerItem } from '../components/StaggerAnimation'
 import { usePageTitle } from '../hooks/usePageTitle'
-import { createCircular, createCourtCase, createEvent, createForumTopic, createManual, deleteCircular, deleteCourtCase, deleteEvent, deleteForumTopic, deleteManual, getCirculars, getCourtCases, getEvents, getForumTopics, getManuals, getSuggestions, updateCircular, updateCourtCase, updateEvent, updateForumTopic, updateManual, adminListUsers, adminUpdateUser, notifyStatsChanged, getSettings, updateMultipleSettings, getMutualTransfers, createMutualTransfer, updateMutualTransfer, deleteMutualTransfer, getBodyMembers, createBodyMember, updateBodyMember, deleteBodyMember } from '../services/api'
+import { createCircular, createCourtCase, createEvent, createForumTopic, createManual, deleteCircular, deleteCourtCase, deleteEvent, deleteForumTopic, deleteManual, getCirculars, getCourtCases, getEvents, getForumTopics, getManuals, getSuggestions, deleteSuggestion, updateCircular, updateCourtCase, updateEvent, updateForumTopic, updateManual, adminListUsers, adminUpdateUser, notifyStatsChanged, getSettings, updateMultipleSettings, getMutualTransfers, createMutualTransfer, updateMutualTransfer, deleteMutualTransfer, getBodyMembers, createBodyMember, updateBodyMember, deleteBodyMember } from '../services/api'
 import type { Circular, CourtCase, EventItem, ForumTopic, Manual, Suggestion, Division, MutualTransfer, BodyMember } from '../types'
 import { DIVISIONS } from '../types'
 import type { MemberUser, Setting } from '../services/api'
@@ -262,7 +262,7 @@ export default function Admin() {
       {tab==='events' && <EventsAdmin data={events} onChange={setEvents} />}
       {tab==='documents' && <DocumentsAdmin manuals={manuals} circulars={circulars} courtCases={cases} onManualsChange={setManuals} onCircularsChange={setCirculars} onCourtCasesChange={setCases} />}
   {tab==='forum' && <ForumAdmin data={topics} onChange={setTopics} />}
-  {tab==='suggestions' && <SuggestionsAdmin data={suggestions} />}
+  {tab==='suggestions' && <SuggestionsAdmin data={suggestions} onChange={setSuggestions} />}
   {tab==='members' && <MembersAdmin data={members} onReload={async(div?: Division | '')=>{ const list = await adminListUsers(div? { division: div } : undefined); setMembers(list) }} onUpdate={async (id, patch)=>{ const upd = await adminUpdateUser(id, patch); setMembers(members.map(m=>m.id===id?upd:m)) }} division={memberDivision} onDivisionChange={async(d)=>{ setMemberDivision(d); const list = await adminListUsers(d? { division: d } : undefined); setMembers(list) }} />}
   {tab==='settings' && <SettingsAdmin data={settings} onChange={setSettings} />}
   {tab==='transfers' && <MutualTransfersAdmin data={transfers} onChange={setTransfers} />}
@@ -904,6 +904,52 @@ function MembersAdmin({ data, onReload, onUpdate, division, onDivisionChange }: 
 
 function EventsAdmin({ data, onChange }: { data: EventItem[]; onChange: (d: EventItem[])=>void }){
   const [form, setForm] = useState<Omit<EventItem,'id'>>({ title:'', date:'', location:'', description:'', photos:[], breaking:false })
+  const [selectMode, setSelectMode] = useState(false)
+  const [selected, setSelected] = useState<Set<string>>(new Set())
+  const [deleting, setDeleting] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
+
+  const filteredEvents = data.filter(e => 
+    e.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    e.location.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    e.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    e.date.includes(searchQuery)
+  )
+
+  const toggleSelect = (id: string) => {
+    const newSelected = new Set(selected)
+    if (newSelected.has(id)) {
+      newSelected.delete(id)
+    } else {
+      newSelected.add(id)
+    }
+    setSelected(newSelected)
+  }
+
+  const toggleSelectAll = () => {
+    if (selected.size === filteredEvents.length) {
+      setSelected(new Set())
+    } else {
+      setSelected(new Set(filteredEvents.map(e => e.id)))
+    }
+  }
+
+  const deleteSelected = async () => {
+    if (selected.size === 0) return
+    if (!confirm(`Are you sure you want to delete ${selected.size} selected event(s)?`)) return
+    
+    setDeleting(true)
+    try {
+      await Promise.all(Array.from(selected).map(id => deleteEvent(id)))
+      onChange(data.filter(e => !selected.has(e.id)))
+      setSelected(new Set())
+    } catch (error) {
+      alert('Error deleting events')
+    } finally {
+      setDeleting(false)
+    }
+  }
+
   return (
     <div className="space-y-5">
       <motion.div 
@@ -948,12 +994,73 @@ function EventsAdmin({ data, onChange }: { data: EventItem[]; onChange: (d: Even
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.1 }}
       >
+        {data.length > 0 && (
+          <div className="px-6 py-4 border-b border-gray-200">
+            <div className="relative">
+              <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+              <input
+                type="text"
+                placeholder="Search events by title, location, description, or date..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent text-sm"
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery('')}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              )}
+            </div>
+          </div>
+        )}
         <div className="bg-gradient-to-r from-gray-50 to-gray-100 px-6 py-4 border-b border-gray-200">
-          <h3 className="text-lg font-semibold text-gray-800">Existing Events ({data.length})</h3>
+          <div className="flex items-center justify-between">
+            <h3 className="text-lg font-semibold text-gray-800">Existing Events ({filteredEvents.length}{searchQuery && ` of ${data.length}`})</h3>
+            <div className="flex items-center gap-3">
+              {selectMode ? (
+                <>
+                  {data.length > 0 && (
+                    <label className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer hover:text-gray-900">
+                      <input
+                        type="checkbox"
+                        checked={selected.size === data.length && data.length > 0}
+                        onChange={toggleSelectAll}
+                        className="w-4 h-4 rounded border-gray-300 text-[var(--primary)] focus:ring-[var(--primary)]"
+                      />
+                      Select All
+                    </label>
+                  )}
+                  {selected.size > 0 && (
+                    <Button variant="danger" onClick={deleteSelected} disabled={deleting}>
+                      {deleting ? 'Deleting...' : `Delete ${selected.size} Selected`}
+                    </Button>
+                  )}
+                  <Button variant="secondary" onClick={() => { setSelectMode(false); setSelected(new Set()); }}>Cancel</Button>
+                </>
+              ) : (
+                filteredEvents.length > 0 && <Button variant="secondary" onClick={() => setSelectMode(true)}>Select</Button>
+              )}
+            </div>
+          </div>
         </div>
         <div className="divide-y divide-gray-100">
-          {data.map(e=> (
-            <div key={e.id} className="p-5 flex items-center gap-4 hover:bg-gray-50 transition-colors">
+          {filteredEvents.map(e=> (
+            <div key={e.id} className={`p-5 flex items-center gap-4 transition-colors ${selected.has(e.id) ? 'bg-blue-50' : 'hover:bg-gray-50'}`}>
+              {selectMode && (
+                <input
+                  type="checkbox"
+                  checked={selected.has(e.id)}
+                  onChange={() => toggleSelect(e.id)}
+                  className="w-4 h-4 rounded border-gray-300 text-[var(--primary)] focus:ring-[var(--primary)]"
+                />
+              )}
               <div className="flex-1">
                 <div className="font-semibold text-gray-800 flex items-center gap-2">
                   {e.title}
@@ -963,11 +1070,15 @@ function EventsAdmin({ data, onChange }: { data: EventItem[]; onChange: (d: Even
               </div>
               <div className="flex gap-2">
                 <Button variant="secondary" onClick={async()=>{ const upd = await updateEvent(e.id,{ breaking: !e.breaking }); onChange(data.map(d=>d.id===e.id?upd:d)) }}>Toggle Breaking</Button>
-                <Button variant="danger" onClick={async()=>{ await deleteEvent(e.id); onChange(data.filter(d=>d.id!==e.id)) }}>Delete</Button>
               </div>
             </div>
           ))}
-          {data.length===0 && <div className="p-8 text-center text-gray-500">No events found. Add your first event above.</div>}
+          {data.length === 0 && <div className="p-8 text-center text-gray-500">No events found. Add your first event above.</div>}
+          {data.length > 0 && filteredEvents.length === 0 && (
+            <div className="p-8 text-center text-gray-500">
+              No events match your search. <button onClick={() => setSearchQuery('')} className="text-[var(--primary)] underline hover:text-[var(--accent)]">Clear search</button>
+            </div>
+          )}
         </div>
       </motion.div>
     </div>
@@ -993,6 +1104,41 @@ function DocumentsAdmin({
   onCourtCasesChange: (d: CourtCase[]) => void
 }) {
   const [subTab, setSubTab] = useState<DocumentSubTab>('circulars')
+
+  // Select mode state
+  const [selectModeCirculars, setSelectModeCirculars] = useState(false)
+  const [selectedCirculars, setSelectedCirculars] = useState<Set<string>>(new Set())
+  const [deletingCirculars, setDeletingCirculars] = useState(false)
+
+  const [selectModeManuals, setSelectModeManuals] = useState(false)
+  const [selectedManuals, setSelectedManuals] = useState<Set<string>>(new Set())
+  const [deletingManuals, setDeletingManuals] = useState(false)
+
+  const [selectModeCases, setSelectModeCases] = useState(false)
+  const [selectedCases, setSelectedCases] = useState<Set<string>>(new Set())
+  const [deletingCases, setDeletingCases] = useState(false)
+
+  // Search states
+  const [searchQueryCirculars, setSearchQueryCirculars] = useState('')
+  const [searchQueryManuals, setSearchQueryManuals] = useState('')
+  const [searchQueryCases, setSearchQueryCases] = useState('')
+
+  // Filtered data
+  const filteredCirculars = circulars.filter(c => 
+    c.subject.toLowerCase().includes(searchQueryCirculars.toLowerCase()) ||
+    c.boardNumber.toLowerCase().includes(searchQueryCirculars.toLowerCase()) ||
+    c.dateOfIssue.includes(searchQueryCirculars)
+  )
+
+  const filteredManuals = manuals.filter(m => 
+    m.title.toLowerCase().includes(searchQueryManuals.toLowerCase())
+  )
+
+  const filteredCases = courtCases.filter(c => 
+    c.caseNumber.toLowerCase().includes(searchQueryCases.toLowerCase()) ||
+    c.subject.toLowerCase().includes(searchQueryCases.toLowerCase()) ||
+    c.date.includes(searchQueryCases)
+  )
 
   // Circular state
   const [circularBoardNumber, setCircularBoardNumber] = useState('')
@@ -1124,6 +1270,84 @@ function DocumentsAdmin({
     }
   }
 
+  // Circulars select functions
+  const toggleSelectCircular = (id: string) => {
+    const newSet = new Set(selectedCirculars)
+    if (newSet.has(id)) newSet.delete(id)
+    else newSet.add(id)
+    setSelectedCirculars(newSet)
+  }
+
+  const toggleSelectAllCirculars = () => {
+    setSelectedCirculars(selectedCirculars.size === filteredCirculars.length ? new Set() : new Set(filteredCirculars.map(c => c.id)))
+  }
+
+  const deleteSelectedCirculars = async () => {
+    if (selectedCirculars.size === 0 || !confirm(`Delete ${selectedCirculars.size} selected circular(s)?`)) return
+    setDeletingCirculars(true)
+    try {
+      await Promise.all(Array.from(selectedCirculars).map(id => deleteCircular(id)))
+      onCircularsChange(circulars.filter(c => !selectedCirculars.has(c.id)))
+      setSelectedCirculars(new Set())
+    } catch (error) {
+      alert('Error deleting circulars')
+    } finally {
+      setDeletingCirculars(false)
+    }
+  }
+
+  // Manuals select functions
+  const toggleSelectManual = (id: string) => {
+    const newSet = new Set(selectedManuals)
+    if (newSet.has(id)) newSet.delete(id)
+    else newSet.add(id)
+    setSelectedManuals(newSet)
+  }
+
+  const toggleSelectAllManuals = () => {
+    setSelectedManuals(selectedManuals.size === filteredManuals.length ? new Set() : new Set(filteredManuals.map(m => m.id)))
+  }
+
+  const deleteSelectedManuals = async () => {
+    if (selectedManuals.size === 0 || !confirm(`Delete ${selectedManuals.size} selected manual(s)?`)) return
+    setDeletingManuals(true)
+    try {
+      await Promise.all(Array.from(selectedManuals).map(id => deleteManual(id)))
+      onManualsChange(manuals.filter(m => !selectedManuals.has(m.id)))
+      setSelectedManuals(new Set())
+    } catch (error) {
+      alert('Error deleting manuals')
+    } finally {
+      setDeletingManuals(false)
+    }
+  }
+
+  // Court Cases select functions
+  const toggleSelectCase = (id: string) => {
+    const newSet = new Set(selectedCases)
+    if (newSet.has(id)) newSet.delete(id)
+    else newSet.add(id)
+    setSelectedCases(newSet)
+  }
+
+  const toggleSelectAllCases = () => {
+    setSelectedCases(selectedCases.size === filteredCases.length ? new Set() : new Set(filteredCases.map(c => c.id)))
+  }
+
+  const deleteSelectedCases = async () => {
+    if (selectedCases.size === 0 || !confirm(`Delete ${selectedCases.size} selected court case(s)?`)) return
+    setDeletingCases(true)
+    try {
+      await Promise.all(Array.from(selectedCases).map(id => deleteCourtCase(id)))
+      onCourtCasesChange(courtCases.filter(c => !selectedCases.has(c.id)))
+      setSelectedCases(new Set())
+    } catch (error) {
+      alert('Error deleting court cases')
+    } finally {
+      setDeletingCases(false)
+    }
+  }
+
   return (
     <div className="space-y-5">
       {/* Sub-tab Navigation */}
@@ -1179,12 +1403,75 @@ function DocumentsAdmin({
             </div>
           </motion.div>
           <motion.div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
-            <div className="bg-gradient-to-r from-gray-50 to-gray-100 px-6 py-4 border-b border-gray-200">
-              <h3 className="text-lg font-semibold text-gray-800">Existing Circulars ({circulars.length})</h3>
+            {circulars.length > 0 && (
+              <div className="px-6 py-4 border-b border-gray-200">
+                <div className="relative">
+                  <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                  <input
+                    type="text"
+                    placeholder="Search circulars by subject, board number, or date..."
+                    value={searchQueryCirculars}
+                    onChange={(e) => setSearchQueryCirculars(e.target.value)}
+                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent text-sm"
+                  />
+                  {searchQueryCirculars && (
+                    <button
+                      onClick={() => setSearchQueryCirculars('')}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
+            <div className="bg-gradient-to-r from-gray-50 to-gray-100 px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+              <h3 className="text-lg font-semibold text-gray-800">Existing Circulars ({filteredCirculars.length}{searchQueryCirculars && ` of ${circulars.length}`})</h3>
+              <div className="flex items-center gap-3">
+                {selectModeCirculars ? (
+                  <>
+                    {filteredCirculars.length > 0 && (
+                      <label className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer hover:text-gray-900">
+                        <input
+                          type="checkbox"
+                          checked={filteredCirculars.length > 0 && selectedCirculars.size === filteredCirculars.length}
+                          onChange={toggleSelectAllCirculars}
+                          className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-2 focus:ring-blue-500"
+                        />
+                        Select All
+                      </label>
+                    )}
+                    {selectedCirculars.size > 0 && (
+                      <button
+                        onClick={deleteSelectedCirculars}
+                        disabled={deletingCirculars}
+                        className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 font-semibold transition-colors text-sm"
+                      >
+                        {deletingCirculars ? 'Deleting...' : `Delete ${selectedCirculars.size} Selected`}
+                      </button>
+                    )}
+                    <Button variant="secondary" onClick={() => { setSelectModeCirculars(false); setSelectedCirculars(new Set()); }}>Cancel</Button>
+                  </>
+                ) : (
+                  filteredCirculars.length > 0 && <Button variant="secondary" onClick={() => setSelectModeCirculars(true)}>Select</Button>
+                )}
+              </div>
             </div>
             <div className="divide-y divide-gray-100">
-              {circulars.map(c => (
-                <div key={c.id} className="p-5 flex items-center gap-4 hover:bg-gray-50 transition-colors">
+              {filteredCirculars.map(c => (
+                <div key={c.id} className={`p-5 flex items-center gap-4 transition-colors ${selectedCirculars.has(c.id) ? 'bg-blue-50' : 'hover:bg-gray-50'}`}>
+                  {selectModeCirculars && (
+                    <input
+                      type="checkbox"
+                      checked={selectedCirculars.has(c.id)}
+                      onChange={() => toggleSelectCircular(c.id)}
+                      className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-2 focus:ring-blue-500"
+                    />
+                  )}
                   <div className="flex-1">
                     <div className="font-semibold text-gray-800">{c.subject}</div>
                     <div className="text-sm text-gray-600 mt-1">{c.boardNumber} • {c.dateOfIssue}</div>
@@ -1192,11 +1479,15 @@ function DocumentsAdmin({
                   </div>
                   <div className="flex gap-2">
                     <Button variant="secondary" onClick={() => handleEditCircular(c)}>Edit</Button>
-                    <Button variant="danger" onClick={async () => { await deleteCircular(c.id); onCircularsChange(circulars.filter(d => d.id !== c.id)) }}>Delete</Button>
                   </div>
                 </div>
               ))}
               {circulars.length === 0 && <div className="p-8 text-center text-gray-500">No circulars found. Add your first circular above.</div>}
+              {circulars.length > 0 && filteredCirculars.length === 0 && (
+                <div className="p-8 text-center text-gray-500">
+                  No circulars match your search. <button onClick={() => setSearchQueryCirculars('')} className="text-[var(--primary)] underline hover:text-[var(--accent)]">Clear search</button>
+                </div>
+              )}
             </div>
           </motion.div>
         </div>
@@ -1229,23 +1520,90 @@ function DocumentsAdmin({
             </div>
           </motion.div>
           <motion.div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
-            <div className="bg-gradient-to-r from-gray-50 to-gray-100 px-6 py-4 border-b border-gray-200">
-              <h3 className="text-lg font-semibold text-gray-800">Existing Manuals ({manuals.length})</h3>
+            {manuals.length > 0 && (
+              <div className="px-6 py-4 border-b border-gray-200">
+                <div className="relative">
+                  <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                  <input
+                    type="text"
+                    placeholder="Search manuals by title..."
+                    value={searchQueryManuals}
+                    onChange={(e) => setSearchQueryManuals(e.target.value)}
+                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent text-sm"
+                  />
+                  {searchQueryManuals && (
+                    <button
+                      onClick={() => setSearchQueryManuals('')}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
+            <div className="bg-gradient-to-r from-gray-50 to-gray-100 px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+              <h3 className="text-lg font-semibold text-gray-800">Existing Manuals ({filteredManuals.length}{searchQueryManuals && ` of ${manuals.length}`})</h3>
+              <div className="flex items-center gap-3">
+                {selectModeManuals ? (
+                  <>
+                    {filteredManuals.length > 0 && (
+                      <label className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer hover:text-gray-900">
+                        <input
+                          type="checkbox"
+                          checked={filteredManuals.length > 0 && selectedManuals.size === filteredManuals.length}
+                          onChange={toggleSelectAllManuals}
+                          className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-2 focus:ring-blue-500"
+                        />
+                        Select All
+                      </label>
+                    )}
+                    {selectedManuals.size > 0 && (
+                      <button
+                        onClick={deleteSelectedManuals}
+                        disabled={deletingManuals}
+                        className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 font-semibold transition-colors text-sm"
+                      >
+                        {deletingManuals ? 'Deleting...' : `Delete ${selectedManuals.size} Selected`}
+                      </button>
+                    )}
+                    <Button variant="secondary" onClick={() => { setSelectModeManuals(false); setSelectedManuals(new Set()); }}>Cancel</Button>
+                  </>
+                ) : (
+                  filteredManuals.length > 0 && <Button variant="secondary" onClick={() => setSelectModeManuals(true)}>Select</Button>
+                )}
+              </div>
             </div>
             <div className="divide-y divide-gray-100">
-              {manuals.map(m => (
-                <div key={m.id} className="p-5 flex items-center gap-4 hover:bg-gray-50 transition-colors">
+              {filteredManuals.map(m => (
+                <div key={m.id} className={`p-5 flex items-center gap-4 transition-colors ${selectedManuals.has(m.id) ? 'bg-blue-50' : 'hover:bg-gray-50'}`}>
+                  {selectModeManuals && (
+                    <input
+                      type="checkbox"
+                      checked={selectedManuals.has(m.id)}
+                      onChange={() => toggleSelectManual(m.id)}
+                      className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-2 focus:ring-blue-500"
+                    />
+                  )}
                   <div className="flex-1">
                     <div className="font-semibold text-gray-800">{m.title}</div>
                     {m.url && <div className="text-sm text-[var(--primary)] mt-1"><a className="underline hover:text-[var(--accent)]" href={m.url} target="_blank" rel="noreferrer">View Document →</a></div>}
                   </div>
                   <div className="flex gap-2">
                     <Button variant="secondary" onClick={() => handleEditManual(m)}>Edit</Button>
-                    <Button variant="danger" onClick={async () => { await deleteManual(m.id); onManualsChange(manuals.filter(d => d.id !== m.id)) }}>Delete</Button>
                   </div>
                 </div>
               ))}
               {manuals.length === 0 && <div className="p-8 text-center text-gray-500">No manuals found. Add your first manual above.</div>}
+              {manuals.length > 0 && filteredManuals.length === 0 && (
+                <div className="p-8 text-center text-gray-500">
+                  No manuals match your search. <button onClick={() => setSearchQueryManuals('')} className="text-[var(--primary)] underline hover:text-[var(--accent)]">Clear search</button>
+                </div>
+              )}
             </div>
           </motion.div>
         </div>
@@ -1274,23 +1632,90 @@ function DocumentsAdmin({
             </div>
           </motion.div>
           <motion.div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
-            <div className="bg-gradient-to-r from-gray-50 to-gray-100 px-6 py-4 border-b border-gray-200">
-              <h3 className="text-lg font-semibold text-gray-800">Existing Court Cases ({courtCases.length})</h3>
+            {courtCases.length > 0 && (
+              <div className="px-6 py-4 border-b border-gray-200">
+                <div className="relative">
+                  <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                  <input
+                    type="text"
+                    placeholder="Search court cases by case number, subject, or date..."
+                    value={searchQueryCases}
+                    onChange={(e) => setSearchQueryCases(e.target.value)}
+                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent text-sm"
+                  />
+                  {searchQueryCases && (
+                    <button
+                      onClick={() => setSearchQueryCases('')}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
+            <div className="bg-gradient-to-r from-gray-50 to-gray-100 px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+              <h3 className="text-lg font-semibold text-gray-800">Existing Court Cases ({filteredCases.length}{searchQueryCases && ` of ${courtCases.length}`})</h3>
+              <div className="flex items-center gap-3">
+                {selectModeCases ? (
+                  <>
+                    {filteredCases.length > 0 && (
+                      <label className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer hover:text-gray-900">
+                        <input
+                          type="checkbox"
+                          checked={filteredCases.length > 0 && selectedCases.size === filteredCases.length}
+                          onChange={toggleSelectAllCases}
+                          className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-2 focus:ring-blue-500"
+                        />
+                        Select All
+                      </label>
+                    )}
+                    {selectedCases.size > 0 && (
+                      <button
+                        onClick={deleteSelectedCases}
+                        disabled={deletingCases}
+                        className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 font-semibold transition-colors text-sm"
+                      >
+                        {deletingCases ? 'Deleting...' : `Delete ${selectedCases.size} Selected`}
+                      </button>
+                    )}
+                    <Button variant="secondary" onClick={() => { setSelectModeCases(false); setSelectedCases(new Set()); }}>Cancel</Button>
+                  </>
+                ) : (
+                  filteredCases.length > 0 && <Button variant="secondary" onClick={() => setSelectModeCases(true)}>Select</Button>
+                )}
+              </div>
             </div>
             <div className="divide-y divide-gray-100">
-              {courtCases.map(c => (
-                <div key={c.id} className="p-5 flex items-center gap-4 hover:bg-gray-50 transition-colors">
+              {filteredCases.map(c => (
+                <div key={c.id} className={`p-5 flex items-center gap-4 transition-colors ${selectedCases.has(c.id) ? 'bg-blue-50' : 'hover:bg-gray-50'}`}>
+                  {selectModeCases && (
+                    <input
+                      type="checkbox"
+                      checked={selectedCases.has(c.id)}
+                      onChange={() => toggleSelectCase(c.id)}
+                      className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-2 focus:ring-blue-500"
+                    />
+                  )}
                   <div className="flex-1">
                     <div className="font-semibold text-gray-800">{c.caseNumber}</div>
                     <div className="text-sm text-gray-600 mt-1">{new Date(c.date).toLocaleDateString()} • {c.subject}</div>
                   </div>
                   <div className="flex gap-2">
                     <Button variant="secondary" onClick={() => handleEditCourtCase(c)}>Edit</Button>
-                    <Button variant="danger" onClick={async () => { await deleteCourtCase(c.id); onCourtCasesChange(courtCases.filter(d => d.id !== c.id)) }}>Delete</Button>
                   </div>
                 </div>
               ))}
               {courtCases.length === 0 && <div className="p-8 text-center text-gray-500">No court cases found. Add your first case above.</div>}
+              {courtCases.length > 0 && filteredCases.length === 0 && (
+                <div className="p-8 text-center text-gray-500">
+                  No court cases match your search. <button onClick={() => setSearchQueryCases('')} className="text-[var(--primary)] underline hover:text-[var(--accent)]">Clear search</button>
+                </div>
+              )}
             </div>
           </motion.div>
         </div>
@@ -1304,6 +1729,34 @@ function ManualsAdmin({ data, onChange }: { data: Manual[]; onChange: (d: Manual
   const [title, setTitle] = useState('')
   const [url, setUrl] = useState('')
   const [file, setFile] = useState<File | null>(null)
+  const [selectMode, setSelectMode] = useState(false)
+  const [selected, setSelected] = useState<Set<string>>(new Set())
+  const [deleting, setDeleting] = useState(false)
+  
+  const toggleSelect = (id: string) => {
+    const newSelected = new Set(selected)
+    if (newSelected.has(id)) newSelected.delete(id)
+    else newSelected.add(id)
+    setSelected(newSelected)
+  }
+
+  const toggleSelectAll = () => {
+    setSelected(selected.size === data.length ? new Set() : new Set(data.map(m => m.id)))
+  }
+
+  const deleteSelected = async () => {
+    if (selected.size === 0 || !confirm(`Delete ${selected.size} selected manual(s)?`)) return
+    setDeleting(true)
+    try {
+      await Promise.all(Array.from(selected).map(id => deleteManual(id)))
+      onChange(data.filter(m => !selected.has(m.id)))
+      setSelected(new Set())
+    } catch (error) {
+      alert('Error deleting manuals')
+    } finally {
+      setDeleting(false)
+    }
+  }
   return (
     <div className="space-y-5">
       <motion.div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
@@ -1331,19 +1784,52 @@ function ManualsAdmin({ data, onChange }: { data: Manual[]; onChange: (d: Manual
         </div>
       </motion.div>
       <motion.div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
-        <div className="bg-gradient-to-r from-gray-50 to-gray-100 px-6 py-4 border-b border-gray-200">
+        <div className="bg-gradient-to-r from-gray-50 to-gray-100 px-6 py-4 border-b border-gray-200 flex items-center justify-between">
           <h3 className="text-lg font-semibold text-gray-800">Existing Manuals ({data.length})</h3>
+          <div className="flex items-center gap-3">
+            {selectMode ? (
+              <>
+                {data.length > 0 && (
+                  <label className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer hover:text-gray-900">
+                    <input
+                      type="checkbox"
+                      checked={data.length > 0 && selected.size === data.length}
+                      onChange={toggleSelectAll}
+                      className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-2 focus:ring-blue-500"
+                    />
+                    Select All
+                  </label>
+                )}
+                {selected.size > 0 && (
+                  <button
+                    onClick={deleteSelected}
+                    disabled={deleting}
+                    className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 font-semibold transition-colors text-sm"
+                  >
+                    {deleting ? 'Deleting...' : `Delete ${selected.size} Selected`}
+                  </button>
+                )}
+                <Button variant="secondary" onClick={() => { setSelectMode(false); setSelected(new Set()); }}>Cancel</Button>
+              </>
+            ) : (
+              data.length > 0 && <Button variant="secondary" onClick={() => setSelectMode(true)}>Select</Button>
+            )}
+          </div>
         </div>
         <div className="divide-y divide-gray-100">
           {data.map(m=> (
-            <div key={m.id} className="p-5 flex items-center gap-4 hover:bg-gray-50 transition-colors">
+            <div key={m.id} className={`p-5 flex items-center gap-4 hover:bg-gray-50 transition-colors ${selected.has(m.id) ? 'bg-blue-50' : ''}`}>
+              {selectMode && (
+                <input
+                  type="checkbox"
+                  checked={selected.has(m.id)}
+                  onChange={() => toggleSelect(m.id)}
+                  className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-2 focus:ring-blue-500"
+                />
+              )}
               <div className="flex-1">
                 <div className="font-semibold text-gray-800">{m.title}</div>
                 {m.url && <div className="text-sm text-[var(--primary)] mt-1"><a className="underline hover:text-[var(--accent)]" href={m.url} target="_blank" rel="noreferrer">View Document →</a></div>}
-              </div>
-              <div className="flex gap-2">
-                <Button variant="secondary" onClick={async()=>{ const upd = await updateManual(m.id,{ title: m.title + ' (Updated)' }); onChange(data.map(d=>d.id===m.id?upd:d)) }}>Quick Update</Button>
-                <Button variant="danger" onClick={async()=>{ await deleteManual(m.id); onChange(data.filter(d=>d.id!==m.id)) }}>Delete</Button>
               </div>
             </div>
           ))}
@@ -1360,6 +1846,34 @@ function CircularsAdmin({ data, onChange }: { data: Circular[]; onChange: (d: Ci
   const [dateOfIssue, setDateOfIssue] = useState('')
   const [url, setUrl] = useState('')
   const [file, setFile] = useState<File | null>(null)
+  const [selectMode, setSelectMode] = useState(false)
+  const [selected, setSelected] = useState<Set<string>>(new Set())
+  const [deleting, setDeleting] = useState(false)
+  
+  const toggleSelect = (id: string) => {
+    const newSelected = new Set(selected)
+    if (newSelected.has(id)) newSelected.delete(id)
+    else newSelected.add(id)
+    setSelected(newSelected)
+  }
+
+  const toggleSelectAll = () => {
+    setSelected(selected.size === data.length ? new Set() : new Set(data.map(c => c.id)))
+  }
+
+  const deleteSelected = async () => {
+    if (selected.size === 0 || !confirm(`Delete ${selected.size} selected circular(s)?`)) return
+    setDeleting(true)
+    try {
+      await Promise.all(Array.from(selected).map(id => deleteCircular(id)))
+      onChange(data.filter(c => !selected.has(c.id)))
+      setSelected(new Set())
+    } catch (error) {
+      alert('Error deleting circulars')
+    } finally {
+      setDeleting(false)
+    }
+  }
   return (
     <div className="space-y-5">
       <motion.div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
@@ -1387,20 +1901,53 @@ function CircularsAdmin({ data, onChange }: { data: Circular[]; onChange: (d: Ci
         </div>
       </motion.div>
       <motion.div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
-        <div className="bg-gradient-to-r from-gray-50 to-gray-100 px-6 py-4 border-b border-gray-200">
+        <div className="bg-gradient-to-r from-gray-50 to-gray-100 px-6 py-4 border-b border-gray-200 flex items-center justify-between">
           <h3 className="text-lg font-semibold text-gray-800">Existing Circulars ({data.length})</h3>
+          <div className="flex items-center gap-3">
+            {selectMode ? (
+              <>
+                {data.length > 0 && (
+                  <label className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer hover:text-gray-900">
+                    <input
+                      type="checkbox"
+                      checked={data.length > 0 && selected.size === data.length}
+                      onChange={toggleSelectAll}
+                      className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-2 focus:ring-blue-500"
+                    />
+                    Select All
+                  </label>
+                )}
+                {selected.size > 0 && (
+                  <button
+                    onClick={deleteSelected}
+                    disabled={deleting}
+                    className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 font-semibold transition-colors text-sm"
+                  >
+                    {deleting ? 'Deleting...' : `Delete ${selected.size} Selected`}
+                  </button>
+                )}
+                <Button variant="secondary" onClick={() => { setSelectMode(false); setSelected(new Set()); }}>Cancel</Button>
+              </>
+            ) : (
+              data.length > 0 && <Button variant="secondary" onClick={() => setSelectMode(true)}>Select</Button>
+            )}
+          </div>
         </div>
         <div className="divide-y divide-gray-100">
           {data.map(c=> (
-            <div key={c.id} className="p-5 flex items-center gap-4 hover:bg-gray-50 transition-colors">
+            <div key={c.id} className={`p-5 flex items-center gap-4 hover:bg-gray-50 transition-colors ${selected.has(c.id) ? 'bg-blue-50' : ''}`}>
+              {selectMode && (
+                <input
+                  type="checkbox"
+                  checked={selected.has(c.id)}
+                  onChange={() => toggleSelect(c.id)}
+                  className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-2 focus:ring-blue-500"
+                />
+              )}
               <div className="flex-1">
                 <div className="font-semibold text-gray-800">{c.subject}</div>
                 <div className="text-sm text-gray-600 mt-1">{c.boardNumber} • {c.dateOfIssue}</div>
                 {c.url && <div className="text-sm text-[var(--primary)] mt-1"><a className="underline hover:text-[var(--accent)]" href={c.url} target="_blank" rel="noreferrer">View Document →</a></div>}
-              </div>
-              <div className="flex gap-2">
-                <Button variant="secondary" onClick={async()=>{ const upd = await updateCircular(c.id,{ subject: c.subject + ' (Updated)' }); onChange(data.map(d=>d.id===c.id?upd:d)) }}>Quick Update</Button>
-                <Button variant="danger" onClick={async()=>{ await deleteCircular(c.id); onChange(data.filter(d=>d.id!==c.id)) }}>Delete</Button>
               </div>
             </div>
           ))}
@@ -1415,6 +1962,66 @@ function ForumAdmin({ data, onChange }: { data: ForumTopic[]; onChange: (d: Foru
   const [title, setTitle] = useState('')
   const [author, setAuthor] = useState('Admin')
   const [category, setCategory] = useState<'technical' | 'social' | 'organizational' | 'general'>('general')
+  const [selectMode, setSelectMode] = useState(false)
+  const [selected, setSelected] = useState<Set<string>>(new Set())
+  const [deleting, setDeleting] = useState(false)
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [editTitle, setEditTitle] = useState('')
+  const [searchQuery, setSearchQuery] = useState('')
+
+  const filteredTopics = data.filter(t => 
+    t.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    t.author.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (t.category || 'general').toLowerCase().includes(searchQuery.toLowerCase())
+  )
+
+  const toggleSelect = (id: string) => {
+    const newSelected = new Set(selected)
+    if (newSelected.has(id)) newSelected.delete(id)
+    else newSelected.add(id)
+    setSelected(newSelected)
+  }
+
+  const toggleSelectAll = () => {
+    setSelected(selected.size === filteredTopics.length ? new Set() : new Set(filteredTopics.map(t => t.id)))
+  }
+
+  const deleteSelected = async () => {
+    if (selected.size === 0 || !confirm(`Delete ${selected.size} selected topic(s)?`)) return
+    setDeleting(true)
+    try {
+      await Promise.all(Array.from(selected).map(id => deleteForumTopic(id)))
+      onChange(data.filter(t => !selected.has(t.id)))
+      setSelected(new Set())
+    } catch (error) {
+      alert('Error deleting topics')
+    } finally {
+      setDeleting(false)
+    }
+  }
+
+  const startEdit = (topic: ForumTopic) => {
+    setEditingId(topic.id)
+    setEditTitle(topic.title)
+  }
+
+  const cancelEdit = () => {
+    setEditingId(null)
+    setEditTitle('')
+  }
+
+  const saveEdit = async () => {
+    if (!editingId || !editTitle.trim()) return
+    try {
+      const updated = await updateForumTopic(editingId, { title: editTitle.trim() })
+      onChange(data.map(t => t.id === editingId ? updated : t))
+      setEditingId(null)
+      setEditTitle('')
+    } catch (error) {
+      alert('Error updating topic')
+    }
+  }
+
   return (
     <div className="space-y-5">
       <motion.div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
@@ -1444,28 +2051,111 @@ function ForumAdmin({ data, onChange }: { data: ForumTopic[]; onChange: (d: Foru
         </div>
       </motion.div>
       <motion.div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
-        <div className="bg-gradient-to-r from-gray-50 to-gray-100 px-6 py-4 border-b border-gray-200">
-          <h3 className="text-lg font-semibold text-gray-800">Existing Topics ({data.length})</h3>
+        {data.length > 0 && (
+          <div className="px-6 py-4 border-b border-gray-200">
+            <div className="relative">
+              <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+              <input
+                type="text"
+                placeholder="Search topics by title, author, or category..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent text-sm"
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery('')}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+        <div className="bg-gradient-to-r from-gray-50 to-gray-100 px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+          <h3 className="text-lg font-semibold text-gray-800">Existing Topics ({filteredTopics.length}{searchQuery && ` of ${data.length}`})</h3>
+          <div className="flex items-center gap-3">
+            {selectMode ? (
+              <>
+                {filteredTopics.length > 0 && (
+                  <label className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer hover:text-gray-900">
+                    <input
+                      type="checkbox"
+                      checked={filteredTopics.length > 0 && selected.size === filteredTopics.length}
+                      onChange={toggleSelectAll}
+                      className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-2 focus:ring-blue-500"
+                    />
+                    Select All
+                  </label>
+                )}
+                {selected.size > 0 && (
+                  <button
+                    onClick={deleteSelected}
+                    disabled={deleting}
+                    className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 font-semibold transition-colors text-sm"
+                  >
+                    {deleting ? 'Deleting...' : `Delete ${selected.size} Selected`}
+                  </button>
+                )}
+                <Button variant="secondary" onClick={() => { setSelectMode(false); setSelected(new Set()); }}>Cancel</Button>
+              </>
+            ) : (
+              filteredTopics.length > 0 && <Button variant="secondary" onClick={() => setSelectMode(true)}>Select</Button>
+            )}
+          </div>
         </div>
         <div className="divide-y divide-gray-100">
-          {data.map(t => (
-            <div key={t.id} className="p-5 flex items-center gap-4 hover:bg-gray-50 transition-colors">
+          {filteredTopics.map(t => (
+            <div key={t.id} className={`p-5 flex items-center gap-4 transition-colors ${selected.has(t.id) ? 'bg-blue-50' : 'hover:bg-gray-50'}`}>
+              {selectMode && (
+                <input
+                  type="checkbox"
+                  checked={selected.has(t.id)}
+                  onChange={() => toggleSelect(t.id)}
+                  className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-2 focus:ring-blue-500"
+                />
+              )}
               <div className="flex-1">
-                <div className="flex items-center gap-2">
-                  <div className="font-semibold text-gray-800">{t.title}</div>
-                  <span className="text-xs px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 font-medium">
-                    {t.category || 'general'}
-                  </span>
-                </div>
-                <div className="text-sm text-gray-600 mt-1">By {t.author} • {new Date(t.createdAt).toLocaleDateString()} • {t.replies} replies</div>
+                {editingId === t.id ? (
+                  <div className="space-y-2">
+                    <Input
+                      label="Topic Title"
+                      value={editTitle}
+                      onChange={(e) => setEditTitle(e.target.value)}
+                    />
+                    <div className="flex gap-2">
+                      <Button onClick={saveEdit}>Save</Button>
+                      <Button variant="secondary" onClick={cancelEdit}>Cancel</Button>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    <div className="flex items-center gap-2">
+                      <div className="font-semibold text-gray-800">{t.title}</div>
+                      <span className="text-xs px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 font-medium">
+                        {t.category || 'general'}
+                      </span>
+                    </div>
+                    <div className="text-sm text-gray-600 mt-1">By {t.author} • {new Date(t.createdAt).toLocaleDateString()} • {t.replies} replies</div>
+                  </>
+                )}
               </div>
-              <div className="flex gap-2">
-                <Button variant="secondary" onClick={async()=>{ const upd = await updateForumTopic(t.id,{ title: t.title + ' (Updated)' }); onChange(data.map(d=>d.id===t.id?upd:d)) }}>Quick Update</Button>
-                <Button variant="danger" onClick={async()=>{ await deleteForumTopic(t.id); onChange(data.filter(d=>d.id!==t.id)) }}>Delete</Button>
-              </div>
+              {!selectMode && editingId !== t.id && (
+                <Button variant="secondary" onClick={() => startEdit(t)}>Edit</Button>
+              )}
             </div>
           ))}
-          {data.length===0 && <div className="p-8 text-center text-gray-500">No forum topics found. Add your first topic above.</div>}
+          {data.length === 0 && <div className="p-8 text-center text-gray-500">No forum topics found. Add your first topic above.</div>}
+          {data.length > 0 && filteredTopics.length === 0 && (
+            <div className="p-8 text-center text-gray-500">
+              No topics match your search. <button onClick={() => setSearchQuery('')} className="text-[var(--primary)] underline hover:text-[var(--accent)]">Clear search</button>
+            </div>
+          )}
         </div>
       </motion.div>
     </div>
@@ -1476,6 +2166,34 @@ function CourtCasesAdmin({ data, onChange }: { data: CourtCase[]; onChange: (d: 
   const [caseNumber, setCaseNumber] = useState('')
   const [date, setDate] = useState('')
   const [subject, setSubject] = useState('')
+  const [selectMode, setSelectMode] = useState(false)
+  const [selected, setSelected] = useState<Set<string>>(new Set())
+  const [deleting, setDeleting] = useState(false)
+  
+  const toggleSelect = (id: string) => {
+    const newSelected = new Set(selected)
+    if (newSelected.has(id)) newSelected.delete(id)
+    else newSelected.add(id)
+    setSelected(newSelected)
+  }
+
+  const toggleSelectAll = () => {
+    setSelected(selected.size === data.length ? new Set() : new Set(data.map(c => c.id)))
+  }
+
+  const deleteSelected = async () => {
+    if (selected.size === 0 || !confirm(`Delete ${selected.size} selected court case(s)?`)) return
+    setDeleting(true)
+    try {
+      await Promise.all(Array.from(selected).map(id => deleteCourtCase(id)))
+      onChange(data.filter(c => !selected.has(c.id)))
+      setSelected(new Set())
+    } catch (error) {
+      alert('Error deleting court cases')
+    } finally {
+      setDeleting(false)
+    }
+  }
   return (
     <div className="space-y-5">
       <motion.div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
@@ -1495,19 +2213,52 @@ function CourtCasesAdmin({ data, onChange }: { data: CourtCase[]; onChange: (d: 
         </div>
       </motion.div>
       <motion.div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
-        <div className="bg-gradient-to-r from-gray-50 to-gray-100 px-6 py-4 border-b border-gray-200">
+        <div className="bg-gradient-to-r from-gray-50 to-gray-100 px-6 py-4 border-b border-gray-200 flex items-center justify-between">
           <h3 className="text-lg font-semibold text-gray-800">Existing Court Cases ({data.length})</h3>
+          <div className="flex items-center gap-3">
+            {selectMode ? (
+              <>
+                {data.length > 0 && (
+                  <label className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer hover:text-gray-900">
+                    <input
+                      type="checkbox"
+                      checked={data.length > 0 && selected.size === data.length}
+                      onChange={toggleSelectAll}
+                      className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-2 focus:ring-blue-500"
+                    />
+                    Select All
+                  </label>
+                )}
+                {selected.size > 0 && (
+                  <button
+                    onClick={deleteSelected}
+                    disabled={deleting}
+                    className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 font-semibold transition-colors text-sm"
+                  >
+                    {deleting ? 'Deleting...' : `Delete ${selected.size} Selected`}
+                  </button>
+                )}
+                <Button variant="secondary" onClick={() => { setSelectMode(false); setSelected(new Set()); }}>Cancel</Button>
+              </>
+            ) : (
+              data.length > 0 && <Button variant="secondary" onClick={() => setSelectMode(true)}>Select</Button>
+            )}
+          </div>
         </div>
         <div className="divide-y divide-gray-100">
           {data.map(c => (
-            <div key={c.id} className="p-5 flex items-center gap-4 hover:bg-gray-50 transition-colors">
+            <div key={c.id} className={`p-5 flex items-center gap-4 hover:bg-gray-50 transition-colors ${selected.has(c.id) ? 'bg-blue-50' : ''}`}>
+              {selectMode && (
+                <input
+                  type="checkbox"
+                  checked={selected.has(c.id)}
+                  onChange={() => toggleSelect(c.id)}
+                  className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-2 focus:ring-blue-500"
+                />
+              )}
               <div className="flex-1">
                 <div className="font-semibold text-gray-800">{c.caseNumber}</div>
                 <div className="text-sm text-gray-600 mt-1">{new Date(c.date).toLocaleDateString()} • {c.subject}</div>
-              </div>
-              <div className="flex gap-2">
-                <Button variant="secondary" onClick={async()=>{ const upd = await updateCourtCase(c.id,{ subject: c.subject + ' (Updated)' }); onChange(data.map(d=>d.id===c.id?upd:d)) }}>Quick Update</Button>
-                <Button variant="danger" onClick={async()=>{ await deleteCourtCase(c.id); onChange(data.filter(d=>d.id!==c.id)) }}>Delete</Button>
               </div>
             </div>
           ))}
@@ -1518,43 +2269,163 @@ function CourtCasesAdmin({ data, onChange }: { data: CourtCase[]; onChange: (d: 
   )
 }
 
-function SuggestionsAdmin({ data }: { data: Suggestion[] }){
+function SuggestionsAdmin({ data, onChange }: { data: Suggestion[]; onChange: (s: Suggestion[]) => void }){
+  const [selectMode, setSelectMode] = useState(false)
+  const [selected, setSelected] = useState<Set<string>>(new Set())
+  const [deleting, setDeleting] = useState(false)
+
+  const toggleSelect = (id: string) => {
+    const newSelected = new Set(selected)
+    if (newSelected.has(id)) {
+      newSelected.delete(id)
+    } else {
+      newSelected.add(id)
+    }
+    setSelected(newSelected)
+  }
+
+  const toggleSelectAll = () => {
+    if (selected.size === data.length) {
+      setSelected(new Set())
+    } else {
+      setSelected(new Set(data.map(s => s.id)))
+    }
+  }
+
+  const deleteSelected = async () => {
+    if (selected.size === 0) return
+    if (!confirm(`Are you sure you want to delete ${selected.size} selected suggestion(s)?`)) return
+    
+    setDeleting(true)
+    try {
+      await Promise.all(Array.from(selected).map(id => deleteSuggestion(id)))
+      onChange(data.filter(s => !selected.has(s.id)))
+      setSelected(new Set())
+    } catch (error) {
+      alert('Error deleting suggestions')
+    } finally {
+      setDeleting(false)
+    }
+  }
+
   return (
     <div className="space-y-5">
       <motion.div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
         <div className="bg-gradient-to-r from-gray-50 to-gray-100 px-6 py-4 border-b border-gray-200">
-          <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
-            <span className="w-8 h-8 bg-yellow-100 rounded-lg flex items-center justify-center">
-              <svg className="w-4 h-4 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" /></svg>
-            </span>
-            User Suggestions ({data.length})
-          </h3>
+          <div className="flex items-center justify-between">
+            <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
+              <span className="w-8 h-8 bg-yellow-100 rounded-lg flex items-center justify-center">
+                <svg className="w-4 h-4 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" /></svg>
+              </span>
+              User Suggestions ({data.length})
+            </h3>
+            <div className="flex items-center gap-3">
+              {selectMode ? (
+                <>
+                  {data.length > 0 && (
+                    <label className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer hover:text-gray-900">
+                      <input
+                        type="checkbox"
+                        checked={selected.size === data.length && data.length > 0}
+                        onChange={toggleSelectAll}
+                        className="w-4 h-4 rounded border-gray-300 text-[var(--primary)] focus:ring-[var(--primary)]"
+                      />
+                      Select All
+                    </label>
+                  )}
+                  {selected.size > 0 && (
+                    <Button
+                      variant="danger"
+                      onClick={deleteSelected}
+                      disabled={deleting}
+                    >
+                      {deleting ? 'Deleting...' : `Delete ${selected.size} Selected`}
+                    </Button>
+                  )}
+                  <Button variant="secondary" onClick={() => { setSelectMode(false); setSelected(new Set()); }}>Cancel</Button>
+                </>
+              ) : (
+                data.length > 0 && <Button variant="secondary" onClick={() => setSelectMode(true)}>Select</Button>
+              )}
+            </div>
+          </div>
         </div>
         {data.length===0 && <div className="p-8 text-center text-gray-500">No suggestions submitted yet.</div>}
         <div className="divide-y divide-gray-100">
           {data.map(s => (
-            <div key={s.id} className="p-6 hover:bg-gray-50 transition-colors">
-              <div className="flex items-center justify-between mb-3">
-                <div className="text-sm text-gray-600 flex items-center gap-2">
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                  {new Date(s.createdAt).toLocaleString()}
+            <div key={s.id} className={`p-6 transition-colors ${selected.has(s.id) ? 'bg-blue-50' : 'hover:bg-gray-50'}`}>
+              <div className="flex items-start gap-3">
+                {selectMode && (
+                  <input
+                    type="checkbox"
+                    checked={selected.has(s.id)}
+                    onChange={() => toggleSelect(s.id)}
+                    className="mt-1 w-4 h-4 rounded border-gray-300 text-[var(--primary)] focus:ring-[var(--primary)]"
+                  />
+                )}
+                <div className="flex-1">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="text-sm text-gray-600 flex items-center gap-2">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                      {new Date(s.createdAt).toLocaleString()}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="text-sm font-semibold text-[var(--primary)] bg-blue-50 px-3 py-1 rounded-lg">{s.userName}</div>
+                      <button
+                        onClick={async () => {
+                          if (confirm('Are you sure you want to delete this suggestion?')) {
+                            await deleteSuggestion(s.id)
+                            onChange(data.filter(item => item.id !== s.id))
+                            setSelected(prev => {
+                              const newSelected = new Set(prev)
+                              newSelected.delete(s.id)
+                              return newSelected
+                            })
+                          }
+                        }}
+                        className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                        title="Delete suggestion"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+                  <p className="text-gray-800 whitespace-pre-wrap leading-relaxed">{s.text}</p>
+                  {s.fileNames?.length>0 && (
+                    <div className="mt-4 space-y-2">
+                      <div className="flex items-center gap-2 text-sm font-semibold text-gray-700">
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" /></svg>
+                        <span>Attachments ({s.fileNames.length})</span>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        {s.fileNames.map((fileName, idx) => (
+                          <a
+                            key={idx}
+                            href={`${import.meta.env?.VITE_API_URL || 'http://localhost:5001'}/uploads/suggestions/${fileName}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-2 px-3 py-2 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-lg text-sm text-blue-700 transition-colors"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            </svg>
+                            {fileName}
+                          </a>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
-                <div className="text-sm font-semibold text-[var(--primary)] bg-blue-50 px-3 py-1 rounded-lg">{s.userName}</div>
               </div>
-              <p className="text-gray-800 whitespace-pre-wrap leading-relaxed">{s.text}</p>
-              {s.fileNames?.length>0 && (
-                <div className="mt-3 flex items-center gap-2 text-sm text-gray-600">
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" /></svg>
-                  <span>Attachments: {s.fileNames.join(', ')}</span>
-                </div>
-              )}
             </div>
           ))}
         </div>
       </motion.div>
       <div className="text-sm text-gray-500 bg-blue-50 border border-blue-200 rounded-lg px-4 py-3 flex items-start gap-2">
         <svg className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-        <span>Note: Files are not uploaded in this mock; only filenames are stored.</span>
+        <span>Click on any attachment to download and view the supporting documents submitted by members.</span>
       </div>
     </div>
   )
@@ -1750,6 +2621,9 @@ function AssociationBodyAdmin() {
   const [openCreate, setOpenCreate] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [selectedDivision, setSelectedDivision] = useState<Division | ''>('')
+  const [selectMode, setSelectMode] = useState(false)
+  const [selected, setSelected] = useState<Set<string>>(new Set())
+  const [deleting, setDeleting] = useState(false)
   const [form, setForm] = useState<Omit<BodyMember, 'id'>>({ name: '', designation: '', photoUrl: '', division: 'Mumbai' })
   const [photoFile, setPhotoFile] = useState<File | null>(null)
   const [photoPreview, setPhotoPreview] = useState<string>('')
@@ -1824,6 +2698,12 @@ function AssociationBodyAdmin() {
     if (confirm('Delete this body member?')) {
       try {
         await deleteBodyMember(id)
+        // Clear from selected if it was selected
+        setSelected(prev => {
+          const newSet = new Set(prev)
+          newSet.delete(id)
+          return newSet
+        })
         // Refresh the list from server to ensure consistency
         const updatedList = await getBodyMembers(selectedDivision || undefined)
         setBodyMembers(updatedList)
@@ -1831,6 +2711,44 @@ function AssociationBodyAdmin() {
         console.error('Delete body member error:', error)
         alert('Failed to delete body member')
       }
+    }
+  }
+
+  const toggleSelect = (id: string) => {
+    setSelected(prev => {
+      const newSet = new Set(prev)
+      if (newSet.has(id)) {
+        newSet.delete(id)
+      } else {
+        newSet.add(id)
+      }
+      return newSet
+    })
+  }
+
+  const toggleSelectAll = () => {
+    if (selected.size === bodyMembers.length) {
+      setSelected(new Set())
+    } else {
+      setSelected(new Set(bodyMembers.map(m => m.id)))
+    }
+  }
+
+  const deleteSelected = async () => {
+    if (selected.size === 0) return
+    if (!confirm(`Delete ${selected.size} selected member(s)?`)) return
+
+    setDeleting(true)
+    try {
+      await Promise.all(Array.from(selected).map(id => deleteBodyMember(id)))
+      setSelected(new Set())
+      const updatedList = await getBodyMembers(selectedDivision || undefined)
+      setBodyMembers(updatedList)
+    } catch (error) {
+      console.error('Bulk delete error:', error)
+      alert('Failed to delete some members')
+    } finally {
+      setDeleting(false)
     }
   }
 
@@ -1948,10 +2866,48 @@ function AssociationBodyAdmin() {
           transition={{ delay: 0.2 }}
           className="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden"
         >
+          {selectMode && (
+            <div className="bg-gray-50 border-b border-gray-200 px-6 py-3 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <label className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer hover:text-gray-900">
+                  <input
+                    type="checkbox"
+                    checked={bodyMembers.length > 0 && selected.size === bodyMembers.length}
+                    onChange={toggleSelectAll}
+                    className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-2 focus:ring-blue-500"
+                  />
+                  Select All
+                </label>
+                {selected.size > 0 && (
+                  <span className="text-blue-700 font-semibold">
+                    {selected.size} member(s) selected
+                  </span>
+                )}
+              </div>
+              <div className="flex items-center gap-2">
+                {selected.size > 0 && (
+                  <button
+                    onClick={deleteSelected}
+                    disabled={deleting}
+                    className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 font-semibold transition-colors text-sm"
+                  >
+                    {deleting ? 'Deleting...' : `Delete ${selected.size} Selected`}
+                  </button>
+                )}
+                <Button variant="secondary" onClick={() => { setSelectMode(false); setSelected(new Set()); }}>Cancel</Button>
+              </div>
+            </div>
+          )}
+          {!selectMode && bodyMembers.length > 0 && (
+            <div className="bg-gray-50 border-b border-gray-200 px-6 py-3 flex justify-end">
+              <Button variant="secondary" onClick={() => setSelectMode(true)}>Select</Button>
+            </div>
+          )}
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
                 <tr className="bg-gradient-to-r from-gray-50 to-gray-100 border-b-2 border-gray-200">
+                  {selectMode && <th className="px-6 py-4 text-center w-12"></th>}
                   <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
                     <div className="flex items-center gap-2">
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1973,8 +2929,18 @@ function AssociationBodyAdmin() {
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: index * 0.05 }}
-                    className="hover:bg-blue-50/50 transition-colors group"
+                    className={`hover:bg-blue-50/50 transition-colors group ${selected.has(member.id) ? 'bg-blue-50' : ''}`}
                   >
+                    {selectMode && (
+                      <td className="px-6 py-4 text-center">
+                        <input
+                          type="checkbox"
+                          checked={selected.has(member.id)}
+                          onChange={() => toggleSelect(member.id)}
+                          className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-2 focus:ring-blue-500"
+                        />
+                      </td>
+                    )}
                     <td className="px-6 py-4">
                       <div className="relative inline-block">
                         <img 
@@ -2189,6 +3155,34 @@ function MutualTransfersAdmin({ data, onChange }: { data: MutualTransfer[]; onCh
   const [openCreate, setOpenCreate] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [form, setForm] = useState({ post: '', currentLocation: '', desiredLocation: '', contactPhone: '', notes: '' })
+  const [selectMode, setSelectMode] = useState(false)
+  const [selected, setSelected] = useState<Set<string>>(new Set())
+  const [deleting, setDeleting] = useState(false)
+
+  const toggleSelect = (id: string) => {
+    const newSelected = new Set(selected)
+    if (newSelected.has(id)) newSelected.delete(id)
+    else newSelected.add(id)
+    setSelected(newSelected)
+  }
+
+  const toggleSelectAll = () => {
+    setSelected(selected.size === data.length ? new Set() : new Set(data.map(t => t.id)))
+  }
+
+  const deleteSelected = async () => {
+    if (selected.size === 0 || !confirm(`Delete ${selected.size} selected transfer(s)?`)) return
+    setDeleting(true)
+    try {
+      await Promise.all(Array.from(selected).map(id => deleteMutualTransfer(id)))
+      onChange(data.filter(t => !selected.has(t.id)))
+      setSelected(new Set())
+    } catch (error) {
+      alert('Error deleting transfers')
+    } finally {
+      setDeleting(false)
+    }
+  }
 
   const handleCreate = async () => {
     try {
@@ -2236,13 +3230,34 @@ function MutualTransfersAdmin({ data, onChange }: { data: MutualTransfer[]; onCh
     <div className="space-y-4">
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-bold">Mutual Transfers</h2>
-        <Button onClick={() => setOpenCreate(true)} variant="primary">Add Transfer</Button>
+        <div className="flex items-center gap-3">
+          {selectMode ? (
+            <>
+              {data.length > 0 && (
+                <label className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer hover:text-gray-900">
+                  <input type="checkbox" checked={selected.size === data.length && data.length > 0} onChange={toggleSelectAll} className="w-4 h-4 rounded border-gray-300 text-[var(--primary)] focus:ring-[var(--primary)]" />
+                  Select All
+                </label>
+              )}
+              {selected.size > 0 && (
+                <Button variant="danger" onClick={deleteSelected} disabled={deleting}>
+                  {deleting ? 'Deleting...' : `Delete ${selected.size} Selected`}
+                </Button>
+              )}
+              <Button variant="secondary" onClick={() => { setSelectMode(false); setSelected(new Set()); }}>Cancel</Button>
+            </>
+          ) : (
+            data.length > 0 && <Button variant="secondary" onClick={() => setSelectMode(true)}>Select</Button>
+          )}
+          <Button onClick={() => setOpenCreate(true)} variant="primary">Add Transfer</Button>
+        </div>
       </div>
 
       <div className="grid gap-4">
         {data.map(item => (
-          <div key={item.id} className="border rounded-lg p-4 bg-white">
-            <div className="flex justify-between items-start">
+          <div key={item.id} className={`border rounded-lg p-4 transition-colors ${selected.has(item.id) ? 'bg-blue-50 border-blue-300' : 'bg-white'}`}>
+            <div className="flex justify-between items-start gap-3">
+              {selectMode && <input type="checkbox" checked={selected.has(item.id)} onChange={() => toggleSelect(item.id)} className="mt-1 w-4 h-4 rounded border-gray-300 text-[var(--primary)] focus:ring-[var(--primary)]" />}
               <div>
                 <div className="font-semibold">{item.post}</div>
                 <div className="text-sm text-gray-600">From: {item.currentLocation} → To: {item.desiredLocation}</div>

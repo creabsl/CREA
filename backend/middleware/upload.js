@@ -29,3 +29,9 @@ function fileFilter(_req, file, cb) {
 
 exports.uploadSingle = (subdir) =>
   multer({ storage: storageFor(subdir), fileFilter, limits: { fileSize: 10 * 1024 * 1024 } }).single('file');
+
+exports.upload = multer({ 
+  storage: storageFor('suggestions'), 
+  fileFilter, 
+  limits: { fileSize: 10 * 1024 * 1024 } 
+});
