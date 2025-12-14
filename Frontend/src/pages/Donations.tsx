@@ -3,11 +3,29 @@ import { motion } from 'framer-motion'
 import { usePageTitle } from '../hooks/usePageTitle'
 import Input from '../components/Input'
 import Button from '../components/Button'
+import { createDonation } from '../services/api'
 
 export default function Donations() {
   usePageTitle('CREA • Support Our Mission')
   
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<{
+    fullName: string
+    email: string
+    mobile: string
+    isEmployee: boolean
+    employeeId: string
+    designation: string
+    division: string
+    department: string
+    amount: string
+    purpose: 'general' | 'education' | 'welfare' | 'infrastructure'
+    isAnonymous: boolean
+    address: string
+    city: string
+    state: string
+    pincode: string
+    message: string
+  }>({
     // Donor Information
     fullName: '',
     email: '',
@@ -46,15 +64,7 @@ export default function Donations() {
     e.preventDefault()
     
     try {
-      const response = await fetch('http://localhost:5001/api/donations', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData)
-      })
-      
-      const data = await response.json()
+      const data = await createDonation(formData)
       
       if (data.success) {
         setSubmitted(true)

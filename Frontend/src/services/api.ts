@@ -544,6 +544,37 @@ export async function getMembershipStats(): Promise<{
   return request('/api/memberships/stats')
 }
 
+export type BulkUploadResult = {
+  row: number
+  membershipId?: string
+  name?: string
+  email?: string
+  validFrom?: string
+  validUntil?: string
+  data?: any
+  error?: string
+}
+
+export type BulkUploadResponse = {
+  success: boolean
+  message: string
+  results: {
+    success: BulkUploadResult[]
+    failed: BulkUploadResult[]
+    total: number
+  }
+}
+
+export async function bulkUploadMembers(file: File): Promise<BulkUploadResponse> {
+  const formData = new FormData()
+  formData.append('file', file)
+  
+  return request<BulkUploadResponse>('/api/memberships/bulk-upload', { 
+    method: 'POST', 
+    body: formData 
+  })
+}
+
 // Auth
 export type User = { 
   id: string
@@ -874,5 +905,61 @@ export async function getMembershipPricing(): Promise<{ ordinary: number; lifeti
   } catch {
     return { ordinary: 500, lifetime: 10000 }
   }
+}
+
+// Donations
+export interface DonationFormData {
+  fullName: string
+  email: string
+  mobile: string
+  isEmployee?: boolean
+  employeeId?: string
+  designation?: string
+  division?: string
+  department?: string
+  amount: number | string
+  purpose: 'general' | 'education' | 'welfare' | 'infrastructure'
+  isAnonymous?: boolean
+  address?: string
+  city?: string
+  state?: string
+  pincode?: string
+  message?: string
+}
+
+export interface DonationResponse {
+  success: boolean
+  message?: string
+  data?: any
+}
+
+export async function createDonation(formData: DonationFormData): Promise<DonationResponse> {
+  return request<DonationResponse>('/api/donations', {
+    method: 'POST',
+    body: JSON.stringify(formData)
+  })
+}
+
+export async function getAllDonations(): Promise<any[]> {
+  const res = await request<{ success: boolean; data: any[] }>('/api/donations')
+  return res.data
+}
+
+export async function getDonationById(id: string): Promise<any> {
+  const res = await request<{ success: boolean; data: any }>(`/api/donations/${id}`)
+  return res.data
+}
+
+export async function updateDonation(id: string, updates: Partial<DonationFormData>): Promise<any> {
+  const res = await request<{ success: boolean; data: any }>(`/api/donations/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(updates)
+  })
+  return res.data
+}
+
+export async function deleteDonation(id: string): Promise<{ success: boolean }> {
+  await request(`/api/donations/${id}`, { method: 'DELETE' })
+  return { success: true }
 }
 

@@ -4,9 +4,10 @@ import { motion } from 'framer-motion'
 import Button from '../components/Button'
 import Input from '../components/Input'
 import Spinner from '../components/Spinner'
+import BulkMemberUpload from '../components/BulkMemberUpload'
 import { StaggerContainer, StaggerItem } from '../components/StaggerAnimation'
 import { usePageTitle } from '../hooks/usePageTitle'
-import { createCircular, createCourtCase, createEvent, createForumTopic, createManual, deleteCircular, deleteCourtCase, deleteEvent, deleteForumTopic, deleteManual, getCirculars, getCourtCases, getEvents, getForumTopics, getManuals, getSuggestions, deleteSuggestion, updateCircular, updateCourtCase, updateEvent, updateForumTopic, updateManual, adminListUsers, adminUpdateUser, notifyStatsChanged, getSettings, updateMultipleSettings, getMutualTransfers, createMutualTransfer, updateMutualTransfer, deleteMutualTransfer, getBodyMembers, createBodyMember, updateBodyMember, deleteBodyMember } from '../services/api'
+import { createCircular, createCourtCase, createEvent, createForumTopic, createManual, deleteCircular, deleteCourtCase, deleteEvent, deleteForumTopic, deleteManual, getCirculars, getCourtCases, getEvents, getForumTopics, getManuals, getSuggestions, deleteSuggestion, updateCircular, updateCourtCase, updateEvent, updateForumTopic, updateManual, adminListUsers, adminUpdateUser, notifyStatsChanged, getSettings, updateMultipleSettings, getMutualTransfers, createMutualTransfer, updateMutualTransfer, deleteMutualTransfer, getBodyMembers, createBodyMember, updateBodyMember, deleteBodyMember, getAllDonations, deleteDonation } from '../services/api'
 import type { Circular, CourtCase, EventItem, ForumTopic, Manual, Suggestion, Division, MutualTransfer, BodyMember } from '../types'
 import { DIVISIONS } from '../types'
 import type { MemberUser, Setting } from '../services/api'
@@ -456,6 +457,7 @@ function MembersAdmin({ data, onReload, onUpdate, division, onDivisionChange }: 
   const navigate = useNavigate()
   const [editing, setEditing] = useState<Record<string, Partial<MemberUser>>>({})
   const [saving, setSaving] = useState(false)
+  const [showBulkUpload, setShowBulkUpload] = useState(false)
 
   const setEdit = (id: string, patch: Partial<MemberUser>) => setEditing(prev => ({ ...prev, [id]: { ...prev[id], ...patch } }))
 
@@ -542,8 +544,24 @@ function MembersAdmin({ data, onReload, onUpdate, division, onDivisionChange }: 
               Export CSV
             </span>
           </Button>
+          <Button onClick={() => setShowBulkUpload(true)}>
+            <span className="flex items-center gap-2">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" /></svg>
+              Bulk Upload
+            </span>
+          </Button>
         </div>
       </motion.div>
+
+      {/* Bulk Upload Modal */}
+      <BulkMemberUpload
+        isOpen={showBulkUpload}
+        onClose={() => setShowBulkUpload(false)}
+        onSuccess={() => {
+          onReload(division)
+          notifyStatsChanged()
+        }}
+      />
 
       {/* Save All Changes Bar */}
       {hasChanges && (
@@ -4048,25 +4066,8 @@ function DonationsAdmin() {
   const fetchDonations = async () => {
     try {
       setLoading(true)
-      const token = localStorage.getItem('crea:token')
-      if (!token) {
-        console.error('No authentication token found')
-        setLoading(false)
-        return
-      }
-      const response = await fetch('http://localhost:5001/api/donations', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      })
-      const data = await response.json()
-      console.log('Donations response:', data)
-      if (data.success) {
-        setDonations(data.data)
-      } else {
-        console.error('Failed to fetch donations:', data.message)
-      }
+      const donationsData = await getAllDonations()
+      setDonations(donationsData)
     } catch (error) {
       console.error('Error fetching donations:', error)
     } finally {

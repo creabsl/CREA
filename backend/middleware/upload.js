@@ -27,8 +27,28 @@ function fileFilter(_req, file, cb) {
   return cb(null, true);
 }
 
+function bulkUploadFileFilter(_req, file, cb) {
+  const allowedMimeTypes = [
+    'text/csv',
+    'application/vnd.ms-excel',
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+  ];
+  const allowedExtensions = ['.csv', '.xls', '.xlsx'];
+  const ext = path.extname(file.originalname).toLowerCase();
+  
+  const ok = allowedMimeTypes.includes(file.mimetype) || allowedExtensions.includes(ext);
+  if (!ok) return cb(new Error('Only CSV and Excel files allowed'));
+  return cb(null, true);
+}
+
 exports.uploadSingle = (subdir) =>
   multer({ storage: storageFor(subdir), fileFilter, limits: { fileSize: 10 * 1024 * 1024 } }).single('file');
+
+exports.uploadBulkMembers = multer({ 
+  storage: storageFor('bulk-uploads'), 
+  fileFilter: bulkUploadFileFilter, 
+  limits: { fileSize: 5 * 1024 * 1024 } // 5MB limit for bulk upload files
+}).single('file');
 
 exports.upload = multer({ 
   storage: storageFor('suggestions'), 

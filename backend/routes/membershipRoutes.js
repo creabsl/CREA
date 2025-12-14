@@ -5,9 +5,11 @@ const {
   listMemberships, 
   updateMembershipStatus,
   renewMembership,
-  getMembershipStats
+  getMembershipStats,
+  bulkUploadMembers
 } = require('../controllers/membershipController');
 const { protect, adminOnly } = require('../middleware/authMiddleware');
+const { uploadBulkMembers } = require('../middleware/upload');
 
 // Public routes
 router.post('/', protect, submitMembership);
@@ -19,5 +21,6 @@ router.get('/stats', protect, getMembershipStats);
 router.get('/', protect, adminOnly, listMemberships);
 router.put('/:id/status', protect, adminOnly, updateMembershipStatus);
 router.put('/:id/renew', protect, adminOnly, renewMembership);
+router.post('/bulk-upload', protect, adminOnly, uploadBulkMembers, bulkUploadMembers);
 
 module.exports = router;
