@@ -165,3 +165,26 @@ export type Donation = {
   createdAt: string
   updatedAt: string
 }
+
+export type PromotionType = 'promotion' | 'announcement' | 'achievement' | 'notification'
+export type PromotionPriority = 'high' | 'medium' | 'low'
+
+export type Promotion = {
+  _id: string
+  title: string
+  description: string
+  type: PromotionType
+  priority: PromotionPriority
+  link?: string
+  imageUrl?: string
+  isActive: boolean
+  startDate: string
+  endDate?: string
+  createdBy: {
+    _id: string
+    name: string
+    email: string
+  }
+  createdAt: string
+  updatedAt: string
+}

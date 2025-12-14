@@ -42,6 +42,7 @@ const bodyMemberRoutes = require('./routes/bodyMemberRoutes');
 const notificationRoutes = require('./routes/notificationRoutes');
 const settingRoutes = require('./routes/settingRoutes');
 const donationRoutes = require('./routes/donationRoutes');
+const promotionRoutes = require('./routes/promotionRoutes');
 
 app.use('/api/users', userRoutes);
 app.use('/api/auth', authRoutes);
@@ -59,6 +60,7 @@ app.use('/api/body-members', bodyMemberRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/settings', settingRoutes);
 app.use('/api/donations', donationRoutes);
+app.use('/api/promotions', promotionRoutes);
 
 // Health check
 app.get('/health', (_req, res) => res.json({ status: 'ok' }));

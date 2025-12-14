@@ -13,7 +13,8 @@ import type {
   PaymentMethod,
   Suggestion,
   ExternalLink,
-  ExternalLinkCategory
+  ExternalLinkCategory,
+  Promotion
 } from '../types'
 
 // Base URL for backend API
@@ -874,5 +875,44 @@ export async function getMembershipPricing(): Promise<{ ordinary: number; lifeti
   } catch {
     return { ordinary: 500, lifetime: 10000 }
   }
+}
+
+// ==================== PROMOTIONS ====================
+
+export async function getActivePromotions(): Promise<Promotion[]> {
+  const res = await request<{ success: boolean; data: Promotion[] }>('/api/promotions/active')
+  return res.data
+}
+
+export async function getAllPromotions(): Promise<Promotion[]> {
+  const res = await request<{ success: boolean; data: Promotion[] }>('/api/promotions')
+  return res.data
+}
+
+export async function getPromotionById(id: string): Promise<Promotion> {
+  const res = await request<{ success: boolean; data: Promotion }>(`/api/promotions/${id}`)
+  return res.data
+}
+
+export async function createPromotion(data: Partial<Promotion>): Promise<Promotion> {
+  const res = await request<{ success: boolean; data: Promotion }>('/api/promotions', {
+    method: 'POST',
+    body: JSON.stringify(data)
+  })
+  return res.data
+}
+
+export async function updatePromotion(id: string, data: Partial<Promotion>): Promise<Promotion> {
+  const res = await request<{ success: boolean; data: Promotion }>(`/api/promotions/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(data)
+  })
+  return res.data
+}
+
+export async function deletePromotion(id: string): Promise<void> {
+  await request<{ success: boolean }>(`/api/promotions/${id}`, {
+    method: 'DELETE'
+  })
 }
 
