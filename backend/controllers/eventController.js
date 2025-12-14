@@ -41,19 +41,28 @@ exports.createEvent = async (req, res) => {
       const userIds = allUsers.map(u => u._id);
       
       const isBreaking = Boolean(isBreakingNews || breaking);
-      const notificationTitle = isBreaking ? '🚨 Breaking News Alert' : 'New Event Published';
-      const notificationMessage = isBreaking 
-        ? `Breaking News: "${title}" - ${description}`
-        : `A new event "${title}" has been scheduled. Check it out!`;
       
-      await createNotificationForUsers(
-        userIds,
-        isBreaking ? 'breaking' : 'event',
-        notificationTitle,
-        notificationMessage,
-        '/events',
-        { eventId: event._id }
-      );
+      if (isBreaking) {
+        // Breaking news notification with special formatting
+        await createNotificationForUsers(
+          userIds,
+          'breaking',
+          '🚨 Breaking News Alert',
+          `${title}`,
+          '/events',
+          { eventId: event._id, isBreaking: true }
+        );
+      } else {
+        // Regular event notification
+        await createNotificationForUsers(
+          userIds,
+          'event',
+          'New Event Published',
+          `A new event "${title}" has been scheduled. Check it out!`,
+          '/events',
+          { eventId: event._id }
+        );
+      }
     } catch (notifError) {
       console.error('Error creating notifications:', notifError);
     }

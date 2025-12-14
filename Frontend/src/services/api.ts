@@ -440,7 +440,7 @@ export async function rejectForumComment(postId: string, commentIndex: number): 
 export type Notification = {
   _id: string
   userId: string
-  type: 'forum' | 'event' | 'document' | 'membership' | 'transfer' | 'suggestion' | 'system' | 'association'
+  type: 'forum' | 'event' | 'document' | 'membership' | 'transfer' | 'suggestion' | 'system' | 'association' | 'breaking'
   title: string
   message: string
   link?: string

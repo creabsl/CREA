@@ -14,7 +14,7 @@ import { defaultTimelineStops, defaultPastEvents, type TimelineStop, type PastEv
 
 export default function Admin() {
   usePageTitle('CREA • Admin')
-  const [tab, setTab] = useState<'events'|'documents'|'forum'|'suggestions'|'members'|'settings'|'about'|'transfers'|'association-body'|'donations'>('events')
+  const [tab, setTab] = useState<'events'|'documents'|'forum'|'suggestions'|'members'|'settings'|'about'|'transfers'|'association-body'|'donations'|'breaking-news'>('events')
   const [events, setEvents] = useState<EventItem[]>([])
   const [manuals, setManuals] = useState<Manual[]>([])
   const [circulars, setCirculars] = useState<Circular[]>([])
@@ -229,7 +229,7 @@ export default function Admin() {
 
       {/* Tab Navigation */}
       <div className="flex gap-2 flex-wrap">
-        {(['events','documents','forum','suggestions','members','settings','transfers','association-body','donations'] as const).map(k => (
+        {(['breaking-news','events','documents','forum','suggestions','members','settings','transfers','association-body','donations'] as const).map(k => (
           <motion.button 
             key={k} 
             onClick={()=>setTab(k)} 
@@ -259,6 +259,7 @@ export default function Admin() {
         </motion.button>
       </div>
 
+      {tab==='breaking-news' && <BreakingNewsAdmin data={events} onChange={setEvents} />}
       {tab==='events' && <EventsAdmin data={events} onChange={setEvents} />}
       {tab==='documents' && <DocumentsAdmin manuals={manuals} circulars={circulars} courtCases={cases} onManualsChange={setManuals} onCircularsChange={setCirculars} onCourtCasesChange={setCases} />}
   {tab==='forum' && <ForumAdmin data={topics} onChange={setTopics} />}
@@ -903,15 +904,252 @@ function MembersAdmin({ data, onReload, onUpdate, division, onDivisionChange }: 
   )
 }
 
+function BreakingNewsAdmin({ data, onChange }: { data: EventItem[]; onChange: (d: EventItem[])=>void }) {
+  const [form, setForm] = useState({ title: '', description: '' })
+  const [deleting, setDeleting] = useState<string | null>(null)
+  
+  const breakingNews = data.filter(e => e.breaking)
+
+  const publishBreakingNews = async () => {
+    if (!form.title.trim() || !form.description.trim()) {
+      alert('Please fill in both title and message')
+      return
+    }
+    
+    try {
+      const created = await createEvent({
+        title: form.title,
+        date: new Date().toISOString().split('T')[0],
+        location: 'Announcement',
+        description: form.description,
+        photos: [],
+        breaking: true
+      })
+      onChange([...data, created])
+      setForm({ title: '', description: '' })
+      alert('Breaking news published successfully!')
+    } catch (error) {
+      console.error('Error publishing breaking news:', error)
+      alert('Failed to publish breaking news')
+    }
+  }
+
+  const removeBreakingNews = async (id: string) => {
+    if (!confirm('Are you sure you want to remove this breaking news?')) return
+    
+    setDeleting(id)
+    try {
+      await deleteEvent(id)
+      onChange(data.filter(e => e.id !== id))
+    } catch (error) {
+      console.error('Error deleting breaking news:', error)
+      alert('Failed to delete breaking news')
+    } finally {
+      setDeleting(null)
+    }
+  }
+
+  const toggleBreaking = async (event: EventItem) => {
+    try {
+      const updated = await updateEvent(event.id, { breaking: !event.breaking })
+      onChange(data.map(e => e.id === event.id ? updated : e))
+    } catch (error) {
+      console.error('Error updating event:', error)
+      alert('Failed to update event')
+    }
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <motion.div
+        className="rounded-xl border-2 border-[var(--accent)] bg-gradient-to-br from-yellow-50 to-orange-50 p-6 shadow-md"
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+      >
+        <div className="flex items-center gap-3 mb-4">
+          <div className="w-10 h-10 bg-[var(--accent)] rounded-lg flex items-center justify-center">
+            <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z" />
+            </svg>
+          </div>
+          <div>
+            <h2 className="text-xl font-bold text-[var(--primary)]">Breaking News Management</h2>
+            <p className="text-sm text-gray-600">Publish and manage urgent announcements and breaking news</p>
+          </div>
+        </div>
+
+        {/* Quick Publish Form */}
+        <div className="bg-white rounded-lg p-5 space-y-4">
+          <div className="flex items-center gap-2 mb-3">
+            <span className="bg-[var(--primary)] text-white px-3 py-1 rounded-full text-xs font-bold uppercase">
+              Quick Publish
+            </span>
+            <span className="text-xs text-gray-600">Appears immediately on dashboard</span>
+          </div>
+          
+          <Input
+            label="Breaking News Title"
+            value={form.title}
+            onChange={(e) => setForm({ ...form, title: e.target.value })}
+            placeholder="e.g., Important Notice, Urgent Update, Alert"
+          />
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Message</label>
+            <textarea
+              value={form.description}
+              onChange={(e) => setForm({ ...form, description: e.target.value })}
+              placeholder="Enter your breaking news message here..."
+              rows={3}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent resize-none"
+            />
+          </div>
+          
+          <Button
+            onClick={publishBreakingNews}
+            className="w-full bg-[var(--accent)] hover:bg-[#d49500] text-[var(--text-dark)]"
+          >
+            <span className="flex items-center justify-center gap-2">
+              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z" />
+              </svg>
+              Publish Breaking News
+            </span>
+          </Button>
+        </div>
+      </motion.div>
+
+      {/* Active Breaking News List */}
+      <motion.div
+        className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm"
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+      >
+        <div className="flex items-center justify-between mb-5">
+          <div className="flex items-center gap-2">
+            <h3 className="text-lg font-semibold text-gray-800">Active Breaking News</h3>
+            <span className="bg-[var(--primary)] text-white px-2 py-1 rounded-full text-xs font-bold">
+              {breakingNews.length}
+            </span>
+          </div>
+          {breakingNews.length > 0 && (
+            <span className="text-xs text-gray-500">Auto-rotates every 5 seconds on dashboard</span>
+          )}
+        </div>
+
+        {breakingNews.length === 0 ? (
+          <div className="text-center py-12">
+            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+              </svg>
+            </div>
+            <p className="text-gray-500 font-medium">No breaking news published</p>
+            <p className="text-sm text-gray-400 mt-1">Use the form above to publish urgent announcements</p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {breakingNews.map((item, index) => (
+              <motion.div
+                key={item.id}
+                className="border-l-4 border-[var(--accent)] bg-gradient-to-r from-yellow-50 to-white rounded-lg p-4 hover:shadow-md transition-all"
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: index * 0.1 }}
+              >
+                <div className="flex items-start gap-4">
+                  <div className="flex-shrink-0 w-10 h-10 bg-[var(--accent)]/20 rounded-lg flex items-center justify-center">
+                    <span className="text-lg font-bold text-[var(--primary)]">{index + 1}</span>
+                  </div>
+                  
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-start justify-between mb-2">
+                      <h4 className="font-semibold text-gray-900 text-base">{item.title}</h4>
+                      <span className="flex-shrink-0 text-xs text-gray-500">
+                        {new Date(item.date).toLocaleDateString()}
+                      </span>
+                    </div>
+                    <p className="text-sm text-gray-600 mb-3">{item.description}</p>
+                    <div className="flex items-center gap-2 text-xs text-gray-500">
+                      <span className="flex items-center gap-1">
+                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                        </svg>
+                        {item.location}
+                      </span>
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={() => removeBreakingNews(item.id)}
+                    disabled={deleting === item.id}
+                    className="flex-shrink-0 w-9 h-9 rounded-lg bg-red-50 hover:bg-red-100 text-red-600 flex items-center justify-center transition-colors disabled:opacity-50"
+                  >
+                    {deleting === item.id ? (
+                      <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                    ) : (
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                    )}
+                  </button>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        )}
+      </motion.div>
+
+      {/* Regular Events that can be promoted to Breaking News */}
+      <motion.div
+        className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm"
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+      >
+        <h3 className="text-lg font-semibold text-gray-800 mb-4">Promote Events to Breaking News</h3>
+        <p className="text-sm text-gray-600 mb-4">Toggle existing events as breaking news</p>
+        
+        {data.filter(e => !e.breaking).length === 0 ? (
+          <div className="text-center py-8 text-gray-500">
+            <p>All events are already marked as breaking news</p>
+          </div>
+        ) : (
+          <div className="space-y-2 max-h-96 overflow-y-auto">
+            {data.filter(e => !e.breaking).slice(0, 10).map(event => (
+              <div
+                key={event.id}
+                className="flex items-center justify-between p-3 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors"
+              >
+                <div className="flex-1 min-w-0">
+                  <h4 className="text-sm font-medium text-gray-900 truncate">{event.title}</h4>
+                  <p className="text-xs text-gray-500">{new Date(event.date).toLocaleDateString()}</p>
+                </div>
+                <button
+                  onClick={() => toggleBreaking(event)}
+                  className="ml-3 px-3 py-1.5 bg-[var(--accent)] hover:bg-[#d49500] text-[var(--text-dark)] rounded-lg text-xs font-medium transition-colors"
+                >
+                  Make Breaking
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+      </motion.div>
+    </div>
+  )
+}
+
 function EventsAdmin({ data, onChange }: { data: EventItem[]; onChange: (d: EventItem[])=>void }){
   const [form, setForm] = useState<Omit<EventItem,'id'>>({ title:'', date:'', location:'', description:'', photos:[], breaking:false })
   const [selectMode, setSelectMode] = useState(false)
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [deleting, setDeleting] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
-  
-  // Breaking News Announcement state
-  const [breakingNewsForm, setBreakingNewsForm] = useState({ title: '', description: '' })
 
   const filteredEvents = data.filter(e => 
     e.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -956,73 +1194,6 @@ function EventsAdmin({ data, onChange }: { data: EventItem[]; onChange: (d: Even
 
   return (
     <div className="space-y-5">
-      {/* Breaking News Announcement Section */}
-      <motion.div 
-        className="rounded-xl border-2 border-red-200 bg-gradient-to-br from-red-50 to-orange-50 p-6 shadow-sm"
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-      >
-        <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
-          <span className="w-8 h-8 bg-red-100 rounded-lg flex items-center justify-center">
-            <svg className="w-4 h-4 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z" />
-            </svg>
-          </span>
-          <span>Publish Breaking News Announcement</span>
-          <span className="ml-2 px-2 py-0.5 bg-red-100 text-red-700 text-xs font-bold rounded-full">STANDALONE</span>
-        </h3>
-        <div className="bg-white/80 rounded-lg p-4 mb-3">
-          <p className="text-sm text-gray-600 mb-2">
-            <strong>📢 Quick Announcement:</strong> Use this to publish urgent information or announcements as breaking news without creating a full event. 
-            Perfect for notices, alerts, or important updates that don't require event details.
-          </p>
-        </div>
-        <div className="space-y-4">
-          <Input 
-            label="Announcement Title" 
-            value={breakingNewsForm.title} 
-            onChange={(e)=>setBreakingNewsForm({...breakingNewsForm, title:e.target.value})}
-            placeholder="e.g., Important Notice, Urgent Update, Alert"
-          />
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Announcement Message</label>
-            <textarea
-              value={breakingNewsForm.description}
-              onChange={(e)=>setBreakingNewsForm({...breakingNewsForm, description:e.target.value})}
-              placeholder="Enter your breaking news message here..."
-              rows={4}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent resize-none"
-            />
-          </div>
-          <Button 
-            onClick={async()=>{ 
-              if (!breakingNewsForm.title.trim() || !breakingNewsForm.description.trim()) {
-                alert('Please fill in both title and message');
-                return;
-              }
-              const created = await createEvent({ 
-                title: breakingNewsForm.title, 
-                date: new Date().toISOString().split('T')[0], 
-                location: 'Announcement', 
-                description: breakingNewsForm.description, 
-                photos: [], 
-                breaking: true 
-              }); 
-              onChange([...data, created]); 
-              setBreakingNewsForm({ title: '', description: '' });
-            }}
-            className="bg-red-600 hover:bg-red-700 text-white"
-          >
-            <span className="flex items-center gap-2">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z" />
-              </svg>
-              Publish Breaking News
-            </span>
-          </Button>
-        </div>
-      </motion.div>
-
       <motion.div 
         className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm"
         initial={{ opacity: 0, y: 10 }}

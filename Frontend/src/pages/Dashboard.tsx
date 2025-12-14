@@ -21,6 +21,8 @@ export default function Dashboard() {
   const navigate = useNavigate()
   usePageTitle('CREA • Dashboard')
   const [totals, setTotals] = useState<{ divisions: number; members: number; courtCases: number }>({ divisions: 0, members: 0, courtCases: 0 })
+  const [currentBreakingIndex, setCurrentBreakingIndex] = useState(0)
+  
   useEffect(() => {
     const load = async () => {
       const [counts, totals, events, topics, circulars, cases] = await Promise.all([
@@ -44,7 +46,17 @@ export default function Dashboard() {
     return () => window.removeEventListener('crea:stats-changed', onStats as EventListener)
   }, [])
 
-  const breaking = useMemo(() => events.find(e => e.breaking), [events])
+  const breakingNews = useMemo(() => events.filter(e => e.breaking), [events])
+  
+  // Auto-rotate breaking news every 5 seconds
+  useEffect(() => {
+    if (breakingNews.length > 1) {
+      const interval = setInterval(() => {
+        setCurrentBreakingIndex((prev) => (prev + 1) % breakingNews.length)
+      }, 5000)
+      return () => clearInterval(interval)
+    }
+  }, [breakingNews.length])
 
   return (
     <div className="space-y-6">
@@ -156,17 +168,20 @@ export default function Dashboard() {
       </motion.div>
 
       {/* Breaking News Alert */}
-      {breaking && (
+      {breakingNews.length > 0 && (
         <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.6, duration: 0.5 }}
         >
           <BreakingNews
-            title={breaking.title}
-            content={breaking.description}
-            date={breaking.date}
-            location={breaking.location}
+            title={breakingNews[currentBreakingIndex].title}
+            content={breakingNews[currentBreakingIndex].description}
+            date={breakingNews[currentBreakingIndex].date}
+            location={breakingNews[currentBreakingIndex].location}
+            currentIndex={currentBreakingIndex}
+            totalCount={breakingNews.length}
+            onNavigate={(index) => setCurrentBreakingIndex(index)}
           />
         </motion.div>
       )}

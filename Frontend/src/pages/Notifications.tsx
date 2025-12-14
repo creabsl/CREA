@@ -83,6 +83,12 @@ export default function Notifications() {
 
   const getIcon = (type: Notification['type']) => {
     switch (type) {
+      case 'breaking':
+        return (
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z" />
+          </svg>
+        )
       case 'forum':
         return (
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -124,6 +130,7 @@ export default function Notifications() {
 
   const getTypeColor = (type: Notification['type']) => {
     switch (type) {
+      case 'breaking': return 'bg-red-100 text-red-700'
       case 'forum': return 'bg-blue-100 text-blue-700'
       case 'event': return 'bg-green-100 text-green-700'
       case 'document': return 'bg-purple-100 text-purple-700'
@@ -230,7 +237,11 @@ export default function Notifications() {
             <motion.div
               key={notification._id}
               className={`bg-white rounded-xl p-4 shadow-md border-l-4 ${
-                notification.read ? 'border-gray-300' : 'border-[var(--primary)]'
+                notification.type === 'breaking' 
+                  ? 'border-red-500 bg-red-50/30' 
+                  : notification.read 
+                    ? 'border-gray-300' 
+                    : 'border-[var(--primary)]'
               } hover:shadow-lg transition-all`}
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
