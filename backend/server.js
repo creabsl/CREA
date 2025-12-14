@@ -42,7 +42,8 @@ const bodyMemberRoutes = require('./routes/bodyMemberRoutes');
 const notificationRoutes = require('./routes/notificationRoutes');
 const settingRoutes = require('./routes/settingRoutes');
 const donationRoutes = require('./routes/donationRoutes');
-const promotionRoutes = require('./routes/promotionRoutes');
+const advertisementRoutes = require('./routes/advertisementRoutes');
+const achievementRoutes = require('./routes/achievementRoutes');
 
 app.use('/api/users', userRoutes);
 app.use('/api/auth', authRoutes);
@@ -60,7 +61,10 @@ app.use('/api/body-members', bodyMemberRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/settings', settingRoutes);
 app.use('/api/donations', donationRoutes);
-app.use('/api/promotions', promotionRoutes);
+app.use('/api/advertisements', advertisementRoutes);
+app.use('/api/achievements', achievementRoutes);
+console.log('✅ Advertisement routes registered at /api/advertisements');
+console.log('✅ Achievement routes registered at /api/achievements');
 
 // Health check
 app.get('/health', (_req, res) => res.json({ status: 'ok' }));

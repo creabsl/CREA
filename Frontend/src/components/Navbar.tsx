@@ -83,13 +83,6 @@ export default function Navbar() {
               <span className="hidden md:inline">|</span>
               <span className="hidden md:inline">Empowering Engineers Since 1950</span>
             </div>
-            <div className="flex items-center gap-3">
-              <span className="hidden sm:inline">Screen Reader Access</span>
-              <span className="hidden sm:inline">|</span>
-              <span>A+</span>
-              <span>A</span>
-              <span>A-</span>
-            </div>
           </div>
         </div>
       </div>

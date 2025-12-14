@@ -166,17 +166,18 @@ export type Donation = {
   updatedAt: string
 }
 
-export type PromotionType = 'promotion' | 'announcement' | 'achievement' | 'notification'
-export type PromotionPriority = 'high' | 'medium' | 'low'
+export type AdvertisementType = 'announcement' | 'achievement' | 'notification'
+export type AdvertisementPriority = 'high' | 'medium' | 'low'
 
-export type Promotion = {
+export type Advertisement = {
   _id: string
   title: string
   description: string
-  type: PromotionType
-  priority: PromotionPriority
+  type: AdvertisementType
+  priority: AdvertisementPriority
   link?: string
   imageUrl?: string
+  videoUrl?: string
   isActive: boolean
   startDate: string
   endDate?: string
@@ -188,3 +189,26 @@ export type Promotion = {
   createdAt: string
   updatedAt: string
 }
+
+export type AchievementType = 'award' | 'courtCase' | 'milestone'
+
+export type Achievement = {
+  _id: string
+  type: AchievementType
+  title: string
+  description: string
+  date: string
+  imageUrl?: string
+  photos?: string[]
+  category?: string
+  isActive: boolean
+  createdBy: {
+    _id: string
+    name: string
+    email: string
+  }
+  createdAt: string
+  updatedAt: string
+}
+
+

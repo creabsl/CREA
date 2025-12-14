@@ -14,7 +14,8 @@ import type {
   Suggestion,
   ExternalLink,
   ExternalLinkCategory,
-  Promotion
+  Advertisement,
+  Achievement
 } from '../types'
 
 // Base URL for backend API
@@ -877,41 +878,75 @@ export async function getMembershipPricing(): Promise<{ ordinary: number; lifeti
   }
 }
 
-// ==================== PROMOTIONS ====================
+// ==================== ADVERTISEMENTS ====================
 
-export async function getActivePromotions(): Promise<Promotion[]> {
-  const res = await request<{ success: boolean; data: Promotion[] }>('/api/promotions/active')
+export async function getActiveAdvertisements(): Promise<Advertisement[]> {
+  const res = await request<{ success: boolean; data: Advertisement[] }>('/api/advertisements/active')
   return res.data
 }
 
-export async function getAllPromotions(): Promise<Promotion[]> {
-  const res = await request<{ success: boolean; data: Promotion[] }>('/api/promotions')
+export async function getAllAdvertisements(): Promise<Advertisement[]> {
+  const res = await request<{ success: boolean; data: Advertisement[] }>('/api/advertisements')
   return res.data
 }
 
-export async function getPromotionById(id: string): Promise<Promotion> {
-  const res = await request<{ success: boolean; data: Promotion }>(`/api/promotions/${id}`)
+export async function getAdvertisementById(id: string): Promise<Advertisement> {
+  const res = await request<{ success: boolean; data: Advertisement }>(`/api/advertisements/${id}`)
   return res.data
 }
 
-export async function createPromotion(data: Partial<Promotion>): Promise<Promotion> {
-  const res = await request<{ success: boolean; data: Promotion }>('/api/promotions', {
+export async function createAdvertisement(data: Partial<Advertisement>): Promise<Advertisement> {
+  const res = await request<{ success: boolean; data: Advertisement }>('/api/advertisements', {
     method: 'POST',
     body: JSON.stringify(data)
   })
   return res.data
 }
 
-export async function updatePromotion(id: string, data: Partial<Promotion>): Promise<Promotion> {
-  const res = await request<{ success: boolean; data: Promotion }>(`/api/promotions/${id}`, {
+export async function updateAdvertisement(id: string, data: Partial<Advertisement>): Promise<Advertisement> {
+  const res = await request<{ success: boolean; data: Advertisement }>(`/api/advertisements/${id}`, {
     method: 'PUT',
     body: JSON.stringify(data)
   })
   return res.data
 }
 
-export async function deletePromotion(id: string): Promise<void> {
-  await request<{ success: boolean }>(`/api/promotions/${id}`, {
+export async function deleteAdvertisement(id: string): Promise<void> {
+  await request<{ success: boolean }>(`/api/advertisements/${id}`, {
+    method: 'DELETE'
+  })
+}
+
+// ==================== ACHIEVEMENTS ====================
+
+export async function getActiveAchievements(): Promise<Achievement[]> {
+  return await request<Achievement[]>('/api/achievements/active')
+}
+
+export async function getAllAchievements(): Promise<Achievement[]> {
+  return await request<Achievement[]>('/api/achievements')
+}
+
+export async function getAchievementById(id: string): Promise<Achievement> {
+  return await request<Achievement>(`/api/achievements/${id}`)
+}
+
+export async function createAchievement(data: Partial<Achievement>): Promise<Achievement> {
+  return await request<Achievement>('/api/achievements', {
+    method: 'POST',
+    body: JSON.stringify(data)
+  })
+}
+
+export async function updateAchievement(id: string, data: Partial<Achievement>): Promise<Achievement> {
+  return await request<Achievement>(`/api/achievements/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(data)
+  })
+}
+
+export async function deleteAchievement(id: string): Promise<void> {
+  await request<void>(`/api/achievements/${id}`, {
     method: 'DELETE'
   })
 }

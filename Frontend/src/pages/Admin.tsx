@@ -6,15 +6,15 @@ import Input from '../components/Input'
 import Spinner from '../components/Spinner'
 import { StaggerContainer, StaggerItem } from '../components/StaggerAnimation'
 import { usePageTitle } from '../hooks/usePageTitle'
-import { createCircular, createCourtCase, createEvent, createForumTopic, createManual, deleteCircular, deleteCourtCase, deleteEvent, deleteForumTopic, deleteManual, getCirculars, getCourtCases, getEvents, getForumTopics, getManuals, getSuggestions, deleteSuggestion, updateCircular, updateCourtCase, updateEvent, updateForumTopic, updateManual, adminListUsers, adminUpdateUser, notifyStatsChanged, getSettings, updateMultipleSettings, getMutualTransfers, createMutualTransfer, updateMutualTransfer, deleteMutualTransfer, getBodyMembers, createBodyMember, updateBodyMember, deleteBodyMember } from '../services/api'
-import type { Circular, CourtCase, EventItem, ForumTopic, Manual, Suggestion, Division, MutualTransfer, BodyMember } from '../types'
+import { createCircular, createCourtCase, createEvent, createForumTopic, createManual, deleteCircular, deleteCourtCase, deleteEvent, deleteForumTopic, deleteManual, getCirculars, getCourtCases, getEvents, getForumTopics, getManuals, getSuggestions, deleteSuggestion, updateCircular, updateCourtCase, updateEvent, updateForumTopic, updateManual, adminListUsers, adminUpdateUser, notifyStatsChanged, getSettings, updateMultipleSettings, getMutualTransfers, createMutualTransfer, updateMutualTransfer, deleteMutualTransfer, getBodyMembers, createBodyMember, updateBodyMember, deleteBodyMember, getAllAdvertisements, createAdvertisement, updateAdvertisement, deleteAdvertisement, getAllAchievements, createAchievement, updateAchievement, deleteAchievement } from '../services/api'
+import type { Circular, CourtCase, EventItem, ForumTopic, Manual, Suggestion, Division, MutualTransfer, BodyMember, Advertisement, Achievement } from '../types'
 import { DIVISIONS } from '../types'
 import type { MemberUser, Setting } from '../services/api'
 import { defaultTimelineStops, defaultPastEvents, type TimelineStop, type PastEvent } from '../data/aboutDefaults'
 
 export default function Admin() {
   usePageTitle('CREA • Admin')
-  const [tab, setTab] = useState<'events'|'documents'|'forum'|'suggestions'|'members'|'settings'|'about'|'transfers'|'association-body'|'donations'>('events')
+  const [tab, setTab] = useState<'events'|'documents'|'forum'|'suggestions'|'members'|'settings'|'about'|'transfers'|'association-body'|'donations'|'advertisements'|'achievements'>('events')
   const [events, setEvents] = useState<EventItem[]>([])
   const [manuals, setManuals] = useState<Manual[]>([])
   const [circulars, setCirculars] = useState<Circular[]>([])
@@ -229,7 +229,7 @@ export default function Admin() {
 
       {/* Tab Navigation */}
       <div className="flex gap-2 flex-wrap">
-        {(['events','documents','forum','suggestions','members','settings','transfers','association-body','donations'] as const).map(k => (
+        {(['events','documents','forum','suggestions','members','settings','transfers','association-body','advertisements','achievements','donations'] as const).map(k => (
           <motion.button 
             key={k} 
             onClick={()=>setTab(k)} 
@@ -268,6 +268,8 @@ export default function Admin() {
   {tab==='transfers' && <MutualTransfersAdmin data={transfers} onChange={setTransfers} />}
   {tab==='about' && <AboutAdmin />}
   {tab==='association-body' && <AssociationBodyAdmin />}
+  {tab==='advertisements' && <AdvertisementsAdmin />}
+  {tab==='achievements' && <AchievementsAdmin />}
   {tab==='donations' && <DonationsAdmin />}
     </div>
   )
@@ -3876,3 +3878,788 @@ function DonationsAdmin() {
     </motion.div>
   )
 }
+
+// ==================== ADVERTISEMENTS ADMIN ====================
+function AdvertisementsAdmin() {
+  const [advertisements, setAdvertisements] = useState<Advertisement[]>([])
+  const [loading, setLoading] = useState(true)
+  const [showForm, setShowForm] = useState(false)
+  const [editingId, setEditingId] = useState<string | null>(null)
+  
+  const [formData, setFormData] = useState({
+    title: '',
+    description: '',
+    type: 'announcement' as 'announcement' | 'achievement' | 'notification',
+    priority: 'medium' as 'high' | 'medium' | 'low',
+    link: '',
+    imageUrl: '',
+    videoUrl: '',
+    isActive: true,
+    startDate: new Date().toISOString().split('T')[0],
+    endDate: ''
+  })
+
+  useEffect(() => {
+    loadAdvertisements()
+  }, [])
+
+  const loadAdvertisements = async () => {
+    setLoading(true)
+    try {
+      const data = await getAllAdvertisements()
+      setAdvertisements(data)
+    } catch (error) {
+      console.error('Error loading advertisements:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    try {
+      const payload = {
+        ...formData,
+        startDate: new Date(formData.startDate).toISOString(),
+        endDate: formData.endDate ? new Date(formData.endDate).toISOString() : undefined
+      }
+      
+      if (editingId) {
+        await updateAdvertisement(editingId, payload)
+        alert('Advertisement updated successfully!')
+      } else {
+        await createAdvertisement(payload)
+        alert('Advertisement created successfully!')
+      }
+      await loadAdvertisements()
+      resetForm()
+    } catch (error: any) {
+      console.error('Error saving advertisement:', error)
+      const message = error?.message || error?.toString() || 'Failed to save advertisement'
+      alert(`Error: ${message}`)
+    }
+  }
+
+  const handleEdit = (ad: Advertisement) => {
+    setEditingId(ad._id)
+    setFormData({
+      title: ad.title,
+      description: ad.description,
+      type: ad.type,
+      priority: ad.priority,
+      link: ad.link || '',
+      imageUrl: ad.imageUrl || '',
+      videoUrl: ad.videoUrl || '',
+      isActive: ad.isActive,
+      startDate: ad.startDate.split('T')[0],
+      endDate: ad.endDate ? ad.endDate.split('T')[0] : ''
+    })
+    setShowForm(true)
+  }
+
+  const handleDelete = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this advertisement?')) return
+    try {
+      await deleteAdvertisement(id)
+      await loadAdvertisements()
+    } catch (error) {
+      console.error('Error deleting advertisement:', error)
+      alert('Failed to delete advertisement')
+    }
+  }
+
+  const resetForm = () => {
+    setFormData({
+      title: '',
+      description: '',
+      type: 'announcement',
+      priority: 'medium',
+      link: '',
+      imageUrl: '',
+      videoUrl: '',
+      isActive: true,
+      startDate: new Date().toISOString().split('T')[0],
+      endDate: ''
+    })
+    setEditingId(null)
+    setShowForm(false)
+  }
+
+  return (
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h2 className="text-2xl font-bold text-gray-900">Manage Advertisements</h2>
+        <Button onClick={() => setShowForm(!showForm)}>
+          {showForm ? 'Cancel' : '+ Add Advertisement'}
+        </Button>
+      </div>
+
+      {showForm && (
+        <div className="bg-white rounded-lg shadow-md border border-gray-200 p-6">
+          <h3 className="text-lg font-semibold mb-4">{editingId ? 'Edit' : 'New'} Advertisement</h3>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Title *</label>
+                <Input
+                  value={formData.title}
+                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                  required
+                  placeholder="Enter advertisement title"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Type *</label>
+                <select
+                  value={formData.type}
+                  onChange={(e) => setFormData({ ...formData, type: e.target.value as 'announcement' | 'achievement' | 'notification' })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
+                  required
+                >
+                  <option value="announcement">Announcement</option>
+                  <option value="achievement">Achievement</option>
+                  <option value="notification">Notification</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Priority *</label>
+                <select
+                  value={formData.priority}
+                  onChange={(e) => setFormData({ ...formData, priority: e.target.value as 'high' | 'medium' | 'low' })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
+                  required
+                >
+                  <option value="high">High</option>
+                  <option value="medium">Medium</option>
+                  <option value="low">Low</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Link (Optional)</label>
+                <Input
+                  value={formData.link}
+                  onChange={(e) => setFormData({ ...formData, link: e.target.value })}
+                  placeholder="https://example.com"
+                  type="url"
+                />
+              </div>
+
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-gray-700 mb-1">Image (Optional)</label>
+                <div className="space-y-2">
+                  <Input
+                    value={formData.imageUrl}
+                    onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
+                    placeholder="https://example.com/image.jpg"
+                    type="url"
+                  />
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-gray-500">OR</span>
+                  </div>
+                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-[var(--primary)] transition-colors">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0]
+                        if (file) {
+                          // Create a preview URL
+                          const reader = new FileReader()
+                          reader.onloadend = () => {
+                            setFormData({ ...formData, imageUrl: reader.result as string })
+                          }
+                          reader.readAsDataURL(file)
+                        }
+                      }}
+                      className="hidden"
+                      id="image-upload"
+                    />
+                    <label htmlFor="image-upload" className="cursor-pointer">
+                      <div className="flex flex-col items-center gap-2">
+                        <svg className="w-10 h-10 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                        <span className="text-sm font-medium text-gray-700">Click to upload image</span>
+                        <span className="text-xs text-gray-500">PNG, JPG, GIF up to 10MB</span>
+                      </div>
+                    </label>
+                  </div>
+                  {formData.imageUrl && (
+                    <div className="relative">
+                      <img src={formData.imageUrl} alt="Preview" className="w-full h-40 object-cover rounded-lg" />
+                      <button
+                        type="button"
+                        onClick={() => setFormData({ ...formData, imageUrl: '' })}
+                        className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Video URL (Optional)</label>
+                <Input
+                  value={formData.videoUrl}
+                  onChange={(e) => setFormData({ ...formData, videoUrl: e.target.value })}
+                  placeholder="https://www.youtube.com/watch?v=..."
+                  type="url"
+                />
+                <p className="text-xs text-gray-500 mt-1">YouTube, Vimeo, or direct video URL</p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Start Date *</label>
+                <Input
+                  type="date"
+                  value={formData.startDate}
+                  onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">End Date (Optional)</label>
+                <Input
+                  type="date"
+                  value={formData.endDate}
+                  onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Description *</label>
+              <textarea
+                value={formData.description}
+                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                required
+                rows={4}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
+                placeholder="Enter advertisement description"
+              />
+            </div>
+
+            <div className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                id="isActive"
+                checked={formData.isActive}
+                onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
+                className="rounded"
+              />
+              <label htmlFor="isActive" className="text-sm text-gray-700">Active (Show on dashboard)</label>
+            </div>
+
+            <div className="flex gap-2">
+              <Button type="submit">
+                {editingId ? 'Update' : 'Create'} Advertisement
+              </Button>
+              <Button type="button" onClick={resetForm} variant="secondary">
+                Cancel
+              </Button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      <div className="bg-white rounded-lg shadow-md border border-gray-200 overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Title</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Priority</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Dates</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {loading ? (
+                <tr>
+                  <td colSpan={6} className="px-6 py-4 text-center">
+                    <Spinner />
+                  </td>
+                </tr>
+              ) : advertisements.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="px-6 py-4 text-center text-gray-500">
+                    No advertisements yet. Create your first one!
+                  </td>
+                </tr>
+              ) : (
+                advertisements.map((ad) => (
+                  <tr key={ad._id} className="hover:bg-gray-50">
+                    <td className="px-6 py-4">
+                      <div className="text-sm font-medium text-gray-900">{ad.title}</div>
+                      <div className="text-sm text-gray-500 line-clamp-1">{ad.description}</div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className={`px-2 py-1 text-xs rounded-full font-medium ${
+                        ad.type === 'achievement' ? 'bg-green-100 text-green-700' :
+                        ad.type === 'announcement' ? 'bg-blue-100 text-blue-700' :
+                        'bg-gray-100 text-gray-700'
+                      }`}>
+                        {ad.type}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className={`px-2 py-1 text-xs rounded-full font-medium ${
+                        ad.priority === 'high' ? 'bg-red-100 text-red-700' :
+                        ad.priority === 'medium' ? 'bg-yellow-100 text-yellow-700' :
+                        'bg-blue-100 text-blue-700'
+                      }`}>
+                        {ad.priority}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className={`px-2 py-1 text-xs rounded-full font-medium ${
+                        ad.isActive ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'
+                      }`}>
+                        {ad.isActive ? 'Active' : 'Inactive'}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      <div>{new Date(ad.startDate).toLocaleDateString()}</div>
+                      {ad.endDate && <div>to {new Date(ad.endDate).toLocaleDateString()}</div>}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                      <button
+                        onClick={() => handleEdit(ad)}
+                        className="text-[var(--primary)] hover:text-[#19417d] mr-3"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => handleDelete(ad._id)}
+                        className="text-red-600 hover:text-red-900"
+                      >
+                        Delete
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </motion.div>
+  )
+}
+
+// ==================== ACHIEVEMENTS ADMIN ====================
+function AchievementsAdmin() {
+  const [achievements, setAchievements] = useState<Achievement[]>([])
+  const [loading, setLoading] = useState(false)
+  const [isEditing, setIsEditing] = useState(false)
+  const [editingId, setEditingId] = useState<string | null>(null)
+  
+  const [type, setType] = useState<'award' | 'courtCase' | 'milestone'>('award')
+  const [title, setTitle] = useState('')
+  const [description, setDescription] = useState('')
+  const [date, setDate] = useState('')
+  const [imageUrl, setImageUrl] = useState('')
+  const [category, setCategory] = useState('')
+  const [isActive, setIsActive] = useState(true)
+  const [imageFile, setImageFile] = useState<File | null>(null)
+  const [imagePreview, setImagePreview] = useState<string>('')
+
+  useEffect(() => {
+    loadAchievements()
+  }, [])
+
+  const loadAchievements = async () => {
+    try {
+      setLoading(true)
+      const data = await getAllAchievements()
+      setAchievements(data)
+    } catch (error) {
+      console.error('Error loading achievements:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const resetForm = () => {
+    setIsEditing(false)
+    setEditingId(null)
+    setType('award')
+    setTitle('')
+    setDescription('')
+    setDate('')
+    setImageUrl('')
+    setCategory('')
+    setIsActive(true)
+    setImageFile(null)
+    setImagePreview('')
+  }
+
+  const handleImageFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    setImageFile(file)
+    setImageUrl('') // Clear URL when file is selected
+
+    const reader = new FileReader()
+    reader.onloadend = () => {
+      const base64 = reader.result as string
+      setImagePreview(base64)
+    }
+    reader.readAsDataURL(file)
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    
+    try {
+      setLoading(true)
+      
+      let finalImageUrl = imageUrl
+      if (imageFile && imagePreview) {
+        finalImageUrl = imagePreview // Use base64 image
+      }
+
+      const achievementData: Partial<Achievement> = {
+        type,
+        title,
+        description,
+        date,
+        imageUrl: finalImageUrl || undefined,
+        category: category || undefined,
+        isActive
+      }
+
+      if (isEditing && editingId) {
+        await updateAchievement(editingId, achievementData)
+      } else {
+        await createAchievement(achievementData)
+      }
+
+      await loadAchievements()
+      resetForm()
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred'
+      alert('Failed to save achievement: ' + errorMessage)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleEdit = (achievement: Achievement) => {
+    setIsEditing(true)
+    setEditingId(achievement._id)
+    setType(achievement.type)
+    setTitle(achievement.title)
+    setDescription(achievement.description)
+    setDate(achievement.date.split('T')[0])
+    setImageUrl(achievement.imageUrl || '')
+    setCategory(achievement.category || '')
+    setIsActive(achievement.isActive)
+    setImagePreview(achievement.imageUrl || '')
+  }
+
+  const handleDelete = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this achievement?')) return
+    
+    try {
+      setLoading(true)
+      await deleteAchievement(id)
+      await loadAchievements()
+    } catch (error) {
+      console.error('Error deleting achievement:', error)
+      alert('Failed to delete achievement')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5 }}
+      className="bg-white rounded-xl shadow-md overflow-hidden"
+    >
+      <div className="p-6 border-b border-gray-200 bg-gradient-to-r from-yellow-50 to-orange-50">
+        <h2 className="text-2xl font-bold text-gray-900">Manage Achievements</h2>
+        <p className="text-sm text-gray-600 mt-1">Add awards, court case victories, and milestone celebrations</p>
+      </div>
+      
+      <div className="p-6">
+        {/* Form */}
+        <form onSubmit={handleSubmit} className="space-y-4 mb-8 p-6 bg-gray-50 rounded-lg">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Type */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Achievement Type *</label>
+              <select
+                value={type}
+                onChange={(e) => setType(e.target.value as 'award' | 'courtCase' | 'milestone')}
+                required
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent"
+              >
+                <option value="award">Award / Recognition</option>
+                <option value="courtCase">Court Case Victory</option>
+                <option value="milestone">Milestone Celebration</option>
+              </select>
+            </div>
+
+            {/* Date */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Date *</label>
+              <input
+                type="date"
+                value={date}
+                onChange={(e) => setDate(e.target.value)}
+                required
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent"
+              />
+            </div>
+
+            {/* Title */}
+            <div className="md:col-span-2">
+              <label className="block text-sm font-medium text-gray-700 mb-1">Title *</label>
+              <input
+                type="text"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                required
+                placeholder="e.g., Best Railway Association Award 2024"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent"
+              />
+            </div>
+
+            {/* Description */}
+            <div className="md:col-span-2">
+              <label className="block text-sm font-medium text-gray-700 mb-1">Description *</label>
+              <textarea
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                required
+                rows={3}
+                placeholder="Detailed description of the achievement..."
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent"
+              />
+            </div>
+
+            {/* Category */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Category (Optional)</label>
+              <input
+                type="text"
+                value={category}
+                onChange={(e) => setCategory(e.target.value)}
+                placeholder="e.g., Excellence Award, Legal Victory"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent"
+              />
+            </div>
+
+            {/* Active Status */}
+            <div className="flex items-center">
+              <label className="flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={isActive}
+                  onChange={(e) => setIsActive(e.target.checked)}
+                  className="w-4 h-4 text-[var(--primary)] border-gray-300 rounded focus:ring-[var(--primary)]"
+                />
+                <span className="ml-2 text-sm font-medium text-gray-700">Active (Show on homepage)</span>
+              </label>
+            </div>
+
+            {/* Image Upload */}
+            <div className="md:col-span-2">
+              <label className="block text-sm font-medium text-gray-700 mb-2">Achievement Image</label>
+              
+              {/* File Upload */}
+              <div className="mb-3">
+                <label className="block text-xs text-gray-600 mb-1">Upload Image File</label>
+                <div className="relative">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageFileChange}
+                    className="hidden"
+                    id="achievement-image-upload"
+                  />
+                  <label
+                    htmlFor="achievement-image-upload"
+                    className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-[var(--primary)] hover:bg-gray-50 transition-all"
+                  >
+                    {imagePreview ? (
+                      <div className="relative w-full h-full">
+                        <img src={imagePreview} alt="Preview" className="w-full h-full object-cover rounded-lg" />
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.preventDefault()
+                            setImageFile(null)
+                            setImagePreview('')
+                          }}
+                          className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        </button>
+                      </div>
+                    ) : (
+                      <>
+                        <svg className="w-8 h-8 text-gray-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                        </svg>
+                        <p className="text-sm text-gray-600">Click to upload image</p>
+                        <p className="text-xs text-gray-500">PNG, JPG, GIF up to 10MB</p>
+                      </>
+                    )}
+                  </label>
+                </div>
+              </div>
+
+              {/* OR divider */}
+              <div className="flex items-center my-3">
+                <div className="flex-1 border-t border-gray-300"></div>
+                <span className="px-3 text-sm text-gray-500 font-medium">OR</span>
+                <div className="flex-1 border-t border-gray-300"></div>
+              </div>
+
+              {/* URL Input */}
+              <div>
+                <label className="block text-xs text-gray-600 mb-1">Or Enter Image URL</label>
+                <input
+                  type="url"
+                  value={imageUrl}
+                  onChange={(e) => {
+                    setImageUrl(e.target.value)
+                    setImageFile(null)
+                    setImagePreview('')
+                  }}
+                  placeholder="https://example.com/image.jpg"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent text-sm"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Submit Buttons */}
+          <div className="flex gap-3 pt-4">
+            <button
+              type="submit"
+              disabled={loading}
+              className="px-6 py-2 bg-[var(--primary)] text-white rounded-lg hover:bg-[#19417d] transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+            >
+              {loading ? 'Saving...' : isEditing ? 'Update Achievement' : 'Create Achievement'}
+            </button>
+            {isEditing && (
+              <button
+                type="button"
+                onClick={resetForm}
+                className="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors font-medium"
+              >
+                Cancel
+              </button>
+            )}
+          </div>
+        </form>
+
+        {/* Achievements List */}
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Achievement</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {loading ? (
+                <tr>
+                  <td colSpan={5} className="px-6 py-12 text-center">
+                    <Spinner />
+                  </td>
+                </tr>
+              ) : achievements.length === 0 ? (
+                <tr>
+                  <td colSpan={5} className="px-6 py-12 text-center text-gray-500">
+                    No achievements yet. Create your first one!
+                  </td>
+                </tr>
+              ) : (
+                achievements.map((achievement) => (
+                  <tr key={achievement._id} className="hover:bg-gray-50">
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-3">
+                        {achievement.imageUrl && (
+                          <img src={achievement.imageUrl} alt={achievement.title} className="w-16 h-16 object-cover rounded-lg" />
+                        )}
+                        <div>
+                          <div className="text-sm font-medium text-gray-900">{achievement.title}</div>
+                          <div className="text-sm text-gray-500 line-clamp-1">{achievement.description}</div>
+                          {achievement.category && (
+                            <span className="inline-block mt-1 px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded">
+                              {achievement.category}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className={`px-2 py-1 text-xs rounded-full font-medium ${
+                        achievement.type === 'award' ? 'bg-yellow-100 text-yellow-700' :
+                        achievement.type === 'courtCase' ? 'bg-green-100 text-green-700' :
+                        'bg-blue-100 text-blue-700'
+                      }`}>
+                        {achievement.type === 'courtCase' ? 'Legal Victory' : achievement.type}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {new Date(achievement.date).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className={`px-2 py-1 text-xs rounded-full font-medium ${
+                        achievement.isActive ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'
+                      }`}>
+                        {achievement.isActive ? 'Active' : 'Inactive'}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                      <button
+                        onClick={() => handleEdit(achievement)}
+                        className="text-[var(--primary)] hover:text-[#19417d] mr-3"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => handleDelete(achievement._id)}
+                        className="text-red-600 hover:text-red-900"
+                      >
+                        Delete
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </motion.div>
+  )
+}
+
+
+
