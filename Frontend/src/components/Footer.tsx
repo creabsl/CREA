@@ -64,7 +64,7 @@ const supportLinks = [
   { label: "Help Desk", href: "mailto:helpdesk@crea.org" },
   { label: "Membership Support", href: "tel:+911234567890" },
   { label: "Suggestion Box", to: "/suggestions" },
-  { label: "Privacy Policy", href: "#" },
+  { label: "Privacy Policy", href: "http://localhost:5001/uploads/document/CREA_Short_Privacy_Policy.pdf", target: "_blank" },
   { label: "Terms of Service", href: "#" },
 ];
 
@@ -173,7 +173,7 @@ export default function Footer() {
               Stay Connected
             </h3>
             <ul className="mt-2 space-y-1.5">
-              {supportLinks.map(({ label, href, to }) => (
+              {supportLinks.map(({ label, href, to, target }) => (
                 <li key={label}>
                   {to ? (
                     <Link
@@ -185,6 +185,8 @@ export default function Footer() {
                   ) : (
                     <a
                       href={href}
+                      target={target}
+                      rel={target === "_blank" ? "noopener noreferrer" : undefined}
                       className="text-gray-500 transition hover:text-[var(--primary)]"
                     >
                       {label}
@@ -202,7 +204,12 @@ export default function Footer() {
         <div className="mt-5 flex flex-col gap-2 border-t border-gray-200 pt-3 text-xs text-gray-500 sm:flex-row sm:items-center sm:justify-between">
           <div>© {year} CREA — Central Railway Engineers Association. All rights reserved.</div>
           <div className="flex flex-wrap items-center gap-3">
-            <a href="#" className="transition hover:text-[var(--primary)]">
+            <a 
+              href="http://localhost:5001/uploads/document/CREA_Short_Privacy_Policy.pdf" 
+              target="_blank"
+              rel="noopener noreferrer"
+              className="transition hover:text-[var(--primary)]"
+            >
               Privacy Policy
             </a>
             <a href="#" className="transition hover:text-[var(--primary)]">
