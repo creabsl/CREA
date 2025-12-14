@@ -25,6 +25,7 @@ import About from './pages/About'
 import ForumModeration from './pages/ForumModeration'
 import Notifications from './pages/Notifications'
 import Donations from './pages/Donations'
+import Developers from './pages/Developers'
 
 function AnimatedRoutes() {
   const location = useLocation()
@@ -51,6 +52,7 @@ function AnimatedRoutes() {
         <Route path="/external-links" element={<RequireAuth><PageTransition><ExternalLinks /></PageTransition></RequireAuth>} />
         <Route path="/notifications" element={<RequireAuth><PageTransition><Notifications /></PageTransition></RequireAuth>} />
         <Route path="/donations" element={<PageTransition><Donations /></PageTransition>} />
+        <Route path="/developers" element={<PageTransition><Developers /></PageTransition>} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </AnimatePresence>

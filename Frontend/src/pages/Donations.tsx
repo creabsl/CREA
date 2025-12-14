@@ -3,11 +3,29 @@ import { motion } from 'framer-motion'
 import { usePageTitle } from '../hooks/usePageTitle'
 import Input from '../components/Input'
 import Button from '../components/Button'
+import { createDonation } from '../services/api'
 
 export default function Donations() {
   usePageTitle('CREA • Support Our Mission')
   
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<{
+    fullName: string
+    email: string
+    mobile: string
+    isEmployee: boolean
+    employeeId: string
+    designation: string
+    division: string
+    department: string
+    amount: string
+    purpose: 'general' | 'education' | 'welfare' | 'infrastructure'
+    isAnonymous: boolean
+    address: string
+    city: string
+    state: string
+    pincode: string
+    message: string
+  }>({
     // Donor Information
     fullName: '',
     email: '',
@@ -46,15 +64,7 @@ export default function Donations() {
     e.preventDefault()
     
     try {
-      const response = await fetch('http://localhost:5001/api/donations', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData)
-      })
-      
-      const data = await response.json()
+      const data = await createDonation(formData)
       
       if (data.success) {
         setSubmitted(true)
@@ -218,9 +228,7 @@ export default function Donations() {
         className="bg-white rounded-2xl shadow-xl p-8"
       >
         <h2 className="text-2xl font-bold text-[var(--primary)] mb-6 flex items-center gap-2">
-          <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
+          <span className="text-2xl">₹</span>
           Make a Donation
         </h2>
 
@@ -330,7 +338,7 @@ export default function Donations() {
                   placeholder="Enter amount"
                 />
                 <div className="mt-2 flex flex-wrap gap-2">
-                  {[500, 1000, 2500, 5000, 10000].map((amt) => (
+                  {[100, 500, 1000, 2500, 5000].map((amt) => (
                     <button
                       key={amt}
                       type="button"

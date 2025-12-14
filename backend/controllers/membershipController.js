@@ -1,4 +1,8 @@
 const Membership = require('../models/membershipModel');
+const XLSX = require('xlsx');
+const csv = require('csv-parser');
+const fs = require('fs');
+const path = require('path');
 
 // POST /api/memberships
 exports.submitMembership = async (req, res) => {
@@ -181,5 +185,219 @@ exports.getMembershipStats = async (req, res) => {
   } catch (err) {
     console.error('Get membership stats error:', err);
     return res.status(500).json({ message: 'Server error' });
+  }
+};
+
+// POST /api/memberships/bulk-upload (admin)
+exports.bulkUploadMembers = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'No file uploaded' 
+      });
+    }
+
+    const filePath = req.file.path;
+    const fileExtension = path.extname(req.file.originalname).toLowerCase();
+    let members = [];
+
+    // Parse CSV file
+    if (fileExtension === '.csv') {
+      members = await new Promise((resolve, reject) => {
+        const results = [];
+        fs.createReadStream(filePath)
+          .pipe(csv())
+          .on('data', (data) => results.push(data))
+          .on('end', () => resolve(results))
+          .on('error', (error) => reject(error));
+      });
+    } 
+    // Parse Excel file (.xlsx, .xls)
+    else if (fileExtension === '.xlsx' || fileExtension === '.xls') {
+      const workbook = XLSX.readFile(filePath);
+      const sheetName = workbook.SheetNames[0];
+      const sheet = workbook.Sheets[sheetName];
+      members = XLSX.utils.sheet_to_json(sheet);
+    } 
+    else {
+      // Clean up uploaded file
+      fs.unlinkSync(filePath);
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Invalid file format. Please upload CSV or Excel file.' 
+      });
+    }
+
+    // Validate and process members
+    const results = {
+      success: [],
+      failed: [],
+      total: members.length
+    };
+
+    const requiredFields = ['name', 'email', 'mobile', 'designation', 'division', 'department', 'type'];
+
+    for (let i = 0; i < members.length; i++) {
+      const memberData = members[i];
+      const rowNumber = i + 2; // +2 because row 1 is header and array is 0-indexed
+
+      try {
+        // Normalize field names (handle different case variations)
+        const normalizedData = {};
+        Object.keys(memberData).forEach(key => {
+          const normalizedKey = key.trim().toLowerCase();
+          normalizedData[normalizedKey] = memberData[key];
+        });
+
+        // Map common field variations
+        const fieldMapping = {
+          'name': ['name', 'full name', 'fullname', 'member name'],
+          'email': ['email', 'e-mail', 'email address'],
+          'mobile': ['mobile', 'phone', 'contact', 'mobile number', 'phone number'],
+          'designation': ['designation', 'position', 'post'],
+          'division': ['division', 'div'],
+          'department': ['department', 'dept'],
+          'type': ['type', 'membership type', 'membershiptype'],
+          'place': ['place', 'location'],
+          'unit': ['unit'],
+          'paymentMethod': ['payment method', 'paymentmethod', 'payment'],
+          'paymentAmount': ['payment amount', 'paymentamount', 'amount'],
+          'purchaseDate': ['purchase date', 'purchasedate', 'date of purchase', 'membership date', 'start date', 'startdate']
+        };
+
+        const processedData = {};
+        Object.keys(fieldMapping).forEach(field => {
+          const variations = fieldMapping[field];
+          for (const variation of variations) {
+            if (normalizedData[variation] !== undefined && normalizedData[variation] !== '') {
+              processedData[field] = normalizedData[variation];
+              break;
+            }
+          }
+        });
+
+        // Check required fields
+        const missingFields = requiredFields.filter(field => !processedData[field]);
+        if (missingFields.length > 0) {
+          results.failed.push({
+            row: rowNumber,
+            data: memberData,
+            error: `Missing required fields: ${missingFields.join(', ')}`
+          });
+          continue;
+        }
+
+        // Validate membership type
+        const membershipType = processedData.type.toLowerCase();
+        if (!['ordinary', 'lifetime'].includes(membershipType)) {
+          results.failed.push({
+            row: rowNumber,
+            data: memberData,
+            error: `Invalid membership type: ${processedData.type}. Must be 'ordinary' or 'lifetime'`
+          });
+          continue;
+        }
+
+        // Parse and validate purchase date if provided
+        let purchaseDate = new Date(); // Default to current date
+        if (processedData.purchaseDate) {
+          const parsedDate = new Date(processedData.purchaseDate);
+          if (isNaN(parsedDate.getTime())) {
+            results.failed.push({
+              row: rowNumber,
+              data: memberData,
+              error: `Invalid purchase date format: ${processedData.purchaseDate}. Use YYYY-MM-DD or MM/DD/YYYY`
+            });
+            continue;
+          }
+          purchaseDate = parsedDate;
+        }
+
+        // Calculate validity dates based on purchase date
+        const validFrom = new Date(purchaseDate);
+        let validUntil;
+        
+        if (membershipType === 'lifetime') {
+          validUntil = new Date(2099, 11, 31); // Far future date for lifetime members
+        } else {
+          // For ordinary membership, add 1 year to purchase date
+          validUntil = new Date(validFrom);
+          validUntil.setFullYear(validUntil.getFullYear() + 1);
+        }
+
+        // Prepare membership document
+        const membershipDoc = {
+          name: processedData.name,
+          email: processedData.email.toLowerCase().trim(),
+          mobile: processedData.mobile,
+          designation: processedData.designation,
+          division: processedData.division,
+          department: processedData.department,
+          place: processedData.place || 'Not specified',
+          unit: processedData.unit || 'Not specified',
+          type: membershipType,
+          paymentMethod: processedData.paymentMethod || 'upi',
+          paymentAmount: processedData.paymentAmount || (membershipType === 'lifetime' ? 5000 : 500),
+          paymentStatus: 'pending',
+          status: 'pending',
+          validFrom: validFrom,
+          validUntil: validUntil,
+          paymentDate: purchaseDate
+        };
+
+        // Check for duplicate email
+        const existingMember = await Membership.findOne({ email: membershipDoc.email });
+        if (existingMember) {
+          results.failed.push({
+            row: rowNumber,
+            data: memberData,
+            error: `Email already exists: ${membershipDoc.email}`
+          });
+          continue;
+        }
+
+        // Create and save membership (validity dates already set above)
+        const membership = new Membership(membershipDoc);
+        await membership.save();
+
+        results.success.push({
+          row: rowNumber,
+          membershipId: membership.membershipId,
+          name: membership.name,
+          email: membership.email,
+          validFrom: membership.validFrom,
+          validUntil: membership.validUntil
+        });
+
+      } catch (error) {
+        results.failed.push({
+          row: rowNumber,
+          data: memberData,
+          error: error.message || 'Unknown error'
+        });
+      }
+    }
+
+    // Clean up uploaded file
+    fs.unlinkSync(filePath);
+
+    return res.status(200).json({
+      success: true,
+      message: `Processed ${results.total} records. ${results.success.length} successful, ${results.failed.length} failed.`,
+      results
+    });
+
+  } catch (err) {
+    console.error('Bulk upload error:', err);
+    // Clean up file if it exists
+    if (req.file && req.file.path && fs.existsSync(req.file.path)) {
+      fs.unlinkSync(req.file.path);
+    }
+    return res.status(500).json({ 
+      success: false, 
+      message: 'Server error during bulk upload',
+      error: err.message 
+    });
   }
 };

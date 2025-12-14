@@ -35,18 +35,34 @@ exports.createEvent = async (req, res) => {
       photos: Array.isArray(photos) ? photos : [],
     });
     
-    // Notify all users about new event
+    // Notify all users about new event or breaking news
     try {
       const allUsers = await User.find({}, '_id');
       const userIds = allUsers.map(u => u._id);
-      await createNotificationForUsers(
-        userIds,
-        'event',
-        'New Event Published',
-        `A new event "${title}" has been scheduled. Check it out!`,
-        '/events',
-        { eventId: event._id }
-      );
+      
+      const isBreaking = Boolean(isBreakingNews || breaking);
+      
+      if (isBreaking) {
+        // Breaking news notification with special formatting
+        await createNotificationForUsers(
+          userIds,
+          'breaking',
+          '🚨 Breaking News Alert',
+          `${title}`,
+          '/events',
+          { eventId: event._id, isBreaking: true }
+        );
+      } else {
+        // Regular event notification
+        await createNotificationForUsers(
+          userIds,
+          'event',
+          'New Event Published',
+          `A new event "${title}" has been scheduled. Check it out!`,
+          '/events',
+          { eventId: event._id }
+        );
+      }
     } catch (notifError) {
       console.error('Error creating notifications:', notifError);
     }

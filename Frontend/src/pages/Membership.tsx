@@ -471,49 +471,48 @@ export default function Membership() {
                 pattern="^[a-zA-Z\s]+$"
                 title="Name must contain only letters and spaces (min 3 characters)"
               />
-              <Input 
-                label="Designation *" 
-                value={form.designation} 
-                onChange={(e)=>onBasicInfoChange('designation', e.target.value)}
-                onKeyPress={(e) => {
-                  if (!/^[a-zA-Z\s]$/.test(e.key)) {
-                    e.preventDefault()
-                  }
-                }}
-                required
-                minLength={2}
-                maxLength={50}
-                pattern="^[a-zA-Z\s]+$"
-                title="Designation must contain only letters and spaces (min 2 characters)"
-              />
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Division *</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Designation <span className="text-red-500">*</span></label>
                 <select
                   className="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-[var(--primary)]"
-                  value={form.division}
-                  onChange={(e)=> onBasicInfoChange('division', e.target.value)}
+                  value={form.designation}
+                  onChange={(e) => onBasicInfoChange('designation', e.target.value)}
                   required
                 >
-                  {DIVISIONS.map((d)=> (
-                    <option key={d} value={d}>{d}</option>
+                  <option value="">Select Designation</option>
+                  {['JE', 'SSE'].map((designation) => (
+                    <option key={designation} value={designation}>{designation}</option>
                   ))}
                 </select>
               </div>
-              <Input 
-                label="Department *" 
-                value={form.department} 
-                onChange={(e)=>onBasicInfoChange('department', e.target.value)}
-                onKeyPress={(e) => {
-                  if (!/^[a-zA-Z\s]$/.test(e.key)) {
-                    e.preventDefault()
-                  }
-                }}
-                required
-                minLength={2}
-                maxLength={100}
-                pattern="^[a-zA-Z\s]+$"
-                title="Department must contain only letters and spaces (min 2 characters)"
-              />
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Division <span className="text-red-500">*</span></label>
+                <select
+                  className="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-[var(--primary)]"
+                  value={form.division}
+                  onChange={(e) => onBasicInfoChange('division', e.target.value)}
+                  required
+                >
+                  <option value="">Select Division</option>
+                  {['BSL', 'NGP', 'PA', 'SUR', 'MB', 'HQ Unit'].map((division) => (
+                    <option key={division} value={division}>{division}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Department <span className="text-red-500">*</span></label>
+                <select
+                  className="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-[var(--primary)]"
+                  value={form.department}
+                  onChange={(e) => onBasicInfoChange('department', e.target.value)}
+                  required
+                >
+                  <option value="">Select Department</option>
+                  {['Electrical', 'Mechanical', 'Engineering', 'S&T'].map((department) => (
+                    <option key={department} value={department}>{department}</option>
+                  ))}
+                </select>
+              </div>
               <Input 
                 label="Place of working *" 
                 value={form.place} 
@@ -530,7 +529,7 @@ export default function Membership() {
                 title="Place of working must contain only letters and spaces (min 2 characters)"
               />
               <Input 
-                label="Unit *" 
+                label="Working Unit *" 
                 value={form.unit} 
                 onChange={(e)=>onBasicInfoChange('unit', e.target.value)}
                 onKeyPress={(e) => {
@@ -542,7 +541,7 @@ export default function Membership() {
                 minLength={1}
                 maxLength={50}
                 pattern="^[a-zA-Z\s]+$"
-                title="Unit must contain only letters and spaces"
+                title="Working Unit must contain only letters and spaces"
               />
               <Input 
                 label="Mobile Number *" 
