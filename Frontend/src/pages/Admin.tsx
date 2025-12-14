@@ -3545,7 +3545,7 @@ function DonationsAdmin() {
   const fetchDonations = async () => {
     try {
       setLoading(true)
-      const token = localStorage.getItem('token')
+      const token = localStorage.getItem('crea:token')
       if (!token) {
         console.error('No authentication token found')
         setLoading(false)
