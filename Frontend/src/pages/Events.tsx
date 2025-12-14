@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
-import { useNavigate } from 'react-router-dom'
 import { SPRING } from '../animations'
 import { getEvents, createEvent } from '../services/api'
 import type { EventItem } from '../types'
@@ -23,7 +22,6 @@ export default function Events() {
   const [openCreate, setOpenCreate] = useState(false)
   const [creating, setCreating] = useState(false)
   const [form, setForm] = useState<Omit<EventItem,'id'>>({ title:'', date:'', location:'', description:'', photos:[], breaking:false })
-  const navigate = useNavigate()
   usePageTitle('CREA • Events')
 
   useEffect(() => { getEvents().then((d)=>{ setEvents(d.filter(e => !e.breaking)); setLoading(false) }) }, [])
