@@ -70,35 +70,37 @@ export default function Navbar() {
     <nav className="sticky top-0 z-50 bg-white shadow-md border-b border-gray-200">
       {/* Top Info Bar - Government Style */}
       <div className="bg-gradient-to-r from-[#003d82] to-[#0a2343] text-white">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between py-2 text-xs">
-            <div className="flex items-center gap-4">
-              <span className="flex items-center gap-1">
-                <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+        <div className="container mx-auto px-3 sm:px-6 lg:px-8">
+          <div className="flex items-center py-2 text-[10px] sm:text-xs">
+            <div className="flex items-center gap-2 sm:gap-3">
+              <div className="flex items-center gap-1.5">
+                <svg className="w-3 h-3 hidden sm:block" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
                 </svg>
-                Central Railway Headquarters, Mumbai
-              </span>
-              <span className="hidden md:inline">|</span>
-              <span className="hidden md:inline">Empowering Engineers Since 1950</span>
+                <span className="font-medium">Central Railway HQ, Mumbai</span>
+              </div>
+              <span className="hidden sm:inline text-white/40">•</span>
+              <span className="hidden sm:inline">Since 1950</span>
             </div>
           </div>
         </div>
       </div>
 
       {/* Main Navbar */}
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-20">
+      <div className="container mx-auto px-3 sm:px-6 lg:px-8">
+        <div className="flex items-center justify-between h-16 sm:h-18 lg:h-20">
           {/* Logo Section */}
-          <Link to="/" className="flex items-center gap-4 hover:opacity-90 transition-opacity">
-            <div className="flex items-center gap-3">
-              <img src={logo} alt="CREA" className="h-14 w-14" />
-              <div className="hidden lg:block border-l-2 border-gray-300 pl-4">
-                <div className="text-[var(--primary)] font-bold text-lg leading-tight">
-                  Central Railway Engineers Association
-                </div>
-                <div className="text-gray-600 text-xs font-medium">रेलवे अभियंता संघ</div>
+          <Link to="/" className="flex items-center gap-2 sm:gap-3 hover:opacity-90 transition-opacity flex-shrink-0">
+            <img src={logo} alt="CREA" className="h-10 w-10 sm:h-12 sm:w-12 lg:h-14 lg:w-14" />
+            <div className="hidden md:block border-l-2 border-gray-300 pl-3">
+              <div className="text-[var(--primary)] font-bold text-sm lg:text-base xl:text-lg leading-tight">
+                Central Railway Engineers Association
               </div>
+              <div className="text-gray-600 text-xs font-medium hidden lg:block">रेलवे अभियंता संघ</div>
+            </div>
+            <div className="block md:hidden">
+              <div className="text-[var(--primary)] font-bold text-sm leading-tight">CREA</div>
+              <div className="text-gray-600 text-[10px] font-medium">Engineers Assoc.</div>
             </div>
           </Link>
 
@@ -119,7 +121,7 @@ export default function Navbar() {
             ]} />
           </div>
 
-          {/* User Actions */}
+          {/* User Actions - Desktop */}
           <div className="hidden lg:flex items-center gap-3">
             {!user ? (
               <Link to="/login" className="px-6 py-2 bg-[var(--accent)] text-[var(--text-dark)] rounded-md font-semibold hover:bg-[#d49500] transition-all">
@@ -222,16 +224,36 @@ export default function Navbar() {
             )}
           </div>
           
-          {/* Mobile menu button */}
-          <button 
-            className="lg:hidden p-2 rounded-md hover:bg-gray-100 transition-colors" 
-            onClick={()=>setOpen(o=>!o)} 
-            aria-label="Toggle navigation"
-          >
-            <svg className="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" />
-            </svg>
-          </button>
+          {/* Mobile/Tablet User Actions */}
+          <div className="flex lg:hidden items-center gap-1 sm:gap-2">
+            {user && (
+              <Link to="/notifications" className="relative p-2 rounded-lg hover:bg-gray-50 active:bg-gray-100 transition-colors">
+                <svg className="w-5 h-5 sm:w-6 sm:h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                </svg>
+                {userNotifCount > 0 && (
+                  <span className="absolute top-1 right-1 inline-flex items-center justify-center min-w-[16px] h-4 px-1 text-[9px] font-bold text-white bg-red-600 rounded-full">
+                    {userNotifCount > 9 ? '9+' : userNotifCount}
+                  </span>
+                )}
+              </Link>
+            )}
+            
+            {/* Mobile menu button */}
+            <button 
+              className="p-2 rounded-lg hover:bg-gray-50 active:bg-gray-100 transition-colors" 
+              onClick={()=>setOpen(o=>!o)} 
+              aria-label="Toggle navigation"
+            >
+              <svg className="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                {open ? (
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                ) : (
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" />
+                )}
+              </svg>
+            </button>
+          </div>
         </div>
       </div>
         
@@ -245,55 +267,72 @@ export default function Navbar() {
             exit={{ height: 0, opacity: 0 }}
             transition={{ duration: DURATION.standard }}
           >
-            <div className="container mx-auto px-4 py-4 space-y-1">
-              <NavLink to="/" className={navLinkClass} end onClick={()=>setOpen(false)}>Home</NavLink>
-              <NavLink to="/about" className={navLinkClass} onClick={()=>setOpen(false)}>About</NavLink>
-              <NavLink to="/events" className={navLinkClass} onClick={()=>setOpen(false)}>Events</NavLink>
-              <NavLink to="/documents" className={navLinkClass} onClick={()=>setOpen(false)}>Documents</NavLink>
-              <NavLink to="/apply-membership" className={navLinkClass} onClick={()=>setOpen(false)}>Membership</NavLink>
-              
-              <div className="pt-2 pb-1 px-1 text-xs font-semibold text-gray-500 uppercase tracking-wide">Community</div>
-              <NavLink to="/forum" className={navLinkClass} onClick={()=>setOpen(false)}>Forum</NavLink>
-              <NavLink to="/mutual-transfers" className={navLinkClass} onClick={()=>setOpen(false)}>Mutual Transfers</NavLink>
-              <NavLink to="/suggestions" className={navLinkClass} onClick={()=>setOpen(false)}>Suggestions</NavLink>
-              <NavLink to="/external-links" className={navLinkClass} onClick={()=>setOpen(false)}>External Links</NavLink>
-              <NavLink to="/body-details" className={navLinkClass} onClick={()=>setOpen(false)}>Association Body</NavLink>
-              <NavLink to="/donations" className={navLinkClass} onClick={()=>setOpen(false)}>Donations</NavLink>
-              
-              {!user ? (
-                <div className="pt-3">
-                  <NavLink to="/login" className="block w-full text-center px-4 py-2 bg-[var(--accent)] text-[var(--text-dark)] rounded-md font-semibold" onClick={()=>setOpen(false)}>
-                    Login
-                  </NavLink>
-                </div>
-              ) : (
-                <div className="pt-3 space-y-1 border-t border-gray-200 mt-3">
-                  {user.role === 'admin' && <NavLink to="/admin" className={navLinkClass} onClick={()=>setOpen(false)}>Admin Panel</NavLink>}
-                  {user.role === 'admin' && (
-                    <NavLink to="/forum-moderation" className={(props) => `${navLinkClass(props)} flex items-center justify-between`} onClick={()=>setOpen(false)}>
-                      <span>Forum Moderation</span>
-                      {pendingCount > 0 && (
-                        <span className="inline-flex items-center justify-center px-2 py-0.5 text-xs font-bold text-white bg-red-600 rounded-full">
-                          {pendingCount}
-                        </span>
-                      )}
-                    </NavLink>
-                  )}
-                  <NavLink to="/notifications" className={(props) => `${navLinkClass(props)} flex items-center justify-between`} onClick={()=>setOpen(false)}>
-                    <span>Notifications</span>
-                    {userNotifCount > 0 && (
-                      <span className="inline-flex items-center justify-center px-2 py-0.5 text-xs font-bold text-white bg-red-600 rounded-full">
-                        {userNotifCount}
-                      </span>
-                    )}
-                  </NavLink>
-                  <NavLink to="/profile" className={navLinkClass} onClick={()=>setOpen(false)}>My Profile</NavLink>
-                  <NavLink to="/files" className={navLinkClass} onClick={()=>setOpen(false)}>My Files</NavLink>
-                  <button onClick={() => { logout(); setOpen(false); }} className="w-full text-left px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50 rounded-md mt-2">
-                    Logout
-                  </button>
+            <div className="px-4 py-4 max-h-[calc(100vh-130px)] overflow-y-auto">
+              {user && (
+                <div className="mb-4 pb-4 border-b border-gray-200">
+                  <div className="flex items-center gap-3">
+                    <span className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-[var(--primary)] to-blue-600 text-white font-bold text-lg shadow-md">
+                      {user.name?.[0]?.toUpperCase() || 'U'}
+                    </span>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-base font-bold text-gray-900 truncate">{user.name}</div>
+                      <div className="text-xs text-gray-500 truncate">{user.email}</div>
+                    </div>
+                  </div>
                 </div>
               )}
+              
+              <nav className="space-y-1">
+                <NavLink to="/" className={navLinkClass} end onClick={()=>setOpen(false)}>Home</NavLink>
+                <NavLink to="/about" className={navLinkClass} onClick={()=>setOpen(false)}>About</NavLink>
+                <NavLink to="/events" className={navLinkClass} onClick={()=>setOpen(false)}>Events</NavLink>
+                <NavLink to="/documents" className={navLinkClass} onClick={()=>setOpen(false)}>Documents</NavLink>
+                <NavLink to="/apply-membership" className={navLinkClass} onClick={()=>setOpen(false)}>Membership</NavLink>
+                
+                <div className="pt-4 pb-2">
+                  <div className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Community</div>
+                  <div className="space-y-1">
+                    <NavLink to="/forum" className={navLinkClass} onClick={()=>setOpen(false)}>Forum</NavLink>
+                    <NavLink to="/mutual-transfers" className={navLinkClass} onClick={()=>setOpen(false)}>Mutual Transfers</NavLink>
+                    <NavLink to="/suggestions" className={navLinkClass} onClick={()=>setOpen(false)}>Suggestions</NavLink>
+                    <NavLink to="/external-links" className={navLinkClass} onClick={()=>setOpen(false)}>External Links</NavLink>
+                    <NavLink to="/body-details" className={navLinkClass} onClick={()=>setOpen(false)}>Association Body</NavLink>
+                    <NavLink to="/donations" className={navLinkClass} onClick={()=>setOpen(false)}>Donations</NavLink>
+                  </div>
+                </div>
+                
+                {user && (
+                  <div className="pt-4 pb-2 border-t border-gray-200">
+                    <div className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Account</div>
+                    <div className="space-y-1">
+                      {user.role === 'admin' && <NavLink to="/admin" className={navLinkClass} onClick={()=>setOpen(false)}>Admin Panel</NavLink>}
+                      {user.role === 'admin' && (
+                        <NavLink to="/forum-moderation" className={(props) => `${navLinkClass(props)} flex items-center justify-between`} onClick={()=>setOpen(false)}>
+                          <span>Forum Moderation</span>
+                          {pendingCount > 0 && (
+                            <span className="inline-flex items-center justify-center px-2 py-0.5 text-xs font-bold text-white bg-red-600 rounded-full">
+                              {pendingCount}
+                            </span>
+                          )}
+                        </NavLink>
+                      )}
+                      <NavLink to="/profile" className={navLinkClass} onClick={()=>setOpen(false)}>My Profile</NavLink>
+                      <NavLink to="/files" className={navLinkClass} onClick={()=>setOpen(false)}>My Files</NavLink>
+                      <button onClick={() => { logout(); setOpen(false); }} className="w-full text-left px-4 py-2.5 text-sm font-semibold text-white bg-red-600 hover:bg-red-700 rounded-lg mt-3 transition-colors">
+                        Logout
+                      </button>
+                    </div>
+                  </div>
+                )}
+                
+                {!user && (
+                  <div className="pt-4 border-t border-gray-200">
+                    <Link to="/login" className="block w-full text-center px-4 py-3 bg-gradient-to-r from-[var(--accent)] to-yellow-500 text-white rounded-lg font-bold shadow-md hover:shadow-lg transition-all" onClick={()=>setOpen(false)}>
+                      Login / Register
+                    </Link>
+                  </div>
+                )}
+              </nav>
             </div>
           </motion.div>
         )}

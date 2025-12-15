@@ -63,8 +63,6 @@ app.use('/api/settings', settingRoutes);
 app.use('/api/donations', donationRoutes);
 app.use('/api/advertisements', advertisementRoutes);
 app.use('/api/achievements', achievementRoutes);
-console.log('✅ Advertisement routes registered at /api/advertisements');
-console.log('✅ Achievement routes registered at /api/achievements');
 
 // Health check
 app.get('/health', (_req, res) => res.json({ status: 'ok' }));
@@ -80,15 +78,13 @@ const start = async () => {
 		if (String(process.env.SEED_ON_START).toLowerCase() === 'true') {
 			try {
 				const { seedDemoData } = require('./scripts/seed')
-				const r = await seedDemoData()
-				const total = Object.values(r).reduce((a, b) => a + b, 0)
-				if (total > 0) console.log('Demo data seeding complete.')
+				await seedDemoData()
 			} catch (e) {
-				console.warn('Auto-seed failed or already ran:', e?.message || e)
+				// Silent fail
 			}
 		}
 
-		app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+		app.listen(PORT, () => console.log(`✓ Server running on http://localhost:${PORT}`));
 	} catch (err) {
 		console.error('Failed to start server:', err?.message || err);
 		process.exit(1);

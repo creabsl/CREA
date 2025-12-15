@@ -61,11 +61,16 @@ export default function Membership() {
   }
 
   const onBasicInfoChange = (k: keyof Omit<Form, 'personalDetails' | 'professionalDetails' | 'documents'>, v: string | number) => {
-    setForm((f) => ({ 
-      ...f, 
-      [k]: v,
-      paymentAmount: k === 'type' && v === 'lifetime' ? membershipFees.lifetime : membershipFees.ordinary
-    }))
+    setForm((f) => {
+      const updates: any = { [k]: v }
+      
+      // Update payment amount when type changes
+      if (k === 'type') {
+        updates.paymentAmount = v === 'lifetime' ? membershipFees.lifetime : membershipFees.ordinary
+      }
+      
+      return { ...f, ...updates }
+    })
   }
 
   // Validate form whenever Step 1 fields change
@@ -151,22 +156,22 @@ export default function Membership() {
 
   if (!showForm) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-gray-100 py-12">
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-gray-100 py-6 sm:py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Hero Section */}
           <motion.div 
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
-            className="text-center mb-16"
+            className="text-center mb-8 sm:mb-16"
           >
             <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: 0.2, duration: 0.5 }}
-              className="inline-block mb-4"
+              className="inline-block mb-3 sm:mb-4"
             >
-              <span className="bg-gradient-to-r from-[var(--accent)] to-yellow-500 text-white px-4 py-2 rounded-full text-sm font-bold uppercase tracking-wider shadow-lg">
+              <span className="bg-gradient-to-r from-[var(--accent)] to-yellow-500 text-white px-3 sm:px-4 py-1.5 sm:py-2 rounded-full text-xs sm:text-sm font-bold uppercase tracking-wider shadow-lg">
                 ✦ Join CREA Today
               </span>
             </motion.div>
@@ -175,7 +180,7 @@ export default function Membership() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3, duration: 0.6 }}
-              className="text-4xl md:text-5xl font-bold text-[var(--primary)] mb-4"
+              className="text-3xl sm:text-4xl md:text-5xl font-bold text-[var(--primary)] mb-3 sm:mb-4 px-4"
             >
               Choose Your Membership Plan
             </motion.h1>
@@ -184,13 +189,13 @@ export default function Membership() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.4, duration: 0.6 }}
-              className="text-lg md:text-xl text-gray-600 max-w-2xl mx-auto"
+              className="text-base sm:text-lg md:text-xl text-gray-600 max-w-2xl mx-auto px-4"
             >
               Join a community of professionals dedicated to growth and collaboration.
             </motion.p>
           </motion.div>
 
-          <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8 max-w-5xl mx-auto">
             {/* Ordinary Membership Card */}
             <motion.div
               initial={{ opacity: 0, x: -30 }}
@@ -362,76 +367,76 @@ export default function Membership() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
+    <div className="min-h-screen bg-gray-50 py-4 sm:py-8">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header with Back Button */}
         <motion.div 
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mb-6"
+          className="mb-4 sm:mb-6"
         >
           <button 
             onClick={() => setShowForm(false)}
-            className="mb-3 flex items-center gap-1.5 text-[var(--primary)] hover:text-blue-700 transition-colors font-medium text-sm"
+            className="mb-2 sm:mb-3 flex items-center gap-1.5 text-[var(--primary)] hover:text-blue-700 transition-colors font-medium text-xs sm:text-sm"
           >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-3 h-3 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
             </svg>
             Back to Plans
           </button>
-          <h1 className="text-2xl font-bold text-gray-900 mb-1">Apply for Membership</h1>
-          <p className="text-sm text-gray-600">Fill in your details and complete the payment process.</p>
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-900 mb-1">Apply for Membership</h1>
+          <p className="text-xs sm:text-sm text-gray-600">Fill in your details and complete the payment process.</p>
         </motion.div>
 
       {membershipId ? (
         <motion.div 
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
-          className="bg-white rounded-lg shadow-sm border border-green-200 p-6"
+          className="bg-white rounded-lg shadow-sm border border-green-200 p-4 sm:p-6"
         >
           <div className="text-center">
-            <div className="w-14 h-14 bg-green-50 rounded-full flex items-center justify-center mx-auto mb-3">
-              <svg className="w-7 h-7 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="w-12 h-12 sm:w-14 sm:h-14 bg-green-50 rounded-full flex items-center justify-center mx-auto mb-2 sm:mb-3">
+              <svg className="w-6 h-6 sm:w-7 sm:h-7 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
               </svg>
             </div>
-            <h2 className="text-xl font-bold text-green-800 mb-2">Application Submitted Successfully!</h2>
-            <p className="text-sm text-gray-700 mb-3">Membership ID: <span className="font-mono font-bold text-[var(--primary)]">{membershipId}</span></p>
-            <p className="text-xs text-gray-600">Your membership will be activated after payment verification.</p>
+            <h2 className="text-lg sm:text-xl font-bold text-green-800 mb-2">Application Submitted Successfully!</h2>
+            <p className="text-xs sm:text-sm text-gray-700 mb-2 sm:mb-3">Membership ID: <span className="font-mono font-bold text-[var(--primary)]">{membershipId}</span></p>
+            <p className="text-[10px] sm:text-xs text-gray-600">Your membership will be activated after payment verification.</p>
           </div>
         </motion.div>
       ) : (
-        <div className="space-y-5">
+        <div className="space-y-4 sm:space-y-5">
           {/* Progress Steps */}
           <motion.div 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="bg-white rounded-lg shadow-sm border border-gray-200 p-5"
+            className="bg-white rounded-lg shadow-sm border border-gray-200 p-3 sm:p-5"
           >
             <div className="flex items-center justify-between">
               {[
-                { num: 1, label: 'Basic Info', icon: '👤' },
+                { num: 1, label: 'Basic', icon: '👤' },
                 { num: 2, label: 'Personal', icon: '📋' },
                 { num: 3, label: 'Professional', icon: '💼' },
                 { num: 4, label: 'Payment', icon: '💳' }
               ].map((s, idx) => (
                 <div key={s.num} className="flex items-center flex-1">
                   <div className="flex flex-col items-center flex-1">
-                    <div className={`w-10 h-10 rounded-full flex items-center justify-center text-base font-semibold transition-all duration-300 ${
+                    <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center text-sm sm:text-base font-semibold transition-all duration-300 ${
                       step >= s.num 
                         ? 'bg-[var(--primary)] text-white shadow-sm' 
                         : 'bg-gray-100 text-gray-400'
                     }`}>
                       {step > s.num ? '✓' : s.icon}
                     </div>
-                    <span className={`mt-1.5 text-xs font-medium ${
+                    <span className={`mt-1 sm:mt-1.5 text-[10px] sm:text-xs font-medium ${
                       step >= s.num ? 'text-[var(--primary)]' : 'text-gray-400'
                     }`}>
                       {s.label}
                     </span>
                   </div>
                   {idx < 3 && (
-                    <div className={`h-0.5 flex-1 mx-2 rounded transition-all duration-300 ${
+                    <div className={`h-0.5 flex-1 mx-1 sm:mx-2 rounded transition-all duration-300 ${
                       step > s.num ? 'bg-[var(--primary)]' : 'bg-gray-200'
                     }`} />
                   )}
@@ -450,13 +455,13 @@ export default function Membership() {
               className="bg-white rounded-lg shadow-sm border border-gray-200"
             >
             <div className="px-5 py-3 bg-blue-50 border-b border-blue-100">
-              <h3 className="text-base font-semibold text-[var(--primary)] flex items-center gap-2">
-                <span className="text-lg">👤</span>
+              <h3 className="text-sm sm:text-base font-semibold text-[var(--primary)] flex items-center gap-2">
+                <span className="text-base sm:text-lg">👤</span>
                 Basic Information
               </h3>
             </div>
-            <div className="p-5">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="p-4 sm:p-5">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
               <Input 
                 label="Name *" 
                 value={form.name} 

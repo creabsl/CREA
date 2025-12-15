@@ -48,28 +48,28 @@ export default function Developers() {
   usePageTitle('CREA • Development Team')
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Hero Section */}
       <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="relative overflow-hidden bg-gradient-to-br from-[var(--primary)] to-[#1a4d8f] rounded-lg p-8 text-white"
+        className="relative overflow-hidden bg-gradient-to-br from-[var(--primary)] to-[#1a4d8f] rounded-lg p-4 sm:p-6 md:p-8 text-white"
       >
         <div className="relative z-10">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="p-2.5 bg-white/20 backdrop-blur-sm rounded-lg">
-              <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className="flex items-center gap-2 sm:gap-3 mb-2">
+            <div className="p-2 sm:p-2.5 bg-white/20 backdrop-blur-sm rounded-lg">
+              <svg className="w-6 h-6 sm:w-8 sm:h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
               </svg>
             </div>
             <div>
-              <h1 className="text-3xl font-bold !text-white mb-1">Development Team</h1>
-              <p className="text-white/90 text-base">Built by engineers, for engineers</p>
+              <h1 className="text-2xl sm:text-3xl font-bold !text-white mb-0.5 sm:mb-1">Development Team</h1>
+              <p className="text-white/90 text-sm sm:text-base">Built by engineers, for engineers</p>
             </div>
           </div>
         </div>
-        <div className="absolute top-0 right-0 w-48 h-48 bg-white/10 rounded-full blur-3xl"></div>
-        <div className="absolute bottom-0 left-0 w-32 h-32 bg-white/5 rounded-full blur-2xl"></div>
+        <div className="absolute top-0 right-0 w-32 h-32 sm:w-48 sm:h-48 bg-white/10 rounded-full blur-3xl"></div>
+        <div className="absolute bottom-0 left-0 w-24 h-24 sm:w-32 sm:h-32 bg-white/5 rounded-full blur-2xl"></div>
       </motion.div>
 
       {/* Introduction */}
@@ -79,16 +79,16 @@ export default function Developers() {
         transition={{ delay: 0.1 }}
         className="bg-white rounded-lg shadow-sm border border-gray-200"
       >
-        <div className="px-5 py-3 bg-blue-50 border-b border-blue-100">
-          <h2 className="text-base font-semibold text-[var(--primary)]">About This Project</h2>
+        <div className="px-4 sm:px-5 py-3 bg-blue-50 border-b border-blue-100">
+          <h2 className="text-sm sm:text-base font-semibold text-[var(--primary)]">About This Project</h2>
         </div>
-        <div className="p-5">
-          <p className="text-sm text-gray-700 leading-relaxed mb-3">
+        <div className="p-4 sm:p-5">
+          <p className="text-xs sm:text-sm text-gray-700 leading-relaxed mb-2 sm:mb-3">
             The CREA platform is a comprehensive digital solution designed to strengthen the Central Railway 
             Engineers Association community. Built with modern web technologies, this platform facilitates 
             seamless communication, knowledge sharing, and community engagement among railway engineering professionals.
           </p>
-          <p className="text-sm text-gray-700 leading-relaxed">
+          <p className="text-xs sm:text-sm text-gray-700 leading-relaxed">
             Our mission is to create a robust, user-friendly platform that serves as the digital backbone 
             for CREA's operations, enabling efficient management of memberships, events, documents, and 
             community interactions.
@@ -103,38 +103,38 @@ export default function Developers() {
         transition={{ delay: 0.2 }}
         className="bg-white rounded-lg shadow-sm border border-gray-200"
       >
-        <div className="px-5 py-3 bg-orange-50 border-b border-orange-100">
-          <h2 className="text-base font-semibold text-[var(--accent)]">Meet the Developers</h2>
+        <div className="px-4 sm:px-5 py-3 bg-orange-50 border-b border-orange-100">
+          <h2 className="text-sm sm:text-base font-semibold text-[var(--accent)]">Meet the Developers</h2>
         </div>
-        <div className="p-5">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="p-4 sm:p-5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
             {developers.map((dev, index) => (
               <motion.div
                 key={dev.name}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.3 + index * 0.05 }}
-                className="bg-gray-50 rounded border border-gray-200 p-4 hover:border-blue-400 hover:bg-blue-50 transition-all"
+                className="bg-gray-50 rounded border border-gray-200 p-3 sm:p-4 hover:border-blue-400 hover:bg-blue-50 transition-all"
               >
-                <div className="flex items-start gap-3">
+                <div className="flex items-start gap-2 sm:gap-3">
                   <div className="flex-shrink-0">
                     {dev.image ? (
                       <img 
                         src={dev.image} 
                         alt={dev.name}
-                        className="w-16 h-16 rounded-full object-cover border-2 border-gray-200"
+                        className="w-12 h-12 sm:w-16 sm:h-16 rounded-full object-cover border-2 border-gray-200"
                       />
                     ) : (
-                      <div className="w-16 h-16 rounded-full bg-gradient-to-br from-[var(--primary)] to-[#1a4d8f] flex items-center justify-center text-white text-lg font-bold">
+                      <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-gradient-to-br from-[var(--primary)] to-[#1a4d8f] flex items-center justify-center text-white text-base sm:text-lg font-bold">
                         {dev.name.split(' ').map(n => n[0]).join('')}
                       </div>
                     )}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h3 className="text-base font-bold text-gray-900 mb-0.5">{dev.name}</h3>
-                    <p className="text-xs font-medium text-[var(--accent)] mb-3">{dev.role}</p>
+                    <h3 className="text-sm sm:text-base font-bold text-gray-900 mb-0.5">{dev.name}</h3>
+                    <p className="text-[10px] sm:text-xs font-medium text-[var(--accent)] mb-2 sm:mb-3">{dev.role}</p>
                     
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1.5 sm:gap-2">
                       {dev.github && (
                         <a
                           href={dev.github}

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import QuickPreviewCard from '../components/QuickPreviewCard'
+import Calendar from '../components/Calendar'
 import { EventIcon, ForumIcon, CircularIcon, CourtCaseIcon } from '../components/Icons'
 import { StaggerContainer, StaggerItem } from '../components/StaggerAnimation'
 import { usePageTitle } from '../hooks/usePageTitle'
@@ -37,12 +38,12 @@ function AdvertisementCarousel({ advertisements }: { advertisements: Advertiseme
       className="bg-white rounded-lg shadow-xl overflow-hidden"
     >
       {/* Header */}
-      <div className="px-6 py-3 bg-blue-50 border-b border-blue-100">
+      <div className="px-4 sm:px-6 py-3 bg-blue-50 border-b border-blue-100">
         <div className="flex items-center gap-2">
-          <svg className="w-5 h-5 text-[var(--primary)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-4 h-4 sm:w-5 sm:h-5 text-[var(--primary)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z" />
           </svg>
-          <h2 className="text-base font-semibold text-[var(--primary)]">Latest Announcements</h2>
+          <h2 className="text-sm sm:text-base font-semibold text-[var(--primary)]">Latest Announcements</h2>
         </div>
       </div>
 
@@ -57,7 +58,7 @@ function AdvertisementCarousel({ advertisements }: { advertisements: Advertiseme
             transition={{ duration: 0.5 }}
             className="relative"
           >
-            <div className="grid md:grid-cols-2 gap-6 p-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 p-4 sm:p-6 md:p-8">
               {/* Left: Media */}
               <div className="flex items-center justify-center">
                 {currentAd.imageUrl ? (
@@ -221,17 +222,17 @@ export default function Dashboard() {
       {/* Hero Section - Central Railway Portal Style */}
       <div className="bg-white rounded-lg shadow-lg border border-gray-200 overflow-hidden">
         {/* Top Header Bar */}
-        <div className="bg-gradient-to-r from-[#003d82] to-[#0a2343] px-6 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2 text-white">
-              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+        <div className="bg-gradient-to-r from-[#003d82] to-[#0a2343] px-4 sm:px-6 py-2 sm:py-3 flex flex-col sm:flex-row items-center justify-center sm:justify-between gap-2">
+          <div className="flex items-center gap-2 sm:gap-4">
+            <div className="flex items-center gap-1 sm:gap-2 text-white">
+              <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd" />
               </svg>
-              <span className="text-sm font-medium">Since 1950</span>
+              <span className="text-xs sm:text-sm font-medium">Since 1950</span>
             </div>
             <div className="hidden md:block h-4 w-px bg-white/30"></div>
-            <div className="hidden md:flex items-center gap-2 text-white/90 text-sm">
-              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+            <div className="flex items-center gap-1 sm:gap-2 text-white/90 text-xs sm:text-sm">
+              <svg className="w-3 h-3 sm:w-4 sm:h-4" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
               </svg>
               <span>{totals.members}+ Members</span>
@@ -240,8 +241,8 @@ export default function Dashboard() {
         </div>
 
         {/* Main Content Area */}
-        <div className="p-8">
-          <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-8">
+        <div className="p-4 sm:p-6 md:p-8">
+          <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6 lg:gap-8">
             {/* Left: Text Content */}
             <div className="flex-1">
               <div className="inline-flex items-center gap-2 bg-orange-100 text-orange-800 px-3 py-1 rounded-full text-xs font-semibold mb-4">
@@ -251,40 +252,40 @@ export default function Dashboard() {
                 Premier Association Since 1950
               </div>
 
-              <h1 className="text-4xl lg:text-5xl font-bold text-[var(--primary)] mb-3 leading-tight">
+              <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-[var(--primary)] mb-3 leading-tight">
                 Central Railway Engineers Association
               </h1>
               
-              <p className="text-lg text-[var(--accent)] font-semibold mb-4">
+              <p className="text-base sm:text-lg text-[var(--accent)] font-semibold mb-3 sm:mb-4">
                 रेलवे अभियंता संघ
               </p>
 
-              <p className="text-gray-700 text-base leading-relaxed mb-6">
+              <p className="text-sm sm:text-base text-gray-700 leading-relaxed mb-4 sm:mb-6">
                 Empowering Railway Engineers with professional excellence, advocacy, and community support across Central Railway. We stand united for the welfare, rights, and professional development of all railway engineers.
               </p>
 
               {/* Key Features */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
-                <div className="flex items-center gap-2 text-sm text-gray-700">
-                  <svg className="w-5 h-5 text-green-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3 mb-4 sm:mb-6">
+                <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-700">
+                  <svg className="w-4 h-4 sm:w-5 sm:h-5 text-green-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                   <span>Legal & Professional Support</span>
                 </div>
-                <div className="flex items-center gap-2 text-sm text-gray-700">
-                  <svg className="w-5 h-5 text-green-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-700">
+                  <svg className="w-4 h-4 sm:w-5 sm:h-5 text-green-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                   <span>Member Welfare Programs</span>
                 </div>
-                <div className="flex items-center gap-2 text-sm text-gray-700">
-                  <svg className="w-5 h-5 text-green-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-700">
+                  <svg className="w-4 h-4 sm:w-5 sm:h-5 text-green-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                   <span>Technical Resources</span>
                 </div>
-                <div className="flex items-center gap-2 text-sm text-gray-700">
-                  <svg className="w-5 h-5 text-green-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-700">
+                  <svg className="w-4 h-4 sm:w-5 sm:h-5 text-green-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                   <span>Community Networking</span>
@@ -292,12 +293,12 @@ export default function Dashboard() {
               </div>
 
               {/* CTA Buttons */}
-              <div className="flex flex-wrap gap-3">
+              <div className="flex flex-col sm:flex-row flex-wrap gap-2 sm:gap-3">
                 <button
                   onClick={() => navigate('/apply-membership')}
-                  className="px-6 py-3 bg-[var(--accent)] text-[var(--text-dark)] rounded font-semibold hover:bg-[#d49500] transition-all shadow-md hover:shadow-lg flex items-center gap-2"
+                  className="px-4 sm:px-6 py-2 sm:py-3 bg-[var(--accent)] text-[var(--text-dark)] rounded font-semibold hover:bg-[#d49500] transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2 text-sm sm:text-base"
                 >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
                   </svg>
                   Apply for Membership
@@ -305,9 +306,9 @@ export default function Dashboard() {
                 
                 <button
                   onClick={() => navigate('/about')}
-                  className="px-6 py-3 bg-white border-2 border-[var(--primary)] text-[var(--primary)] rounded font-semibold hover:bg-[var(--primary)] hover:text-white transition-all flex items-center gap-2"
+                  className="px-4 sm:px-6 py-2 sm:py-3 bg-white border-2 border-[var(--primary)] text-[var(--primary)] rounded font-semibold hover:bg-[var(--primary)] hover:text-white transition-all flex items-center justify-center gap-2 text-sm sm:text-base"
                 >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                   About CREA
@@ -316,7 +317,7 @@ export default function Dashboard() {
             </div>
 
             {/* Right: Stats Cards */}
-            <div className="lg:w-80">
+            <div className="w-full lg:w-80">
               <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg p-6 border-2 border-blue-200">
                 <h3 className="text-sm font-semibold text-gray-600 uppercase tracking-wide mb-4">Quick Statistics</h3>
                 
@@ -650,7 +651,7 @@ export default function Dashboard() {
         </motion.div>
       </div>
 
-      {/* What's New & Quick Actions Section */}
+      {/* What's New & Calendar Section */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* What's New - 2 columns */}
         <div className="lg:col-span-2">
@@ -762,67 +763,106 @@ export default function Dashboard() {
           </motion.div>
         </div>
 
-        {/* Quick Actions - 1 column */}
+        {/* Calendar - 1 column */}
         <div>
           <motion.div
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 1.3, duration: 0.5 }}
-            className="bg-white rounded-lg overflow-hidden shadow border border-gray-200"
           >
-            <div className="px-4 py-3 bg-orange-50 border-b border-orange-100">
-              <div className="flex items-center gap-2">
-                <svg className="w-5 h-5 text-[var(--accent)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
-                </svg>
-                <h3 className="text-base font-semibold text-[var(--accent)]">Quick Actions</h3>
-              </div>
-            </div>
-            
-            <div className="p-4 space-y-2">
-              <button
-                onClick={() => navigate('/apply-membership')}
-                className="w-full bg-[var(--accent)] text-[var(--text-dark)] rounded px-4 py-2.5 font-semibold text-sm hover:bg-[#d49500] transition-all hover:shadow-md flex items-center justify-between group"
-              >
-                <span>Apply for Membership</span>
-                <svg className="w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                </svg>
-              </button>
-              
-              <button
-                onClick={() => navigate('/manuals')}
-                className="w-full bg-white border border-gray-200 text-[var(--primary)] rounded px-4 py-2.5 font-semibold text-sm hover:bg-gray-50 hover:border-[var(--primary)] transition-all hover:shadow-md flex items-center justify-between group"
-              >
-                <span>View Manuals</span>
-                <svg className="w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                </svg>
-              </button>
-              
-              <button
-                onClick={() => navigate('/mutual-transfers')}
-                className="w-full bg-white border border-gray-200 text-[var(--primary)] rounded px-4 py-2.5 font-semibold text-sm hover:bg-gray-50 hover:border-[var(--primary)] transition-all hover:shadow-md flex items-center justify-between group"
-              >
-                <span>Mutual Transfers</span>
-                <svg className="w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                </svg>
-              </button>
-
-              <button
-                onClick={() => navigate('/external-links')}
-                className="w-full bg-white border border-gray-200 text-[var(--primary)] rounded px-4 py-2.5 font-semibold text-sm hover:bg-gray-50 hover:border-[var(--primary)] transition-all hover:shadow-md flex items-center justify-between group"
-              >
-                <span>External Links</span>
-                <svg className="w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                </svg>
-              </button>
-            </div>
+            <Calendar 
+              year={new Date().getFullYear()} 
+              month={new Date().getMonth()} 
+              markers={events.map(e => ({
+                date: e.date,
+                title: e.title,
+                type: e.breaking ? 'breaking' : 'event'
+              }))}
+            />
           </motion.div>
         </div>
       </div>
+
+      {/* Quick Actions Section */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 1.4, duration: 0.5 }}
+        className="bg-white rounded-lg overflow-hidden shadow border border-gray-200"
+      >
+        <div className="px-4 py-3 bg-gray-50 border-b border-gray-200">
+          <div className="flex items-center gap-2">
+            <svg className="w-5 h-5 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+            </svg>
+            <h3 className="text-base font-semibold text-gray-700">Quick Actions</h3>
+          </div>
+        </div>
+        
+        <div className="p-4">
+          <div className="grid grid-cols-3 md:grid-cols-6 gap-3">
+                <button
+                  onClick={() => navigate('/apply-membership')}
+                  className="bg-gradient-to-br from-blue-600 to-blue-700 text-white rounded-lg p-3 hover:from-blue-700 hover:to-blue-800 transition-all hover:shadow-lg flex flex-col items-center justify-center gap-1.5 group"
+                >
+                  <svg className="w-5 h-5 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+                  </svg>
+                  <span className="text-[10px] font-semibold text-center leading-tight">Apply<br/>Membership</span>
+                </button>
+                
+                <button
+                  onClick={() => navigate('/manuals')}
+                  className="bg-white border-2 border-gray-200 text-gray-700 rounded-lg p-3 hover:border-blue-500 hover:bg-blue-50 transition-all hover:shadow-lg flex flex-col items-center justify-center gap-1.5 group"
+                >
+                  <svg className="w-5 h-5 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                  </svg>
+                  <span className="text-[10px] font-semibold text-center">Manuals</span>
+                </button>
+                
+                <button
+                  onClick={() => navigate('/mutual-transfers')}
+                  className="bg-white border-2 border-gray-200 text-gray-700 rounded-lg p-3 hover:border-blue-500 hover:bg-blue-50 transition-all hover:shadow-lg flex flex-col items-center justify-center gap-1.5 group"
+                >
+                  <svg className="w-5 h-5 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+                  </svg>
+                  <span className="text-[10px] font-semibold text-center">Transfers</span>
+                </button>
+                
+                <button
+                  onClick={() => navigate('/external-links')}
+                  className="bg-white border-2 border-gray-200 text-gray-700 rounded-lg p-3 hover:border-blue-500 hover:bg-blue-50 transition-all hover:shadow-lg flex flex-col items-center justify-center gap-1.5 group"
+                >
+                  <svg className="w-5 h-5 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                  </svg>
+                  <span className="text-[10px] font-semibold text-center">Links</span>
+                </button>
+                
+                <button
+                  onClick={() => navigate('/events')}
+                  className="bg-white border-2 border-gray-200 text-gray-700 rounded-lg p-3 hover:border-blue-500 hover:bg-blue-50 transition-all hover:shadow-lg flex flex-col items-center justify-center gap-1.5 group"
+                >
+                  <svg className="w-5 h-5 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                  <span className="text-[10px] font-semibold text-center">Events</span>
+                </button>
+                
+                <button
+                  onClick={() => navigate('/forum')}
+                  className="bg-white border-2 border-gray-200 text-gray-700 rounded-lg p-3 hover:border-blue-500 hover:bg-blue-50 transition-all hover:shadow-lg flex flex-col items-center justify-center gap-1.5 group"
+                >
+                  <svg className="w-5 h-5 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a1.994 1.994 0 01-1.414-.586m0 0L11 14h4a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2v4l.586-.586z" />
+                  </svg>
+                  <span className="text-[10px] font-semibold text-center">Forum</span>
+                </button>
+              </div>
+            </div>
+          </motion.div>
     </div>
   )
 }

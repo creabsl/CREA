@@ -85,21 +85,21 @@ export default function Footer() {
 
   return (
     <footer className="mt-8 border-t bg-white/80 backdrop-blur">
-      <div className="container mx-auto px-4 sm:px-6 lg:px-0 py-5 text-sm text-gray-600">
-        <div className="grid grid-cols-1 gap-5 md:grid-cols-[1.4fr_1fr_1fr]">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-5 text-sm text-gray-600">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-[1.4fr_1fr_1fr] gap-6 md:gap-5">
           <div className="space-y-2.5">
             <div>
               <div className="flex items-center gap-2">
-                <img src={Logo} alt="CREA logo" className="h-7 w-auto" />
-                <h2 className="text-sm font-semibold text-[var(--primary)]">
+                <img src={Logo} alt="CREA logo" className="h-6 sm:h-7 w-auto" />
+                <h2 className="text-xs sm:text-sm font-semibold text-[var(--primary)]">
                   Central Railway Engineers Association
                 </h2>
               </div>
-              <p className="mt-1 text-gray-500">
-                Strengthening the engineering fraternity with knowledge, community,<br />and timely support.
+              <p className="mt-1 text-xs sm:text-sm text-gray-500">
+                Strengthening the engineering fraternity with knowledge, community,<br className="hidden sm:block" /> and timely support.
               </p>
             </div>
-            <div className="space-y-1 text-gray-500">
+            <div className="space-y-1 text-xs sm:text-sm text-gray-500">
               <div>HQ: "Dutt Bhawan", New Ashok Nagar (Near Chilla Regulator), P.O.-Vasundhara Enclave, Delhi-110096</div>
               <div>Working hours: Mon–Sat, 09:30–18:00</div>
             </div>
@@ -108,7 +108,7 @@ export default function Footer() {
               <h3 className="text-xs font-semibold uppercase tracking-wide text-[var(--primary)]">
                 Connect
               </h3>
-              <div className="mt-2 grid grid-cols-8 gap-5">
+              <div className="mt-2 grid grid-cols-3 sm:grid-cols-8 gap-3 sm:gap-5 max-w-xs sm:max-w-none">
                 {socialLinks.map(({ label, href, Icon, badgeClass }) => (
                   <a
                     key={label}
@@ -119,11 +119,10 @@ export default function Footer() {
                   >
                     <span className="sr-only">{label}</span>
                     <span
-                      className={`flex h-9 w-9 items-center justify-center rounded-full text-white shadow-sm ${badgeClass}`}
+                      className={`flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-full text-white shadow-sm ${badgeClass}`}
                     >
-                      <Icon className="h-3.5 w-3.5" />
+                      <Icon className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
                     </span>
-                    {/* <span className="text-[11px] text-gray-400">{handle}</span> */}
                   </a>
                 ))}
               </div>
@@ -134,12 +133,12 @@ export default function Footer() {
             <h3 className="text-xs font-semibold uppercase tracking-wide text-[var(--primary)]">
               Explore
             </h3>
-            <ul className="mt-2 grid grid-cols-2 gap-y-2 gap-x-10">
+            <ul className="mt-2 grid grid-cols-2 gap-y-2 gap-x-6 sm:gap-x-10">
               {exploreLinks.map(({ label, to }) => (
                 <li key={label}>
                   <Link
                     to={to}
-                    className="text-gray-500 transition hover:text-[var(--primary)]"
+                    className="text-xs sm:text-sm text-gray-500 transition hover:text-[var(--primary)]"
                   >
                     {label}
                   </Link>
@@ -159,7 +158,7 @@ export default function Footer() {
                   {to ? (
                     <Link
                       to={to}
-                      className="text-gray-500 transition hover:text-[var(--primary)]"
+                      className="text-xs sm:text-sm text-gray-500 transition hover:text-[var(--primary)]"
                     >
                       {label}
                     </Link>
@@ -168,7 +167,7 @@ export default function Footer() {
                       href={href}
                       target={target}
                       rel={target === "_blank" ? "noopener noreferrer" : undefined}
-                      className="text-gray-500 transition hover:text-[var(--primary)]"
+                      className="text-xs sm:text-sm text-gray-500 transition hover:text-[var(--primary)]"
                     >
                       {label}
                     </a>
@@ -176,15 +175,15 @@ export default function Footer() {
                 </li>
               ))}
             </ul>
-            <p className="mt-3 text-gray-500">
+            <p className="mt-3 text-xs sm:text-sm text-gray-500">
               Follow our updates on social channels and stay informed about events and circulars.
             </p>
           </div>
         </div>
 
-        <div className="mt-5 flex flex-col gap-2 border-t border-gray-200 pt-3 text-xs text-gray-500 sm:flex-row sm:items-center sm:justify-between">
+        <div className="mt-5 flex flex-col gap-2 sm:gap-1 border-t border-gray-200 pt-3 text-[10px] sm:text-xs text-gray-500 sm:flex-row sm:items-center sm:justify-between">
           <div>© {year} CREA — Central Railway Engineers Association. All rights reserved.</div>
-          <div className="flex flex-wrap items-center gap-3">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3">
             <a 
               href="http://localhost:5001/uploads/document/CREA_Short_Privacy_Policy.pdf" 
               target="_blank"
