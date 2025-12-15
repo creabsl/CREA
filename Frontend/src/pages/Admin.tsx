@@ -4,10 +4,11 @@ import { motion } from 'framer-motion'
 import Button from '../components/Button'
 import Input from '../components/Input'
 import Spinner from '../components/Spinner'
+import Modal from '../components/Modal'
 import BulkMemberUpload from '../components/BulkMemberUpload'
 import { StaggerContainer, StaggerItem } from '../components/StaggerAnimation'
 import { usePageTitle } from '../hooks/usePageTitle'
-import { createCircular, createCourtCase, createEvent, createForumTopic, createManual, deleteCircular, deleteCourtCase, deleteEvent, deleteForumTopic, deleteManual, getCirculars, getCourtCases, getEvents, getForumTopics, getManuals, getSuggestions, deleteSuggestion, updateCircular, updateCourtCase, updateEvent, updateForumTopic, updateManual, adminListUsers, adminUpdateUser, notifyStatsChanged, getSettings, updateMultipleSettings, getMutualTransfers, createMutualTransfer, updateMutualTransfer, deleteMutualTransfer, getBodyMembers, createBodyMember, updateBodyMember, deleteBodyMember, getAllAdvertisements, createAdvertisement, updateAdvertisement, deleteAdvertisement, getAllAchievements, createAchievement, updateAchievement, deleteAchievement } from '../services/api'
+import { createCircular, createCourtCase, createEvent, createForumTopic, createManual, deleteCircular, deleteCourtCase, deleteEvent, deleteForumTopic, deleteManual, getCirculars, getCourtCases, getEvents, getForumTopics, getManuals, getSuggestions, deleteSuggestion, updateCircular, updateCourtCase, updateEvent, updateForumTopic, updateManual, adminListUsers, adminUpdateUser, notifyStatsChanged, getSettings, updateMultipleSettings, getMutualTransfers, createMutualTransfer, updateMutualTransfer, deleteMutualTransfer, getBodyMembers, createBodyMember, updateBodyMember, deleteBodyMember, getAllAdvertisements, createAdvertisement, updateAdvertisement, deleteAdvertisement, getAllAchievements, createAchievement, updateAchievement, deleteAchievement, getAllEventAds, createOrUpdateEventAd, deleteEventAd, toggleEventAdStatus, type EventAd } from '../services/api'
 import type { Circular, CourtCase, EventItem, ForumTopic, Manual, Suggestion, Division, MutualTransfer, BodyMember, Advertisement, Achievement } from '../types'
 import { DIVISIONS } from '../types'
 import type { MemberUser, Setting } from '../services/api'
@@ -15,7 +16,7 @@ import { defaultTimelineStops, defaultPastEvents, type TimelineStop, type PastEv
 
 export default function Admin() {
   usePageTitle('CREA • Admin')
-  const [tab, setTab] = useState<'events'|'documents'|'forum'|'suggestions'|'members'|'settings'|'about'|'transfers'|'association-body'|'donations'|'advertisements'|'achievements'>('events')
+  const [tab, setTab] = useState<'events'|'documents'|'forum'|'suggestions'|'members'|'settings'|'about'|'transfers'|'association-body'|'donations'|'advertisements'|'achievements'|'event-ads'>('events')
   const [events, setEvents] = useState<EventItem[]>([])
   const [manuals, setManuals] = useState<Manual[]>([])
   const [circulars, setCirculars] = useState<Circular[]>([])
@@ -230,7 +231,7 @@ export default function Admin() {
 
       {/* Tab Navigation */}
       <div className="flex gap-2 flex-wrap">
-        {(['events','documents','forum','suggestions','members','settings','transfers','association-body','advertisements','achievements','donations'] as const).map(k => (
+        {(['events','documents','forum','suggestions','members','settings','transfers','association-body','advertisements','achievements','donations','event-ads'] as const).map(k => (
           <motion.button 
             key={k} 
             onClick={()=>setTab(k)} 
@@ -272,6 +273,7 @@ export default function Admin() {
   {tab==='advertisements' && <AdvertisementsAdmin />}
   {tab==='achievements' && <AchievementsAdmin />}
   {tab==='donations' && <DonationsAdmin />}
+  {tab==='event-ads' && <EventAdsAdmin />}
     </div>
   )
 }
@@ -4675,6 +4677,393 @@ function AchievementsAdmin() {
           </table>
         </div>
       </div>
+    </motion.div>
+  )
+}
+
+function EventAdsAdmin() {
+  const [ads, setAds] = useState<EventAd[]>([])
+  const [loading, setLoading] = useState(true)
+  const [editingAd, setEditingAd] = useState<EventAd | null>(null)
+  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [position, setPosition] = useState<'left' | 'right'>('left')
+  const [title, setTitle] = useState('')
+  const [link, setLink] = useState('')
+  const [endDate, setEndDate] = useState('')
+  const [priority, setPriority] = useState(0)
+  const [image, setImage] = useState<File | null>(null)
+  const [submitting, setSubmitting] = useState(false)
+
+  const API_URL = import.meta.env?.VITE_API_URL || 'http://localhost:5001'
+
+  useEffect(() => {
+    loadAds()
+  }, [])
+
+  const loadAds = async () => {
+    try {
+      const data = await getAllEventAds()
+      setAds(data)
+    } catch (error) {
+      console.error('Failed to load event ads:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleEdit = (ad: EventAd) => {
+    setEditingAd(ad)
+    setPosition(ad.position)
+    setTitle(ad.title)
+    setLink(ad.link)
+    setPriority(ad.priority || 0)
+    setEndDate(ad.endDate ? new Date(ad.endDate).toISOString().split('T')[0] : '')
+    setImage(null)
+    setIsModalOpen(true)
+  }
+
+  const handleCreateNew = (pos: 'left' | 'right') => {
+    setEditingAd(null)
+    setPosition(pos)
+    setTitle('')
+    setLink('')
+    setPriority(0)
+    setEndDate('')
+    setImage(null)
+    setIsModalOpen(true)
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!title || !link || (!editingAd && !image)) {
+      alert('Please fill all required fields including the image')
+      return
+    }
+
+    setSubmitting(true)
+    try {
+      const formData = new FormData()
+      if (editingAd) formData.append('id', editingAd._id)
+      formData.append('position', position)
+      formData.append('title', title)
+      formData.append('link', link)
+      formData.append('priority', priority.toString())
+      if (endDate) formData.append('endDate', new Date(endDate).toISOString())
+      if (image) formData.append('image', image)
+
+      await createOrUpdateEventAd(formData)
+      await loadAds()
+      setIsModalOpen(false)
+      alert(`Ad ${editingAd ? 'updated' : 'created'} successfully!`)
+    } catch (error) {
+      alert(`Failed to ${editingAd ? 'update' : 'create'} ad: ${error}`)
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  const handleDelete = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this ad?')) return
+
+    try {
+      await deleteEventAd(id)
+      await loadAds()
+      alert('Ad deleted successfully!')
+    } catch (error) {
+      alert(`Failed to delete ad: ${error}`)
+    }
+  }
+
+  const handleToggleStatus = async (id: string) => {
+    try {
+      await toggleEventAdStatus(id)
+      await loadAds()
+    } catch (error) {
+      alert(`Failed to toggle ad status: ${error}`)
+    }
+  }
+
+  const leftAds = ads.filter(ad => ad.position === 'left').sort((a, b) => b.priority - a.priority)
+  const rightAds = ads.filter(ad => ad.position === 'right').sort((a, b) => b.priority - a.priority)
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="space-y-6"
+    >
+      {/* Header */}
+      <div className="bg-gradient-to-r from-[var(--primary)] to-[#19417d] rounded-xl p-6 text-white shadow-lg">
+        <div className="flex items-center gap-3 mb-2">
+          <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+          </svg>
+          <h2 className="text-2xl font-bold">Event Page Advertisements</h2>
+        </div>
+        <p className="text-white/80 text-sm">Manage advertisements displayed on event gallery pages (Left & Right sidebars)</p>
+      </div>
+
+      {loading ? (
+        <div className="text-center py-12">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[var(--primary)] mx-auto"></div>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Left Ads */}
+          <div className="bg-white rounded-xl shadow-md border border-gray-200 p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h3 className="text-lg font-bold text-gray-900">Left Advertisements</h3>
+                <p className="text-sm text-gray-500">{leftAds.length} ad(s)</p>
+              </div>
+              <button
+                onClick={() => handleCreateNew('left')}
+                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm font-medium"
+              >
+                + Add Left Ad
+              </button>
+            </div>
+
+            {leftAds.length > 0 ? (
+              <div className="space-y-4">
+                {leftAds.map((ad) => (
+                  <div key={ad._id} className="border border-gray-200 rounded-lg p-4 space-y-3">
+                    <div className="aspect-[160/384] bg-gray-100 rounded-lg overflow-hidden max-w-[120px]">
+                      <img
+                        src={`${API_URL}${ad.imageUrl}`}
+                        alt={ad.title}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <p className="font-semibold text-gray-900">{ad.title}</p>
+                      <a href={ad.link} target="_blank" rel="noopener noreferrer" className="text-sm text-blue-600 hover:underline break-all block">
+                        {ad.link}
+                      </a>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className={`px-2 py-1 text-xs rounded-full font-medium ${
+                          ad.isActive ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'
+                        }`}>
+                          {ad.isActive ? 'Active' : 'Inactive'}
+                        </span>
+                        <span className="px-2 py-1 text-xs rounded-full font-medium bg-blue-100 text-blue-700">
+                          Priority: {ad.priority}
+                        </span>
+                        {ad.endDate && (
+                          <span className="px-2 py-1 text-xs rounded-full font-medium bg-gray-100 text-gray-700">
+                            Expires: {new Date(ad.endDate).toLocaleDateString()}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-3 gap-2">
+                      <button
+                        onClick={() => handleEdit(ad)}
+                        className="px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-xs font-medium"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => handleToggleStatus(ad._id)}
+                        className="px-3 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 text-xs font-medium"
+                      >
+                        {ad.isActive ? 'Disable' : 'Enable'}
+                      </button>
+                      <button
+                        onClick={() => handleDelete(ad._id)}
+                        className="px-3 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 text-xs font-medium"
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-12 border-2 border-dashed border-gray-300 rounded-lg">
+                <svg className="w-16 h-16 text-gray-300 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+                <p className="text-gray-500 text-sm">No advertisements configured</p>
+              </div>
+            )}
+          </div>
+
+          {/* Right Ads */}
+          <div className="bg-white rounded-xl shadow-md border border-gray-200 p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h3 className="text-lg font-bold text-gray-900">Right Advertisements</h3>
+                <p className="text-sm text-gray-500">{rightAds.length} ad(s)</p>
+              </div>
+              <button
+                onClick={() => handleCreateNew('right')}
+                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm font-medium"
+              >
+                + Add Right Ad
+              </button>
+            </div>
+
+            {rightAds.length > 0 ? (
+              <div className="space-y-4">
+                {rightAds.map((ad) => (
+                  <div key={ad._id} className="border border-gray-200 rounded-lg p-4 space-y-3">
+                    <div className="aspect-[160/384] bg-gray-100 rounded-lg overflow-hidden max-w-[120px]">
+                      <img
+                        src={`${API_URL}${ad.imageUrl}`}
+                        alt={ad.title}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <p className="font-semibold text-gray-900">{ad.title}</p>
+                      <a href={ad.link} target="_blank" rel="noopener noreferrer" className="text-sm text-blue-600 hover:underline break-all block">
+                        {ad.link}
+                      </a>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className={`px-2 py-1 text-xs rounded-full font-medium ${
+                          ad.isActive ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'
+                        }`}>
+                          {ad.isActive ? 'Active' : 'Inactive'}
+                        </span>
+                        <span className="px-2 py-1 text-xs rounded-full font-medium bg-blue-100 text-blue-700">
+                          Priority: {ad.priority}
+                        </span>
+                        {ad.endDate && (
+                          <span className="px-2 py-1 text-xs rounded-full font-medium bg-gray-100 text-gray-700">
+                            Expires: {new Date(ad.endDate).toLocaleDateString()}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-3 gap-2">
+                      <button
+                        onClick={() => handleEdit(ad)}
+                        className="px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-xs font-medium"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => handleToggleStatus(ad._id)}
+                        className="px-3 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 text-xs font-medium"
+                      >
+                        {ad.isActive ? 'Disable' : 'Enable'}
+                      </button>
+                      <button
+                        onClick={() => handleDelete(ad._id)}
+                        className="px-3 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 text-xs font-medium"
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-12 border-2 border-dashed border-gray-300 rounded-lg">
+                <svg className="w-16 h-16 text-gray-300 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+                <p className="text-gray-500 text-sm">No advertisements configured</p>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Modal for Create/Edit */}
+      <Modal open={isModalOpen} onClose={() => !submitting && setIsModalOpen(false)}>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <h3 className="text-xl font-bold text-gray-900 mb-4">
+            {editingAd ? 'Edit' : 'Create'} {position === 'left' ? 'Left' : 'Right'} Advertisement
+          </h3>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Title <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent"
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Destination URL <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="url"
+              value={link}
+              onChange={(e) => setLink(e.target.value)}
+              placeholder="https://example.com"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent"
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Priority
+            </label>
+            <input
+              type="number"
+              value={priority}
+              onChange={(e) => setPriority(parseInt(e.target.value) || 0)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent"
+            />
+            <p className="text-xs text-gray-500 mt-1">Higher priority ads display first (default: 0)</p>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              End Date (Optional)
+            </label>
+            <input
+              type="date"
+              value={endDate}
+              onChange={(e) => setEndDate(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent"
+            />
+            <p className="text-xs text-gray-500 mt-1">Leave empty for no expiration</p>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Advertisement Image {!editingAd && <span className="text-red-500">*</span>}
+            </label>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={(e) => setImage(e.target.files?.[0] || null)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent"
+              required={!editingAd}
+            />
+            <p className="text-xs text-gray-500 mt-1">Recommended size: 160x384 pixels</p>
+          </div>
+
+          <div className="flex gap-3 pt-4">
+            <button
+              type="button"
+              onClick={() => setIsModalOpen(false)}
+              disabled={submitting}
+              className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={submitting}
+              className="flex-1 px-4 py-2 bg-[var(--primary)] text-white rounded-lg hover:bg-[#19417d] font-medium disabled:opacity-50"
+            >
+              {submitting ? 'Saving...' : editingAd ? 'Update' : 'Create'}
+            </button>
+          </div>
+        </form>
+      </Modal>
     </motion.div>
   )
 }

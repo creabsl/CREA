@@ -55,3 +55,13 @@ exports.upload = multer({
   fileFilter, 
   limits: { fileSize: 10 * 1024 * 1024 } 
 });
+
+exports.uploadAdImage = multer({ 
+  storage: storageFor('ads'), 
+  fileFilter: (_req, file, cb) => {
+    const ok = file.mimetype.startsWith('image/');
+    if (!ok) return cb(new Error('Only images allowed for advertisements'));
+    return cb(null, true);
+  }, 
+  limits: { fileSize: 5 * 1024 * 1024 } // 5MB limit for ad images
+}).single('image');

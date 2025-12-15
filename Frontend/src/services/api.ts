@@ -1012,3 +1012,51 @@ export async function deleteDonation(id: string): Promise<void> {
     method: 'DELETE'
   })
 }
+
+// ==================== EVENT ADS ====================
+
+export interface EventAd {
+  _id: string
+  position: 'left' | 'right'
+  title: string
+  imageUrl: string
+  link: string
+  isActive: boolean
+  priority: number
+  startDate: string
+  endDate?: string
+  createdAt: string
+  updatedAt: string
+}
+
+export interface ActiveEventAds {
+  left: EventAd[]
+  right: EventAd[]
+}
+
+export async function getActiveEventAds(): Promise<ActiveEventAds> {
+  return await request<ActiveEventAds>('/api/event-ads/active')
+}
+
+export async function getAllEventAds(): Promise<EventAd[]> {
+  return await request<EventAd[]>('/api/event-ads')
+}
+
+export async function createOrUpdateEventAd(formData: FormData): Promise<EventAd> {
+  return await request<EventAd>('/api/event-ads', {
+    method: 'POST',
+    body: formData
+  })
+}
+
+export async function deleteEventAd(id: string): Promise<void> {
+  await request<void>(`/api/event-ads/${id}`, {
+    method: 'DELETE'
+  })
+}
+
+export async function toggleEventAdStatus(id: string): Promise<EventAd> {
+  return await request<EventAd>(`/api/event-ads/${id}/toggle`, {
+    method: 'PATCH'
+  })
+}
