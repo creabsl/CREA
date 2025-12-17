@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { SPRING } from '../animations'
-import { getEvents, createEvent, getActiveEventAds, type EventAd } from '../services/api'
+import { getEvents, createEvent } from '../services/api'
 import type { EventItem } from '../types'
 import Button from '../components/Button'
 import Modal from '../components/Modal'
@@ -172,7 +172,7 @@ function RightAdSpace({ ad }: { ad: EventAd | null }) {
 }
 
 // Auto-rotating slideshow component for completed events
-function AutoRotatingSlideshow({ photos, onImageClick, leftAd, rightAd }: { photos: string[], onImageClick: (url: string) => void, leftAd: EventAd[], rightAd: EventAd[] }) {
+function AutoRotatingSlideshow({ photos, onImageClick }: { photos: string[], onImageClick: (url: string) => void }) {
   const [currentIndex, setCurrentIndex] = useState(0)
   const [isPaused, setIsPaused] = useState(false)
 
@@ -205,11 +205,8 @@ function AutoRotatingSlideshow({ photos, onImageClick, leftAd, rightAd }: { phot
       onMouseLeave={() => setIsPaused(false)}
     >
       <div className="flex gap-4 items-start">
-        {/* Left Advertisement Space - Only visible to admin as placeholder */}
-        <AdCarousel ads={leftAd} position="left" />
-
         {/* Main slideshow container */}
-        <div className="relative w-full max-w-2xl mx-auto flex-1">
+        <div className="relative w-full max-w-2xl mx-auto">
           <div className="relative aspect-[4/3] bg-gradient-to-br from-gray-100 to-gray-200 rounded-lg overflow-hidden shadow-md group">
           <AnimatePresence mode="wait">
             <motion.img
@@ -300,9 +297,6 @@ function AutoRotatingSlideshow({ photos, onImageClick, leftAd, rightAd }: { phot
           </div>
         )}
         </div>
-
-        {/* Right Advertisement Space - Only visible to admin as placeholder */}
-        <AdCarousel ads={rightAd} position="right" />
       </div>
     </div>
   )
@@ -311,7 +305,6 @@ function AutoRotatingSlideshow({ photos, onImageClick, leftAd, rightAd }: { phot
 export default function Events() {
   const [events, setEvents] = useState<EventItem[]>([])
   const [openImg, setOpenImg] = useState<string | null>(null)
-  const [eventAds, setEventAds] = useState<{ left: EventAd[], right: EventAd[] }>({ left: [], right: [] })
   const { user } = useAuth()
   const isAdmin = user?.role === 'admin'
   const [eventType, setEventType] = useState<'upcoming'|'completed'>('upcoming')
@@ -323,7 +316,6 @@ export default function Events() {
 
   useEffect(() => { 
     getEvents().then((d)=>{ setEvents(d.filter(e => !e.breaking)); setLoading(false) })
-    getActiveEventAds().then(setEventAds).catch(console.error)
   }, [])
 
   const today = new Date()
@@ -487,7 +479,7 @@ export default function Events() {
                             {e.photos.length} {e.photos.length === 1 ? 'Photo' : 'Photos'}
                           </span>
                         </div>
-                        <AutoRotatingSlideshow photos={e.photos} onImageClick={setOpenImg} leftAd={eventAds.left} rightAd={eventAds.right} />
+                        <AutoRotatingSlideshow photos={e.photos} onImageClick={setOpenImg} />
                       </div>
                     )}
 
