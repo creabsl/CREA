@@ -42,21 +42,23 @@ const exploreLinks = [
   { label: "Forum", to: "/forum" },
   { label: "Documents", to: "/documents" },
   { label: "Membership", to: "/apply-membership" },
-  { label: "Body Details", to: "/body-details" },
+  { label: "Association Body Details", to: "/body-details" },
   { label: "Suggestions", to: "/suggestions" },
   { label: "Mutual Transfers", to: "/mutual-transfers" },
   { label: "Donations", to: "/donations" },
 ];
-
 
 const supportLinks = [
   { label: "Help Desk", href: "mailto:creabsl@gmail.com" },
   { label: "Meet the Developers", to: "/developers" },
   { label: "Membership Support", href: "tel:+9195503011162" },
   { label: "Suggestion Box", to: "/suggestions" },
-  { label: "Privacy Policy", href: "http://localhost:5001/uploads/document/CREA_Short_Privacy_Policy.pdf", target: "_blank" },
+  {
+    label: "Privacy Policy",
+    href: "http://localhost:5001/uploads/document/CREA_Short_Privacy_Policy.pdf",
+    target: "_blank",
+  },
   { label: "Terms of Service", href: "#" },
-  
 ];
 
 const socialLinks = [
@@ -96,11 +98,16 @@ export default function Footer() {
                 </h2>
               </div>
               <p className="mt-1 text-xs sm:text-sm text-gray-500">
-                Strengthening the engineering fraternity with knowledge, community,<br className="hidden sm:block" /> and timely support.
+                Strengthening the engineering fraternity with knowledge,
+                community,
+                <br className="hidden sm:block" /> and timely support.
               </p>
             </div>
             <div className="space-y-1 text-xs sm:text-sm text-gray-500">
-              <div>HQ: "Dutt Bhawan", New Ashok Nagar (Near Chilla Regulator), P.O.-Vasundhara Enclave, Delhi-110096</div>
+              <div>
+                HQ: "Dutt Bhawan", New Ashok Nagar (Near Chilla Regulator),
+                P.O.-Vasundhara Enclave, Delhi-110096
+              </div>
               <div>Working hours: Mon–Sat, 09:30–18:00</div>
             </div>
 
@@ -146,7 +153,6 @@ export default function Footer() {
               ))}
             </ul>
           </div>
-              
 
           <div>
             <h3 className="text-xs font-semibold uppercase tracking-wide text-[var(--primary)]">
@@ -166,7 +172,9 @@ export default function Footer() {
                     <a
                       href={href}
                       target={target}
-                      rel={target === "_blank" ? "noopener noreferrer" : undefined}
+                      rel={
+                        target === "_blank" ? "noopener noreferrer" : undefined
+                      }
                       className="text-xs sm:text-sm text-gray-500 transition hover:text-[var(--primary)]"
                     >
                       {label}
@@ -176,16 +184,20 @@ export default function Footer() {
               ))}
             </ul>
             <p className="mt-3 text-xs sm:text-sm text-gray-500">
-              Follow our updates on social channels and stay informed about events and circulars.
+              Follow our updates on social channels and stay informed about
+              events and circulars.
             </p>
           </div>
         </div>
 
         <div className="mt-5 flex flex-col gap-2 sm:gap-1 border-t border-gray-200 pt-3 text-[10px] sm:text-xs text-gray-500 sm:flex-row sm:items-center sm:justify-between">
-          <div>© {year} CREA — Central Railway Engineers Association. All rights reserved.</div>
+          <div>
+            © {year} CREA — Central Railway Engineers Association. All rights
+            reserved.
+          </div>
           <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-            <a 
-              href="http://localhost:5001/uploads/document/CREA_Short_Privacy_Policy.pdf" 
+            <a
+              href="http://localhost:5001/uploads/document/CREA_Short_Privacy_Policy.pdf"
               target="_blank"
               rel="noopener noreferrer"
               className="transition hover:text-[var(--primary)]"
@@ -195,7 +207,10 @@ export default function Footer() {
             <a href="#" className="transition hover:text-[var(--primary)]">
               Terms of Use
             </a>
-            <a href="mailto:secretary@crea.org" className="transition hover:text-[var(--primary)]">
+            <a
+              href="mailto:secretary@crea.org"
+              className="transition hover:text-[var(--primary)]"
+            >
               secretary@crea.org
             </a>
           </div>
