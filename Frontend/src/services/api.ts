@@ -1093,6 +1093,16 @@ export async function logout(): Promise<{ success: boolean }> {
   return { success: true };
 }
 
+export async function forgotPassword(
+  email: string
+): Promise<{ success: boolean; message?: string }> {
+  if (!email) throw new Error("Email is required");
+  return request("/api/auth/forgot-password", {
+    method: "POST",
+    body: JSON.stringify({ email }),
+  });
+}
+
 // OTP Auth
 export async function requestOtp(
   email: string,
