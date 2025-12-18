@@ -7,7 +7,10 @@ import { createDonationOrder, verifyDonationPayment } from "../services/api";
 
 declare global {
   interface Window {
-    Razorpay: any;
+    Razorpay: new (options: Record<string, unknown>) => {
+      open: () => void;
+      close: () => void;
+    };
   }
 }
 
@@ -54,7 +57,6 @@ export default function Donations() {
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   const handleInputChange = (field: string, value: string | boolean) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -99,17 +101,18 @@ export default function Donations() {
       } else {
         openRazorpayModal(orderResponse);
       }
-    } catch (error: any) {
+    } catch (error) {
       console.error("Error processing donation:", error);
-      setError(error.message || "An error occurred. Please try again.");
+      const errorMessage = error instanceof Error ? error.message : "An error occurred. Please try again.";
+      setError(errorMessage);
       setLoading(false);
     }
   };
 
-  const openRazorpayModal = (orderResponse: any) => {
-    const options = {
+  const openRazorpayModal = (orderResponse: Record<string, unknown>) => {
+    const options: Record<string, unknown> = {
       key: orderResponse.keyId,
-      amount: Math.round(orderResponse.amount * 100),
+      amount: Math.round((orderResponse.amount as number) * 100),
       currency: "INR",
       order_id: orderResponse.orderId,
       name: "CREA",
@@ -119,18 +122,17 @@ export default function Donations() {
         email: formData.email,
         contact: formData.mobile,
       },
-      handler: async (response: any) => {
+      handler: async (response: Record<string, unknown>) => {
         // Step 3: Verify payment on backend
         try {
           const verifyResponse = await verifyDonationPayment({
-            razorpay_order_id: response.razorpay_order_id,
-            razorpay_payment_id: response.razorpay_payment_id,
-            razorpay_signature: response.razorpay_signature,
+            razorpay_order_id: response.razorpay_order_id as string,
+            razorpay_payment_id: response.razorpay_payment_id as string,
+            razorpay_signature: response.razorpay_signature as string,
           });
 
           if (verifyResponse.success) {
             setSubmitted(true);
-            setSuccessMessage(`Thank you! Your donation of ₹${formData.amount} has been received.`);
             
             // Reset form after showing success message
             setTimeout(() => {
@@ -154,13 +156,13 @@ export default function Donations() {
               });
               setShowEmployeeFields(false);
               setSubmitted(false);
-              setSuccessMessage(null);
             }, 5000);
           } else {
             setError(verifyResponse.message || "Payment verification failed");
           }
-        } catch (error: any) {
-          setError("Payment verification failed: " + (error.message || "Unknown error"));
+        } catch (error) {
+          const errorMessage = error instanceof Error ? error.message : "Unknown error";
+          setError("Payment verification failed: " + errorMessage);
         }
         setLoading(false);
       },

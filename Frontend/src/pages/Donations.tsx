@@ -7,7 +7,10 @@ import { createDonationOrder, verifyDonationPayment } from '../services/api'
 
 declare global {
   interface Window {
-    Razorpay: any;
+    Razorpay: new (options: Record<string, unknown>) => {
+      open: () => void;
+      close: () => void;
+    };
   }
 }
 
@@ -105,17 +108,18 @@ export default function Donations() {
       } else {
         openRazorpayModal(orderResponse)
       }
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error submitting donation:', error)
-      setError(error.message || 'An error occurred. Please try again.')
+      const errorMessage = error instanceof Error ? error.message : 'An error occurred. Please try again.'
+      setError(errorMessage)
       setSubmitting(false)
     }
   }
 
-  const openRazorpayModal = (orderResponse: any) => {
-    const options = {
+  const openRazorpayModal = (orderResponse: Record<string, unknown>) => {
+    const options: Record<string, unknown> = {
       key: orderResponse.keyId,
-      amount: orderResponse.amount * 100, // amount in paise
+      amount: (orderResponse.amount as number) * 100, // amount in paise
       currency: 'INR',
       name: 'Central Railway Engineers Association',
       description: `Donation - ${formData.purpose}`,
@@ -128,13 +132,13 @@ export default function Donations() {
       theme: {
         color: '#0d2c54',
       },
-      handler: async function (response: any) {
+      handler: async function (response: Record<string, unknown>) {
         try {
           // Step 3: Verify payment on backend
           const verifyResponse = await verifyDonationPayment({
-            razorpay_order_id: response.razorpay_order_id,
-            razorpay_payment_id: response.razorpay_payment_id,
-            razorpay_signature: response.razorpay_signature,
+            razorpay_order_id: response.razorpay_order_id as string,
+            razorpay_payment_id: response.razorpay_payment_id as string,
+            razorpay_signature: response.razorpay_signature as string,
           })
 
           if (verifyResponse.success) {
@@ -168,9 +172,10 @@ export default function Donations() {
             setError('Payment verification failed. Please contact support.')
             setSubmitting(false)
           }
-        } catch (error: any) {
+        } catch (error) {
           console.error('Error verifying payment:', error)
-          setError('Payment verification failed. Please contact support.')
+          const errorMessage = error instanceof Error ? error.message : 'Payment verification failed. Please contact support.'
+          setError(errorMessage)
           setSubmitting(false)
         }
       },

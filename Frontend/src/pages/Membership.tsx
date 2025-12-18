@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
 import Input from "../components/Input";
 import Button from "../components/Button";
-import { submitMembership, getMembershipPricing, createMembershipOrder, verifyMembershipPayment } from "../services/api";
+import { getMembershipPricing, createMembershipOrder, verifyMembershipPayment } from "../services/api";
 import { usePageTitle } from "../hooks/usePageTitle";
 import type { MembershipFormData } from "../services/api";
 import FileUploader from "../components/FileUploader";
@@ -10,7 +10,10 @@ import { STATES, getCitiesForState } from "../data/statesAndCities";
 
 declare global {
   interface Window {
-    Razorpay: any;
+    Razorpay: new (options: Record<string, unknown>) => {
+      open: () => void;
+      close: () => void;
+    };
   }
 }
 
@@ -23,7 +26,6 @@ export default function Membership() {
   const [step, setStep] = useState(1);
   const [isFormValid, setIsFormValid] = useState(false);
   const [isStep2Valid, setIsStep2Valid] = useState(false);
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [membershipFees, setMembershipFees] = useState({
     ordinary: 500,
@@ -226,7 +228,11 @@ export default function Membership() {
         unit: form.unit || "",
         type: form.type,
         paymentMethod: form.paymentMethod || "upi",
+        paymentStatus: form.paymentStatus,
         paymentAmount: form.paymentAmount,
+        status: form.status,
+        personalDetails: form.personalDetails,
+        professionalDetails: form.professionalDetails,
       });
 
       if (!orderResponse.success) {
@@ -248,17 +254,18 @@ export default function Membership() {
       } else {
         openRazorpayModal(orderResponse);
       }
-    } catch (error: any) {
+    } catch (error) {
       console.error("Error processing membership:", error);
-      setError(error.message || "An error occurred. Please try again.");
+      const errorMessage = error instanceof Error ? error.message : "An error occurred. Please try again.";
+      setError(errorMessage);
       setSubmitting(false);
     }
   };
 
-  const openRazorpayModal = (orderResponse: any) => {
-    const options = {
+  const openRazorpayModal = (orderResponse: Record<string, unknown>) => {
+    const options: Record<string, unknown> = {
       key: orderResponse.keyId,
-      amount: Math.round(orderResponse.amount * 100),
+      amount: Math.round((orderResponse.amount as number) * 100),
       currency: "INR",
       order_id: orderResponse.orderId,
       name: "CREA",
@@ -277,13 +284,13 @@ export default function Membership() {
       upi: {
         flow: 'otp',
       },
-      handler: async (response: any) => {
+      handler: async (response: Record<string, unknown>) => {
         // Step 3: Verify payment on backend
         try {
           const verifyResponse = await verifyMembershipPayment({
-            razorpay_order_id: response.razorpay_order_id,
-            razorpay_payment_id: response.razorpay_payment_id,
-            razorpay_signature: response.razorpay_signature,
+            razorpay_order_id: response.razorpay_order_id as string,
+            razorpay_payment_id: response.razorpay_payment_id as string,
+            razorpay_signature: response.razorpay_signature as string,
           });
 
           if (verifyResponse.success) {
