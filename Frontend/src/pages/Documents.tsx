@@ -149,8 +149,8 @@ export default function Documents() {
 
   const filteredDocuments = documents.filter(doc => 
     doc.type === activeTab && 
-    (doc.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-     doc.description.toLowerCase().includes(searchQuery.toLowerCase()))
+    (doc.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+     doc.description?.toLowerCase().includes(searchQuery.toLowerCase()))
   )
 
   const getColumns = (type: DocumentType) => {

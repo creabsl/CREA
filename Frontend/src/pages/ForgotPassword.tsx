@@ -6,12 +6,25 @@ import { usePageTitle } from "../hooks/usePageTitle";
 
 export default function ForgotPassword() {
   usePageTitle("CREA • Forgot password");
-  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
   const [sent, setSent] = useState(false);
+  const [error, setError] = useState("");
 
-  const onSubmit = (e: React.FormEvent) => {
+  const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // mock: mark as sent
+    setError("");
+    
+    if (!email.trim()) {
+      setError("Please enter your email address");
+      return;
+    }
+    
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setError("Please enter a valid email address");
+      return;
+    }
+    
+    // Mock: mark as sent
     setSent(true);
   };
 
@@ -23,20 +36,23 @@ export default function ForgotPassword() {
         </h1>
         {sent ? (
           <div className="mt-3 rounded border bg-green-50 p-3 text-green-700 text-sm">
-            If an account exists for {username}, a reset link has been sent
+            If an account exists for {email}, a reset link has been sent
             (mock).
           </div>
         ) : (
           <>
             <p className="text-sm text-gray-600 mt-1">
-              Enter your Email and we'll send a reset link (mock).
+              Enter your email and we'll send a reset link (mock).
             </p>
             <form className="mt-4 space-y-3" onSubmit={onSubmit}>
               <Input
-                label="Username"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
+                label="Email Address"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="your.email@example.com"
               />
+              {error && <div className="text-sm text-red-600">{error}</div>}
               <Button type="submit">Send reset link</Button>
             </form>
           </>
