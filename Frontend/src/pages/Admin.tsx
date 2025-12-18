@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import Button from '../components/Button'
@@ -791,12 +791,16 @@ function MembersAdmin({ data, onReload, onUpdate, division, onDivisionChange }: 
 }
 
 function EventsAdmin({ data, onChange }: { data: EventItem[]; onChange: (d: EventItem[])=>void }){
+  const formRef = useRef<HTMLDivElement>(null)
   const [form, setForm] = useState<Omit<EventItem,'id'>>({ title:'', date:'', location:'', description:'', photos:[], breaking:false })
   const [selectMode, setSelectMode] = useState(false)
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [deleting, setDeleting] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [eventTab, setEventTab] = useState<'upcoming' | 'completed'>('upcoming')
+  const [editingEvent, setEditingEvent] = useState<EventItem | null>(null)
+  const [photoFiles, setPhotoFiles] = useState<File[]>([])
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   // Separate upcoming and completed events
   const today = new Date()
@@ -849,9 +853,89 @@ function EventsAdmin({ data, onChange }: { data: EventItem[]; onChange: (d: Even
     }
   }
 
+  const handleEditEvent = (event: EventItem) => {
+    setEditingEvent(event)
+    setForm({
+      title: event.title,
+      date: event.date,
+      location: event.location,
+      description: event.description,
+      photos: event.photos || [],
+      breaking: event.breaking || false
+    })
+    setPhotoFiles([])
+    // Scroll to form
+    setTimeout(() => {
+      formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }, 100)
+  }
+
+  const handleSaveEvent = async () => {
+    try {
+      let photosArray = editingEvent ? (form.photos || []) : []
+      
+      // Upload new photos if any
+      if (photoFiles.length > 0) {
+        const formData = new FormData()
+        photoFiles.forEach(file => formData.append('photos', file))
+        
+        const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5001'}/api/upload/multiple`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          },
+          body: formData
+        })
+        
+        if (response.ok) {
+          const result = await response.json()
+          photosArray = [...photosArray, ...result.urls]
+        } else {
+          alert('Failed to upload photos')
+          return
+        }
+      }
+      
+      const eventData = { ...form, photos: photosArray }
+      
+      if (editingEvent) {
+        const updated = await updateEvent(editingEvent.id, eventData)
+        onChange(data.map(e => e.id === editingEvent.id ? updated : e))
+      } else {
+        const created = await createEvent(eventData)
+        onChange([...data, created])
+      }
+      
+      // Reset form
+      setForm({ title:'', date:'', location:'', description:'', photos:[], breaking:false })
+      setPhotoFiles([])
+      if (fileInputRef.current) fileInputRef.current.value = ''
+      setEditingEvent(null)
+    } catch (error) {
+      console.error('Error saving event:', error)
+      alert('Failed to save event')
+    }
+  }
+
+  const handleCancelEdit = () => {
+    setForm({ title:'', date:'', location:'', description:'', photos:[], breaking:false })
+    setPhotoFiles([])
+    if (fileInputRef.current) fileInputRef.current.value = ''
+    setEditingEvent(null)
+  }
+
+  const handleRemoveExistingPhoto = (photoUrl: string) => {
+    setForm({ ...form, photos: (form.photos || []).filter(p => p !== photoUrl) })
+  }
+
+  const handleRemoveNewPhoto = (index: number) => {
+    setPhotoFiles(photoFiles.filter((_, i) => i !== index))
+  }
+
   return (
     <div className="space-y-5">
       <motion.div 
+        ref={formRef}
         className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm"
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
@@ -862,7 +946,7 @@ function EventsAdmin({ data, onChange }: { data: EventItem[]; onChange: (d: Even
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
             </svg>
           </span>
-          Add New Event
+          {editingEvent ? 'Edit Event' : 'Add New Event'}
         </h3>
         <div className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -871,19 +955,86 @@ function EventsAdmin({ data, onChange }: { data: EventItem[]; onChange: (d: Even
             <Input label="Location" value={form.location} onChange={(e)=>setForm({...form, location:e.target.value})} />
           </div>
           <Input label="Description" value={form.description} onChange={(e)=>setForm({...form, description:e.target.value})} />
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Event Photos
+            </label>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              multiple
+              onChange={(e) => setPhotoFiles(Array.from(e.target.files || []))}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent text-sm"
+            />
+            <p className="text-xs text-gray-500 mt-1">Upload photos for events (especially for completed events to showcase highlights)</p>
+            
+            {/* Show existing photos if editing */}
+            {editingEvent && form.photos && form.photos.length > 0 && (
+              <div className="mt-3">
+                <p className="text-sm font-medium text-gray-700 mb-2">Existing Photos:</p>
+                <div className="grid grid-cols-4 gap-2">
+                  {form.photos.map((photo, idx) => (
+                    <div key={idx} className="relative group">
+                      <img src={photo} alt={`Event ${idx + 1}`} className="w-full h-20 object-cover rounded border" />
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveExistingPhoto(photo)}
+                        className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            
+            {/* Show new photos to be uploaded */}
+            {photoFiles.length > 0 && (
+              <div className="mt-3">
+                <p className="text-sm font-medium text-gray-700 mb-2">New Photos to Upload ({photoFiles.length}):</p>
+                <div className="grid grid-cols-4 gap-2">
+                  {photoFiles.map((file, idx) => (
+                    <div key={idx} className="relative group">
+                      <img src={URL.createObjectURL(file)} alt={file.name} className="w-full h-20 object-cover rounded border" />
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveNewPhoto(idx)}
+                        className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
           <div className="flex items-center justify-between gap-4">
             <label className="text-sm inline-flex items-center gap-2 font-medium text-gray-700 cursor-pointer">
               <input type="checkbox" className="w-4 h-4 rounded border-gray-300 text-[var(--primary)] focus:ring-[var(--primary)]" checked={!!form.breaking} onChange={(e)=>setForm({...form, breaking:e.target.checked})}/>
               Mark as Breaking News
             </label>
-            <Button onClick={async()=>{ const created = await createEvent(form); onChange([...data, created]); setForm({ title:'', date:'', location:'', description:'', photos:[], breaking:false }) }}>
-              <span className="flex items-center gap-2">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
-                </svg>
-                Add Event
-              </span>
-            </Button>
+            <div className="flex gap-2">
+              {editingEvent && (
+                <Button variant="secondary" onClick={handleCancelEdit}>
+                  Cancel
+                </Button>
+              )}
+              <Button onClick={handleSaveEvent}>
+                <span className="flex items-center gap-2">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
+                  </svg>
+                  {editingEvent ? 'Update Event' : 'Add Event'}
+                </span>
+              </Button>
+            </div>
           </div>
         </div>
       </motion.div>
@@ -986,12 +1137,24 @@ function EventsAdmin({ data, onChange }: { data: EventItem[]; onChange: (d: Even
                 <div className="font-semibold text-gray-800 flex items-center gap-2">
                   {e.title}
                   {e.breaking && <span className="bg-red-100 text-red-700 px-2 py-0.5 rounded text-xs font-bold">BREAKING</span>}
+                  {e.photos && e.photos.length > 0 && <span className="bg-blue-100 text-blue-700 px-2 py-0.5 rounded text-xs font-medium">{e.photos.length} Photo{e.photos.length > 1 ? 's' : ''}</span>}
                 </div>
                 <div className="text-sm text-gray-600 mt-1">{e.date} • {e.location}</div>
+                {e.description && <div className="text-sm text-gray-500 mt-1 line-clamp-2">{e.description}</div>}
               </div>
-              <div className="flex gap-2">
-                <Button variant="secondary" onClick={async()=>{ const upd = await updateEvent(e.id,{ breaking: !e.breaking }); onChange(data.map(d=>d.id===e.id?upd:d)) }}>Toggle Breaking</Button>
-              </div>
+              {!selectMode && (
+                <div className="flex gap-2">
+                  <Button variant="secondary" onClick={() => handleEditEvent(e)}>
+                    <span className="flex items-center gap-1">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                      </svg>
+                      Edit
+                    </span>
+                  </Button>
+                  <Button variant="secondary" onClick={async()=>{ const upd = await updateEvent(e.id,{ breaking: !e.breaking }); onChange(data.map(d=>d.id===e.id?upd:d)) }}>Toggle Breaking</Button>
+                </div>
+              )}
             </div>
           ))}
           {currentViewEvents.length === 0 && <div className="p-8 text-center text-gray-500">No {eventTab} events found. Add your first event above.</div>}

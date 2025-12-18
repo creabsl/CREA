@@ -46,6 +46,7 @@ const advertisementRoutes = require('./routes/advertisementRoutes');
 const achievementRoutes = require('./routes/achievementRoutes');
 const eventAdRoutes = require('./routes/eventAdRoutes');
 const breakingNewsRoutes = require('./routes/breakingNewsRoutes');
+const uploadRoutes = require('./routes/uploadRoutes');
 
 app.use('/api/users', userRoutes);
 app.use('/api/auth', authRoutes);
@@ -67,6 +68,7 @@ app.use('/api/advertisements', advertisementRoutes);
 app.use('/api/achievements', achievementRoutes);
 app.use('/api/event-ads', eventAdRoutes);
 app.use('/api/breaking-news', breakingNewsRoutes);
+app.use('/api/upload', uploadRoutes);
 
 // Health check
 app.get('/health', (_req, res) => res.json({ status: 'ok' }));
