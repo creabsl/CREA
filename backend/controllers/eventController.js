@@ -89,19 +89,22 @@ exports.updateEvent = async (req, res) => {
     const { id } = req.params;
     const update = req.body;
     
-    // Handle existing photos
+    // Handle photos - preserve existing base64 photos and handle new uploads
     let photoUrls = [];
-    if (update.existingPhotos) {
+    
+    // If photos array is provided (from frontend form), use it
+    if (Array.isArray(update.photos)) {
+      photoUrls = update.photos;
+    } else if (update.existingPhotos) {
+      // Handle legacy existingPhotos
       try {
         photoUrls = JSON.parse(update.existingPhotos);
       } catch {
         photoUrls = Array.isArray(update.existingPhotos) ? update.existingPhotos : [];
       }
-    } else if (update.photos && !Array.isArray(update.photos)) {
-      update.photos = [];
     }
     
-    // Handle uploaded photo files
+    // Handle new uploaded photo files
     if (req.files && req.files.length > 0) {
       const uploadedUrls = req.files.map(file => `/uploads/events/${file.filename}`);
       photoUrls = [...photoUrls, ...uploadedUrls];
