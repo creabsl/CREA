@@ -25,8 +25,39 @@ exports.createEvent = async (req, res) => {
       return res.status(400).json({ message: 'Title, description, and date are required' });
     }
 
-    // Handle uploaded photo files
-    let photoUrls = Array.isArray(photos) ? photos : [];
+    // Handle uploaded photo files and base64 photos
+    let photoUrls = [];
+    
+    // Process photos array if provided (from frontend form with base64)
+    if (Array.isArray(photos)) {
+      for (const photo of photos) {
+        // If it's a data URL (base64), convert it to a file
+        if (typeof photo === 'string' && photo.startsWith('data:')) {
+          try {
+            // Convert base64 to buffer
+            const base64Data = photo.split(',')[1];
+            const buffer = Buffer.from(base64Data, 'base64');
+            
+            // Generate unique filename
+            const filename = `event-${Date.now()}-${Math.random().toString(36).substr(2, 9)}.jpeg`;
+            const filepath = `./uploads/events/${filename}`;
+            
+            // Save file
+            const fs = require('fs');
+            if (!fs.existsSync('./uploads/events')) {
+              fs.mkdirSync('./uploads/events', { recursive: true });
+            }
+            fs.writeFileSync(filepath, buffer);
+            
+            photoUrls.push(`/uploads/events/${filename}`);
+          } catch (err) {
+            console.error('Error converting base64 to file:', err);
+          }
+        }
+      }
+    }
+    
+    // Handle uploaded photo files from multipart form
     if (req.files && req.files.length > 0) {
       const uploadedUrls = req.files.map(file => `/uploads/events/${file.filename}`);
       photoUrls = [...photoUrls, ...uploadedUrls];
@@ -89,12 +120,46 @@ exports.updateEvent = async (req, res) => {
     const { id } = req.params;
     const update = req.body;
     
-    // Handle photos - preserve existing base64 photos and handle new uploads
+    // Handle photos - convert base64 to files if needed
     let photoUrls = [];
     
-    // If photos array is provided (from frontend form), use it
+    // If photos array is provided (from frontend form), process them
     if (Array.isArray(update.photos)) {
-      photoUrls = update.photos;
+      for (const photo of update.photos) {
+        // If it's a data URL (base64), convert it to a file
+        if (typeof photo === 'string' && photo.startsWith('data:')) {
+          try {
+            // Convert base64 to buffer
+            const base64Data = photo.split(',')[1];
+            const buffer = Buffer.from(base64Data, 'base64');
+            
+            // Generate unique filename
+            const filename = `event-${Date.now()}-${Math.random().toString(36).substr(2, 9)}.jpeg`;
+            const filepath = `./uploads/events/${filename}`;
+            
+            // Save file
+            const fs = require('fs');
+            if (!fs.existsSync('./uploads/events')) {
+              fs.mkdirSync('./uploads/events', { recursive: true });
+            }
+            fs.writeFileSync(filepath, buffer);
+            
+            photoUrls.push(`/uploads/events/${filename}`);
+          } catch (err) {
+            console.error('Error converting base64 to file:', err);
+            // If conversion fails, keep original if it's a valid path
+            if (photo.startsWith('/')) {
+              photoUrls.push(photo);
+            }
+          }
+        } else if (typeof photo === 'string' && !photo.startsWith('http')) {
+          // Existing relative paths
+          photoUrls.push(photo);
+        } else if (typeof photo === 'string' && photo.startsWith('http')) {
+          // External URLs
+          photoUrls.push(photo);
+        }
+      }
     } else if (update.existingPhotos) {
       // Handle legacy existingPhotos
       try {
