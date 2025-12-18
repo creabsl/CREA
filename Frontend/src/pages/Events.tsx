@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { SPRING } from '../animations'
 import { getEvents, createEvent } from '../services/api'
@@ -195,6 +196,7 @@ function AutoRotatingSlideshow({ photos, onImageClick }: { photos: string[], onI
 
 export default function Events() {
   const [events, setEvents] = useState<EventItem[]>([])
+  const navigate = useNavigate()
   const [openImg, setOpenImg] = useState<string | null>(null)
   const { user } = useAuth()
   const isAdmin = user?.role === 'admin'
@@ -244,7 +246,7 @@ export default function Events() {
             </div>
             {isAdmin && (
               <Button 
-                onClick={() => setOpenCreate(true)}
+                onClick={() => navigate('/admin?tab=events')}
                 variant="secondary"
                 className="bg-white !text-[var(--primary)] hover:bg-white/90 shadow-lg font-semibold"
               >

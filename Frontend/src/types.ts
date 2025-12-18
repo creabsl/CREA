@@ -310,3 +310,16 @@ export type BreakingNews = {
   createdAt: string;
   updatedAt: string;
 };
+
+export type DocumentType = 'circular' | 'manual' | 'court-case';
+
+export type DocumentFeedItem = {
+  id: string;
+  type: DocumentType;
+  title: string;
+  label?: string;
+  uploadedAt?: string;
+  downloadUrl?: string;
+  externalUrl?: string;
+  fileName?: string;
+};
