@@ -1,15 +1,13 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useState, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import Button from '../components/Button'
 import Input from '../components/Input'
 import Spinner from '../components/Spinner'
-import Modal from '../components/Modal'
 import BulkMemberUpload from '../components/BulkMemberUpload'
-import { StaggerContainer, StaggerItem } from '../components/StaggerAnimation'
 import { usePageTitle } from '../hooks/usePageTitle'
-import { createCircular, createCourtCase, createEvent, createForumTopic, createManual, deleteCircular, deleteCourtCase, deleteEvent, deleteForumTopic, deleteManual, getCirculars, getCourtCases, getEvents, getForumTopics, getManuals, getSuggestions, deleteSuggestion, updateCircular, updateCourtCase, updateEvent, updateForumTopic, updateManual, adminListUsers, adminUpdateUser, notifyStatsChanged, getSettings, updateMultipleSettings, getMutualTransfers, createMutualTransfer, updateMutualTransfer, deleteMutualTransfer, getBodyMembers, createBodyMember, updateBodyMember, deleteBodyMember, getAllAchievements, createAchievement, updateAchievement, deleteAchievement } from '../services/api'
-import type { Circular, CourtCase, EventItem, ForumTopic, Manual, Suggestion, Division, MutualTransfer, BodyMember, Achievement } from '../types'
+import { createCircular, createCourtCase, createEvent, createManual, deleteCircular, deleteCourtCase, deleteEvent, deleteManual, getCirculars, getCourtCases, getEvents, getManuals, updateCircular, updateCourtCase, updateEvent, updateManual, adminListUsers, adminUpdateUser, notifyStatsChanged, getSettings, updateMultipleSettings, getMutualTransfers, createMutualTransfer, updateMutualTransfer, deleteMutualTransfer, getBodyMembers, createBodyMember, updateBodyMember, deleteBodyMember, getAllAchievements, createAchievement, updateAchievement, deleteAchievement } from '../services/api'
+import type { Circular, CourtCase, EventItem, Manual, Division, MutualTransfer, BodyMember, Achievement } from '../types'
 import BreakingNewsAdmin from '../components/BreakingNewsAdmin'
 import { DIVISIONS } from '../types'
 import type { MemberUser, Setting } from '../services/api'
@@ -21,22 +19,18 @@ export default function Admin() {
   const [events, setEvents] = useState<EventItem[]>([])
   const [manuals, setManuals] = useState<Manual[]>([])
   const [circulars, setCirculars] = useState<Circular[]>([])
-  const [topics, setTopics] = useState<ForumTopic[]>([])
   const [cases, setCases] = useState<CourtCase[]>([])
-  const [suggestions, setSuggestions] = useState<Suggestion[]>([])
   const [members, setMembers] = useState<MemberUser[]>([])
   const [settings, setSettings] = useState<Setting[]>([])
   const [memberDivision, setMemberDivision] = useState<Division | ''>('')
   const [transfers, setTransfers] = useState<MutualTransfer[]>([])
-  const navigate = useNavigate()
+
 
   useEffect(() => {
     getEvents().then(setEvents).catch(console.error)
     getManuals().then(setManuals).catch(console.error)
     getCirculars().then(setCirculars).catch(console.error)
-    getForumTopics().then(setTopics).catch(console.error)
     getCourtCases().then(setCases).catch(console.error)
-    getSuggestions().then(setSuggestions).catch(console.error)
     getSettings().then(setSettings).catch(console.error)
     adminListUsers().then(setMembers).catch(console.error)
     getMutualTransfers({ includeInactive: true }).then(setTransfers).catch(console.error)
@@ -791,7 +785,6 @@ function MembersAdmin({ data, onReload, onUpdate, division, onDivisionChange }: 
 }
 
 function EventsAdmin({ data, onChange }: { data: EventItem[]; onChange: (d: EventItem[])=>void }){
-  const formRef = useRef<HTMLDivElement>(null)
   const [form, setForm] = useState<Omit<EventItem,'id'>>({ title:'', date:'', location:'', description:'', photos:[], breaking:false })
   const [selectMode, setSelectMode] = useState(false)
   const [selected, setSelected] = useState<Set<string>>(new Set())
@@ -800,7 +793,8 @@ function EventsAdmin({ data, onChange }: { data: EventItem[]; onChange: (d: Even
   const [eventTab, setEventTab] = useState<'upcoming' | 'completed'>('upcoming')
   const [editingEvent, setEditingEvent] = useState<EventItem | null>(null)
   const [photoFiles, setPhotoFiles] = useState<File[]>([])
-  const fileInputRef = useRef<HTMLInputElement>(null)
+  const [existingPhotos, setExistingPhotos] = useState<string[]>([])
+  const formRef = useRef<HTMLDivElement>(null)
 
   // Separate upcoming and completed events
   const today = new Date()
@@ -863,7 +857,9 @@ function EventsAdmin({ data, onChange }: { data: EventItem[]; onChange: (d: Even
       photos: event.photos || [],
       breaking: event.breaking || false
     })
+    setExistingPhotos(event.photos || [])
     setPhotoFiles([])
+    
     // Scroll to form
     setTimeout(() => {
       formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
@@ -871,65 +867,32 @@ function EventsAdmin({ data, onChange }: { data: EventItem[]; onChange: (d: Even
   }
 
   const handleSaveEvent = async () => {
-    try {
-      let photosArray = editingEvent ? (form.photos || []) : []
-      
-      // Upload new photos if any
-      if (photoFiles.length > 0) {
-        const formData = new FormData()
-        photoFiles.forEach(file => formData.append('photos', file))
-        
-        const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5001'}/api/upload/multiple`, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
-          },
-          body: formData
-        })
-        
-        if (response.ok) {
-          const result = await response.json()
-          photosArray = [...photosArray, ...result.urls]
-        } else {
-          alert('Failed to upload photos')
-          return
-        }
-      }
-      
-      const eventData = { ...form, photos: photosArray }
-      
-      if (editingEvent) {
-        const updated = await updateEvent(editingEvent.id, eventData)
-        onChange(data.map(e => e.id === editingEvent.id ? updated : e))
-      } else {
-        const created = await createEvent(eventData)
-        onChange([...data, created])
-      }
-      
-      // Reset form
-      setForm({ title:'', date:'', location:'', description:'', photos:[], breaking:false })
-      setPhotoFiles([])
-      if (fileInputRef.current) fileInputRef.current.value = ''
-      setEditingEvent(null)
-    } catch (error) {
-      console.error('Error saving event:', error)
-      alert('Failed to save event')
+    const eventData = { 
+      ...form, 
+      photos: existingPhotos,
+      files: photoFiles 
     }
+    
+    if (editingEvent) {
+      const updated = await updateEvent(editingEvent.id, eventData)
+      onChange(data.map(e => e.id === editingEvent.id ? updated : e))
+    } else {
+      const created = await createEvent(eventData)
+      onChange([...data, created])
+    }
+    
+    // Reset form
+    setForm({ title:'', date:'', location:'', description:'', photos:[], breaking:false })
+    setPhotoFiles([])
+    setExistingPhotos([])
+    setEditingEvent(null)
   }
 
   const handleCancelEdit = () => {
     setForm({ title:'', date:'', location:'', description:'', photos:[], breaking:false })
     setPhotoFiles([])
-    if (fileInputRef.current) fileInputRef.current.value = ''
+    setExistingPhotos([])
     setEditingEvent(null)
-  }
-
-  const handleRemoveExistingPhoto = (photoUrl: string) => {
-    setForm({ ...form, photos: (form.photos || []).filter(p => p !== photoUrl) })
-  }
-
-  const handleRemoveNewPhoto = (index: number) => {
-    setPhotoFiles(photoFiles.filter((_, i) => i !== index))
   }
 
   return (
@@ -957,57 +920,59 @@ function EventsAdmin({ data, onChange }: { data: EventItem[]; onChange: (d: Even
           <Input label="Description" value={form.description} onChange={(e)=>setForm({...form, description:e.target.value})} />
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Event Photos
+              Upload Event Photos
             </label>
             <input
-              ref={fileInputRef}
               type="file"
               accept="image/*"
               multiple
-              onChange={(e) => setPhotoFiles(Array.from(e.target.files || []))}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent text-sm"
+              className="block w-full text-sm text-gray-600 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+              onChange={(e) => {
+                const files = Array.from(e.target.files || [])
+                setPhotoFiles(prev => [...prev, ...files])
+              }}
             />
-            <p className="text-xs text-gray-500 mt-1">Upload photos for events (especially for completed events to showcase highlights)</p>
-            
-            {/* Show existing photos if editing */}
-            {editingEvent && form.photos && form.photos.length > 0 && (
+            <p className="text-xs text-gray-500 mt-1">Upload photos for completed events to showcase event highlights</p>
+            {photoFiles.length > 0 && (
               <div className="mt-3">
-                <p className="text-sm font-medium text-gray-700 mb-2">Existing Photos:</p>
-                <div className="grid grid-cols-4 gap-2">
-                  {form.photos.map((photo, idx) => (
+                <p className="text-sm font-medium text-gray-700 mb-2">New Photos ({photoFiles.length}):</p>
+                <div className="flex flex-wrap gap-2">
+                  {photoFiles.map((file, idx) => (
                     <div key={idx} className="relative group">
-                      <img src={photo} alt={`Event ${idx + 1}`} className="w-full h-20 object-cover rounded border" />
+                      <img 
+                        src={URL.createObjectURL(file)} 
+                        alt={file.name} 
+                        className="w-20 h-20 object-cover rounded border"
+                      />
                       <button
                         type="button"
-                        onClick={() => handleRemoveExistingPhoto(photo)}
-                        className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                        onClick={() => setPhotoFiles(prev => prev.filter((_, i) => i !== idx))}
+                        className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full text-xs opacity-0 group-hover:opacity-100 transition-opacity"
                       >
-                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-                        </svg>
+                        ×
                       </button>
                     </div>
                   ))}
                 </div>
               </div>
             )}
-            
-            {/* Show new photos to be uploaded */}
-            {photoFiles.length > 0 && (
+            {existingPhotos.length > 0 && (
               <div className="mt-3">
-                <p className="text-sm font-medium text-gray-700 mb-2">New Photos to Upload ({photoFiles.length}):</p>
-                <div className="grid grid-cols-4 gap-2">
-                  {photoFiles.map((file, idx) => (
+                <p className="text-sm font-medium text-gray-700 mb-2">Existing Photos ({existingPhotos.length}):</p>
+                <div className="flex flex-wrap gap-2">
+                  {existingPhotos.map((url, idx) => (
                     <div key={idx} className="relative group">
-                      <img src={URL.createObjectURL(file)} alt={file.name} className="w-full h-20 object-cover rounded border" />
+                      <img 
+                        src={url} 
+                        alt={`Photo ${idx + 1}`} 
+                        className="w-20 h-20 object-cover rounded border"
+                      />
                       <button
                         type="button"
-                        onClick={() => handleRemoveNewPhoto(idx)}
-                        className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                        onClick={() => setExistingPhotos(prev => prev.filter((_, i) => i !== idx))}
+                        className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full text-xs opacity-0 group-hover:opacity-100 transition-opacity"
                       >
-                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-                        </svg>
+                        ×
                       </button>
                     </div>
                   ))}
@@ -3422,216 +3387,7 @@ function MutualTransfersAdmin({ data, onChange }: { data: MutualTransfer[]; onCh
   )
 }
 
-// Unused legacy function - commented out due to missing API implementations
-/* eslint-disable @typescript-eslint/no-unused-vars */
-if (false) {
-function ForumApprovalAdmin_DISABLED({ 
-  pendingPosts, 
-  pendingComments, 
-  onPostsChange, 
-  onCommentsChange 
-}: { 
-  pendingPosts: any[]
-  pendingComments: any[]
-  onPostsChange: (posts: any[]) => void
-  onCommentsChange: (comments: any[]) => void
-}) {
-  const [loading, setLoading] = useState(false)
 
-  const handleApprovePost = async (postId: string) => {
-    setLoading(true)
-    try {
-      // await approveForumPost(postId)
-      onPostsChange(pendingPosts.filter(p => p._id !== postId))
-      alert('Post approved successfully!')
-    } catch (error) {
-      alert('Error approving post: ' + (error as Error).message)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const handleRejectPost = async (postId: string) => {
-    if (!confirm('Are you sure you want to reject and delete this post?')) return
-    setLoading(true)
-    try {
-      // await rejectForumPost(postId)
-      onPostsChange(pendingPosts.filter(p => p._id !== postId))
-      alert('Post rejected and deleted')
-    } catch (error) {
-      alert('Error rejecting post: ' + (error as Error).message)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const handleApproveComment = async (postId: string, commentIndex: number) => {
-    setLoading(true)
-    try {
-      // await approveForumComment(postId, commentIndex)
-      onCommentsChange(pendingComments.filter(c => !(c.postId === postId && c.commentIndex === commentIndex)))
-      alert('Comment approved successfully!')
-    } catch (error) {
-      alert('Error approving comment: ' + (error as Error).message)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const handleRejectComment = async (postId: string, commentIndex: number) => {
-    if (!confirm('Are you sure you want to reject and delete this comment?')) return
-    setLoading(true)
-    try {
-      // await rejectForumComment(postId, commentIndex)
-      onCommentsChange(pendingComments.filter(c => !(c.postId === postId && c.commentIndex === commentIndex)))
-      alert('Comment rejected and deleted')
-    } catch (error) {
-      alert('Error rejecting comment: ' + (error as Error).message)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  return (
-    <div className="space-y-6">
-      <motion.div
-        className="bg-white rounded-xl border border-gray-200 p-6 shadow-md"
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-      >
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h2 className="text-2xl font-bold text-gray-900">Forum Moderation</h2>
-            <p className="text-sm text-gray-500 mt-1">Review and approve pending forum posts and comments</p>
-          </div>
-          <div className="flex items-center gap-4">
-            <div className="px-4 py-2 bg-orange-50 border border-orange-200 rounded-lg">
-              <span className="text-sm text-orange-700 font-medium">{pendingPosts.length} Pending Posts</span>
-            </div>
-            <div className="px-4 py-2 bg-blue-50 border border-blue-200 rounded-lg">
-              <span className="text-sm text-blue-700 font-medium">{pendingComments.length} Pending Comments</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Pending Posts Section */}
-        <div className="mb-8">
-          <h3 className="text-xl font-semibold text-gray-800 mb-4 flex items-center gap-2">
-            <svg className="w-5 h-5 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
-            </svg>
-            Pending Posts ({pendingPosts.length})
-          </h3>
-          <div className="space-y-4">
-            {pendingPosts.length === 0 ? (
-              <p className="text-center text-gray-500 py-8 bg-gray-50 rounded-lg">No pending posts</p>
-            ) : (
-              pendingPosts.map(post => (
-                <motion.div
-                  key={post._id}
-                  className="border border-gray-200 rounded-lg p-4 bg-white hover:shadow-md transition-shadow"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                >
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-2">
-                        <span className="px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded font-medium">
-                          {post.topicTitle}
-                        </span>
-                        <span className="text-sm text-gray-500">by {post.author}</span>
-                        <span className="text-xs text-gray-400">{new Date(post.createdAt).toLocaleDateString()}</span>
-                      </div>
-                      <p className="text-gray-700 whitespace-pre-wrap">{post.content}</p>
-                    </div>
-                    <div className="flex gap-2">
-                      <Button
-                        onClick={() => handleApprovePost(post._id)}
-                        disabled={loading}
-                        variant="primary"
-                        className="!py-1 !px-3 !text-sm"
-                      >
-                        ✓ Approve
-                      </Button>
-                      <Button
-                        onClick={() => handleRejectPost(post._id)}
-                        disabled={loading}
-                        variant="secondary"
-                        className="!py-1 !px-3 !text-sm !bg-red-50 !text-red-600 hover:!bg-red-100"
-                      >
-                        ✗ Reject
-                      </Button>
-                    </div>
-                  </div>
-                </motion.div>
-              ))
-            )}
-          </div>
-        </div>
-
-        {/* Pending Comments Section */}
-        <div>
-          <h3 className="text-xl font-semibold text-gray-800 mb-4 flex items-center gap-2">
-            <svg className="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a1.994 1.994 0 01-1.414-.586m0 0L11 14h4a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2v4l.586-.586z" />
-            </svg>
-            Pending Comments ({pendingComments.length})
-          </h3>
-          <div className="space-y-4">
-            {pendingComments.length === 0 ? (
-              <p className="text-center text-gray-500 py-8 bg-gray-50 rounded-lg">No pending comments</p>
-            ) : (
-              pendingComments.map((comment) => (
-                <motion.div
-                  key={`${comment.postId}-${comment.commentIndex}`}
-                  className="border border-gray-200 rounded-lg p-4 bg-white hover:shadow-md transition-shadow"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                >
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-2">
-                        <span className="px-2 py-1 bg-purple-100 text-purple-700 text-xs rounded font-medium">
-                          {comment.topicTitle}
-                        </span>
-                        <span className="text-xs text-gray-400">Comment on: {comment.postContent}</span>
-                      </div>
-                      <div className="flex items-center gap-2 mb-2">
-                        <span className="text-sm text-gray-500">by {comment.author}</span>
-                        <span className="text-xs text-gray-400">{comment.createdAt}</span>
-                      </div>
-                      <p className="text-gray-700 whitespace-pre-wrap">{comment.content}</p>
-                    </div>
-                    <div className="flex gap-2">
-                      <Button
-                        onClick={() => handleApproveComment(comment.postId, comment.commentIndex)}
-                        disabled={loading}
-                        variant="primary"
-                        className="!py-1 !px-3 !text-sm"
-                      >
-                        ✓ Approve
-                      </Button>
-                      <Button
-                        onClick={() => handleRejectComment(comment.postId, comment.commentIndex)}
-                        disabled={loading}
-                        variant="secondary"
-                        className="!py-1 !px-3 !text-sm !bg-red-50 !text-red-600 hover:!bg-red-100"
-                      >
-                        ✗ Reject
-                      </Button>
-                    </div>
-                  </div>
-                </motion.div>
-              ))
-            )}
-          </div>
-        </div>
-      </motion.div>
-    </div>
-  )
-}
-}
-/* eslint-enable @typescript-eslint/no-unused-vars */
 
 function DonationsAdmin() {
   const [donations, setDonations] = useState<import('../types').Donation[]>([])
@@ -4080,10 +3836,10 @@ function AchievementsAdmin() {
       }
 
       if (editingId) {
-        await updateAchievement(editingId, formData)
+        await updateAchievement(editingId, formData as any)
         alert('Achievement updated successfully!')
       } else {
-        await createAchievement(formData)
+        await createAchievement(formData as any)
         alert('Achievement created successfully!')
       }
       

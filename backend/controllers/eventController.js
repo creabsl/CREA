@@ -25,6 +25,13 @@ exports.createEvent = async (req, res) => {
       return res.status(400).json({ message: 'Title, description, and date are required' });
     }
 
+    // Handle uploaded photo files
+    let photoUrls = Array.isArray(photos) ? photos : [];
+    if (req.files && req.files.length > 0) {
+      const uploadedUrls = req.files.map(file => `/uploads/events/${file.filename}`);
+      photoUrls = [...photoUrls, ...uploadedUrls];
+    }
+
     const event = await Event.create({
       title,
       description,
@@ -32,7 +39,7 @@ exports.createEvent = async (req, res) => {
       isBreakingNews: Boolean(isBreakingNews),
       breaking: Boolean(breaking),
       location,
-      photos: Array.isArray(photos) ? photos : [],
+      photos: photoUrls,
     });
     
     // Notify all users about new event or breaking news
@@ -80,8 +87,29 @@ exports.createEvent = async (req, res) => {
 exports.updateEvent = async (req, res) => {
   try {
     const { id } = req.params;
-  const update = req.body;
-  if (update.photos && !Array.isArray(update.photos)) update.photos = [];
+    const update = req.body;
+    
+    // Handle existing photos
+    let photoUrls = [];
+    if (update.existingPhotos) {
+      try {
+        photoUrls = JSON.parse(update.existingPhotos);
+      } catch {
+        photoUrls = Array.isArray(update.existingPhotos) ? update.existingPhotos : [];
+      }
+    } else if (update.photos && !Array.isArray(update.photos)) {
+      update.photos = [];
+    }
+    
+    // Handle uploaded photo files
+    if (req.files && req.files.length > 0) {
+      const uploadedUrls = req.files.map(file => `/uploads/events/${file.filename}`);
+      photoUrls = [...photoUrls, ...uploadedUrls];
+    }
+    
+    update.photos = photoUrls;
+    delete update.existingPhotos;
+    
     const event = await Event.findByIdAndUpdate(id, update, { new: true, runValidators: true });
 
     if (!event) {

@@ -85,9 +85,22 @@ export async function getEvents(): Promise<EventItem[]> {
   }))
 }
 
-export async function createEvent(input: Omit<EventItem, 'id'>): Promise<EventItem> {
-  const payload = { ...input, isBreakingNews: !!input.breaking }
-  const e = await request<EventDTO>('/api/events', { method: 'POST', body: JSON.stringify(payload) })
+export async function createEvent(input: Omit<EventItem, 'id'> & { files?: File[] }): Promise<EventItem> {
+  let body: BodyInit
+  if (input.files && input.files.length > 0) {
+    const fd = new FormData()
+    fd.append('title', input.title)
+    fd.append('description', input.description)
+    fd.append('date', input.date)
+    fd.append('location', input.location)
+    fd.append('breaking', String(!!input.breaking))
+    input.files.forEach(file => fd.append('photos', file))
+    body = fd
+  } else {
+    const payload = { ...input, isBreakingNews: !!input.breaking }
+    body = JSON.stringify(payload)
+  }
+  const e = await request<EventDTO>('/api/events', { method: 'POST', body })
   return {
     id: e._id,
     title: e.title,
@@ -99,9 +112,23 @@ export async function createEvent(input: Omit<EventItem, 'id'>): Promise<EventIt
   }
 }
 
-export async function updateEvent(id: string, patch: Partial<EventItem>): Promise<EventItem> {
-  const payload = { ...patch, isBreakingNews: patch.breaking }
-  const e = await request<EventDTO>(`/api/events/${id}`, { method: 'PUT', body: JSON.stringify(payload) })
+export async function updateEvent(id: string, patch: Partial<EventItem> & { files?: File[] }): Promise<EventItem> {
+  let body: BodyInit
+  if (patch.files && patch.files.length > 0) {
+    const fd = new FormData()
+    if (patch.title) fd.append('title', patch.title)
+    if (patch.description) fd.append('description', patch.description)
+    if (patch.date) fd.append('date', patch.date)
+    if (patch.location) fd.append('location', patch.location)
+    if (patch.breaking !== undefined) fd.append('breaking', String(patch.breaking))
+    if (patch.photos) fd.append('existingPhotos', JSON.stringify(patch.photos))
+    patch.files.forEach(file => fd.append('photos', file))
+    body = fd
+  } else {
+    const payload = { ...patch, isBreakingNews: patch.breaking }
+    body = JSON.stringify(payload)
+  }
+  const e = await request<EventDTO>(`/api/events/${id}`, { method: 'PUT', body })
   return {
     id: e._id,
     title: e.title,
@@ -977,17 +1004,19 @@ export async function getAchievementById(id: string): Promise<Achievement> {
   return await request<Achievement>(`/api/achievements/${id}`)
 }
 
-export async function createAchievement(data: Partial<Achievement>): Promise<Achievement> {
+export async function createAchievement(data: Partial<Achievement> | FormData): Promise<Achievement> {
+  const body = data instanceof FormData ? data : JSON.stringify(data)
   return await request<Achievement>('/api/achievements', {
     method: 'POST',
-    body: JSON.stringify(data)
+    body
   })
 }
 
-export async function updateAchievement(id: string, data: Partial<Achievement>): Promise<Achievement> {
+export async function updateAchievement(id: string, data: Partial<Achievement> | FormData): Promise<Achievement> {
+  const body = data instanceof FormData ? data : JSON.stringify(data)
   return await request<Achievement>(`/api/achievements/${id}`, {
     method: 'PUT',
-    body: JSON.stringify(data)
+    body
   })
 }
 
