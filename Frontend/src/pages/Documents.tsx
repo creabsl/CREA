@@ -266,53 +266,53 @@ export default function Documents() {
     }
   }
 
-  const getTypeColor = (_type: DocumentType) => {
-    // Using dashboard color palette only
-    return 'from-[var(--primary)] to-[var(--primary)]'
-  }
-
   return (
-    <div className="space-y-8">
-      {/* Enhanced Header */}
-      <div className="relative overflow-hidden bg-gradient-to-br from-[var(--primary)] to-[#1a4d8f] rounded-2xl p-8 text-white">
-        <div className="relative z-10">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="p-2 bg-white/20 rounded-lg backdrop-blur-sm">
-              <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <div className="space-y-6">
+      {/* Minimalistic Header */}
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+        <div className="px-6 py-4 bg-blue-50 border-b border-blue-100">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <svg className="w-6 h-6 text-[var(--primary)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
               </svg>
+              <div>
+                <h1 className="text-xl font-semibold text-[var(--primary)]">Document Repository</h1>
+                <p className="text-xs text-gray-600">Circulars, Manuals & Legal Records</p>
+              </div>
             </div>
-            <h1 className="text-4xl font-bold !text-white" style={{ color: 'white' }}>Document Repository</h1>
+            {isAdmin && (
+              <Button 
+                onClick={() => setIsAddModalOpen(true)}
+                className="text-sm"
+              >
+                <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
+                </svg>
+                {getAddButtonText(activeTab)}
+              </Button>
+            )}
           </div>
-          <p className="text-white/90 text-lg">Access all organization documents, circulars, manuals, and legal records</p>
         </div>
-        
-        {/* Decorative gradient blob */}
-        <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl"></div>
-      </div>
 
-      {/* Enhanced Controls */}
-      <div className="bg-white rounded-2xl shadow-xl p-6">
-        {/* Tab Navigation */}
-        <div className="flex justify-center gap-2 mb-6">
+        {/* Compact Tab Navigation */}
+        <div className="flex border-b border-gray-200 bg-gray-50 px-6">
           {TABS.map((tab) => (
             <button
               key={tab.value}
               onClick={() => setActiveTab(tab.value)}
-              className={`flex items-center gap-2 px-5 py-2.5 rounded-lg font-medium text-sm transition-all duration-200 ${
+              className={`flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
                 activeTab === tab.value
-                  ? 'bg-[var(--primary)] text-white shadow-lg'
-                  : 'text-[var(--secondary)] hover:text-[var(--primary)] hover:bg-brand-50'
+                  ? 'border-[var(--primary)] text-[var(--primary)]'
+                  : 'border-transparent text-gray-600 hover:text-gray-900 hover:border-gray-300'
               }`}
             >
-              <span className={activeTab === tab.value ? 'text-white' : 'text-[var(--secondary)]'}>
-                {tab.icon}
-              </span>
+              {tab.icon}
               {tab.label}
-              <span className={`ml-2 px-2 py-0.5 text-xs rounded-full ${
+              <span className={`ml-1 px-1.5 py-0.5 text-xs rounded-full ${
                 activeTab === tab.value
-                  ? 'bg-white/20 text-white'
-                  : 'bg-brand-50 text-brand'
+                  ? 'bg-blue-100 text-[var(--primary)]'
+                  : 'bg-gray-200 text-gray-600'
               }`}>
                 {documents.filter(d => d.type === tab.value).length}
               </span>
@@ -321,71 +321,60 @@ export default function Documents() {
         </div>
 
         {/* Search Bar and Add Button */}
-        <div className="flex items-center gap-4">
-          <div className="relative flex-1">
-            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-              <svg className="h-5 w-5 text-[var(--secondary)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div className="p-4">
+          <div className="relative">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <svg className="h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
             </div>
             <input
               type="search"
-              placeholder="Search documents..."
+              placeholder={`Search ${activeTab === 'circular' ? 'circulars' : activeTab === 'manual' ? 'manuals' : 'court cases'}...`}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="block w-full pl-12 pr-4 py-3 rounded-xl leading-5 bg-brand-50 placeholder-[var(--secondary)] text-[var(--text-dark)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:bg-white transition-all"
+              className="block w-full pl-10 pr-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-[var(--primary)] focus:border-[var(--primary)]"
             />
           </div>
-          {isAdmin && (
-            <Button 
-              onClick={() => setIsAddModalOpen(true)}
-              className="whitespace-nowrap"
-            >
-              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
-              </svg>
-              {getAddButtonText(activeTab)}
-            </Button>
-          )}
         </div>
       </div>
 
-      {/* Enhanced Document Table */}
+      {/* Document Content */}
       {loading ? (
-        <div className="bg-white rounded-2xl shadow-xl p-12">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-12">
           <div className="text-center">
-            <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-[var(--primary)] border-t-transparent mb-4"></div>
-            <p className="text-gray-500">Loading documents...</p>
+            <div className="inline-block animate-spin rounded-full h-10 w-10 border-3 border-[var(--primary)] border-t-transparent mb-3"></div>
+            <p className="text-sm text-gray-500">Loading documents...</p>
           </div>
         </div>
       ) : filteredDocuments.length > 0 ? (
-        <div className="bg-white rounded-2xl shadow-xl p-6">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
           <DataTable
             columns={getColumns(activeTab)}
             data={filteredDocuments}
           />
         </div>
       ) : (
-        <div className="bg-white rounded-2xl shadow-inner p-12">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-12">
           <div className="text-center">
-            <div className={`inline-flex p-4 bg-gradient-to-br ${getTypeColor(activeTab)} rounded-2xl mb-4`}>
-              <div className="text-white">
+            <div className="inline-flex p-3 bg-gray-100 rounded-lg mb-3">
+              <div className="text-gray-400">
                 {getTabIcon(activeTab)}
               </div>
             </div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">No Documents Found</h3>
-            <p className="text-gray-500 mb-6">
+            <h3 className="text-base font-semibold text-gray-900 mb-1">No Documents Found</h3>
+            <p className="text-sm text-gray-500 mb-4">
               {searchQuery 
-                ? `No documents match your search "${searchQuery}"`
-                : `No ${activeTab === 'circular' ? 'circulars' : activeTab === 'manual' ? 'manuals' : 'court cases'} available yet`
+                ? `No documents match "${searchQuery}"`
+                : `No ${activeTab === 'circular' ? 'circulars' : activeTab === 'manual' ? 'manuals' : 'court cases'} available`
               }
             </p>
             {!searchQuery && isAdmin && (
-              <Button onClick={() => setIsAddModalOpen(true)}>
-                <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <Button onClick={() => setIsAddModalOpen(true)} className="text-sm">
+                <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
                 </svg>
-                Add First Document
+                Add Document
               </Button>
             )}
           </div>

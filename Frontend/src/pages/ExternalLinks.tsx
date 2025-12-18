@@ -154,63 +154,52 @@ export default function ExternalLinks() {
   const categories = Object.keys(links).filter(cat => links[cat]?.length > 0).length;
 
   return (
-    <div className="space-y-8">
-      {/* Hero Header with Gradient */}
-      <motion.div
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3 }}
-        className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[var(--primary)] to-[#1a4d8f] p-8 text-white shadow-xl"
-      >
-        <div className="relative z-10">
+    <div className="space-y-6">      {/* Minimalistic Header */}
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+        <div className="px-5 py-4 bg-blue-50 border-b border-blue-100">
           <div className="flex items-center justify-between">
-            <div>
-              <div className="flex items-center gap-3 mb-2">
-                <div className="p-2 bg-white/20 rounded-lg backdrop-blur-sm">
-                  <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
-                  </svg>
-                </div>
-                <h1 className="text-3xl font-bold !text-white" style={{ color: 'white' }}>External Links</h1>
+            <div className="flex items-center gap-3">
+              <svg className="w-6 h-6 text-[var(--primary)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+              </svg>
+              <div>
+                <h1 className="text-xl font-semibold text-[var(--primary)]">External Links</h1>
+                <p className="text-xs text-gray-600">Important Government & Industry Links</p>
               </div>
-              <p className="text-white/90 text-lg">Quick access to important external resources</p>
             </div>
             {user?.role === 'admin' && (
-              <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                <Button onClick={openAddModal} className="bg-white text-[var(--primary)] hover:bg-white/90">
-                  <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
-                  </svg>
-                  Add New Link
-                </Button>
-              </motion.div>
+              <button
+                onClick={() => { setEditingLink(null); setIsModalOpen(true); }}
+                className="px-3 py-1.5 text-xs bg-[var(--primary)] text-white rounded-lg hover:bg-[#0a2343] transition-colors flex items-center gap-1.5"
+              >
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
+                </svg>
+                Add Link
+              </button>
             )}
           </div>
         </div>
-        
-        {/* Decorative blob */}
-        <div className="absolute -right-20 -top-20 w-64 h-64 bg-white/10 rounded-full blur-3xl"></div>
-        <div className="absolute -left-20 -bottom-20 w-64 h-64 bg-white/10 rounded-full blur-3xl"></div>
-      </motion.div>
+      </div>
 
       {/* Stats Cards */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3, delay: 0.1 }}
-        className="grid gap-6 sm:grid-cols-3"
+        className="grid gap-4 sm:grid-cols-3"
       >
         <motion.div
-          whileHover={{ y: -4 }}
-          className="relative overflow-hidden rounded-xl bg-white border border-gray-200 p-6 shadow-md"
+          whileHover={{ y: -2 }}
+          className="relative overflow-hidden rounded-lg bg-white border border-gray-200 p-5 shadow-sm"
         >
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-[var(--secondary)]">Total Links</p>
-              <p className="text-3xl font-bold text-[var(--primary)] mt-1">{totalLinks}</p>
+              <p className="text-xs font-medium text-[var(--secondary)]">Total Links</p>
+              <p className="text-2xl font-bold text-[var(--primary)] mt-1">{totalLinks}</p>
             </div>
-            <div className="p-3 bg-[var(--primary)] rounded-xl text-white">
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="p-2 bg-[var(--primary)]/10 rounded-lg">
+              <svg className="w-5 h-5 text-[var(--primary)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
               </svg>
             </div>
@@ -218,16 +207,16 @@ export default function ExternalLinks() {
         </motion.div>
 
         <motion.div
-          whileHover={{ y: -4 }}
-          className="relative overflow-hidden rounded-xl bg-white border border-gray-200 p-6 shadow-md"
+          whileHover={{ y: -2 }}
+          className="relative overflow-hidden rounded-lg bg-white border border-gray-200 p-5 shadow-sm"
         >
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-[var(--secondary)]">Active Links</p>
-              <p className="text-3xl font-bold text-[var(--primary)] mt-1">{activeLinks}</p>
+              <p className="text-xs font-medium text-[var(--secondary)]">Active Links</p>
+              <p className="text-2xl font-bold text-[var(--primary)] mt-1">{activeLinks}</p>
             </div>
-            <div className="p-3 bg-[var(--accent)] rounded-xl text-white">
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="p-2 bg-[var(--accent)]/10 rounded-lg">
+              <svg className="w-5 h-5 text-[var(--accent)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
             </div>
@@ -235,16 +224,16 @@ export default function ExternalLinks() {
         </motion.div>
 
         <motion.div
-          whileHover={{ y: -4 }}
-          className="relative overflow-hidden rounded-xl bg-white border border-gray-200 p-6 shadow-md"
+          whileHover={{ y: -2 }}
+          className="relative overflow-hidden rounded-lg bg-white border border-gray-200 p-5 shadow-sm"
         >
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-[var(--secondary)]">Categories</p>
-              <p className="text-3xl font-bold text-[var(--primary)] mt-1">{categories}</p>
+              <p className="text-xs font-medium text-[var(--secondary)]">Categories</p>
+              <p className="text-2xl font-bold text-[var(--primary)] mt-1">{categories}</p>
             </div>
-            <div className="p-3 bg-[var(--secondary)] rounded-xl text-white">
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="p-2 bg-[var(--secondary)]/10 rounded-lg">
+              <svg className="w-5 h-5 text-[var(--secondary)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
               </svg>
             </div>
@@ -253,7 +242,7 @@ export default function ExternalLinks() {
       </motion.div>
 
       {/* Links by Category */}
-      <div className="space-y-8">
+      <div className="space-y-6">
         {Object.entries(categoryLabels).map(([category, label], categoryIndex) => (
           <AnimatePresence key={category}>
             {links[category]?.length > 0 && (
@@ -265,76 +254,79 @@ export default function ExternalLinks() {
                 className="space-y-4"
               >
                 {/* Category Header */}
-                <div className="flex items-center gap-3 p-4 rounded-xl bg-[var(--primary)] text-white shadow-md">
-                  <div className="p-2 bg-white/20 rounded-lg backdrop-blur-sm">
-                    {categoryIcons[category as ExternalLinkCategory]}
+                <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+                  <div className="px-5 py-3 bg-orange-50 border-b border-orange-100">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 bg-[var(--accent)]/10 rounded-lg">
+                        {categoryIcons[category as ExternalLinkCategory]}
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="text-base font-bold text-[var(--accent)]">{label}</h3>
+                        <p className="text-xs text-gray-600">{links[category].length} resource{links[category].length !== 1 ? 's' : ''} available</p>
+                      </div>
+                    </div>
                   </div>
-                  <div className="flex-1">
-                    <h3 className="text-xl font-bold !text-white" style={{ color: 'white' }}>{label}</h3>
-                    <p className="text-sm text-white/90">{links[category].length} resource{links[category].length !== 1 ? 's' : ''} available</p>
-                  </div>
-                </div>
 
                 {/* Links Grid */}
-                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                <div className="p-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                   {links[category].map((link, linkIndex) => (
                     <motion.div
                       key={link.id}
                       initial={{ opacity: 0, scale: 0.9 }}
                       animate={{ opacity: 1, scale: 1 }}
                       transition={{ duration: 0.3, delay: linkIndex * 0.05 }}
-                      whileHover={{ y: -4, shadow: "0 20px 25px -5px rgba(0, 0, 0, 0.1)" }}
-                      className="relative group rounded-xl border border-gray-200 p-6 bg-white shadow-md hover:shadow-xl transition-all duration-300"
+                      whileHover={{ y: -2, shadow: "0 10px 15px -3px rgba(0, 0, 0, 0.1)" }}
+                      className="relative group rounded-lg border border-gray-200 p-4 bg-white shadow-sm hover:shadow-md transition-all"
                     >
                       {/* Status Badge */}
                       {link.isActive ? (
-                        <div className="absolute top-4 right-4">
-                          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700">
+                        <div className="absolute top-3 right-3">
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700">
                             <span className="w-1.5 h-1.5 bg-green-500 rounded-full"></span>
                             Active
                           </span>
                         </div>
                       ) : (
-                        <div className="absolute top-4 right-4">
-                          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
+                        <div className="absolute top-3 right-3">
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
                             <span className="w-1.5 h-1.5 bg-gray-400 rounded-full"></span>
                             Inactive
                           </span>
                         </div>
                       )}
 
-                      <div className="pr-20">
-                        <h4 className="font-semibold text-[var(--primary)] text-lg mb-2">{link.title}</h4>
+                      <div className="pr-16">
+                        <h4 className="font-semibold text-[var(--primary)] text-base mb-2">{link.title}</h4>
                         {link.description && (
-                          <p className="text-sm text-[var(--secondary)] line-clamp-2 mb-4">{link.description}</p>
+                          <p className="text-xs text-[var(--secondary)] line-clamp-2 mb-3">{link.description}</p>
                         )}
                       </div>
 
-                      <div className="mt-4 flex items-center justify-between gap-2">
+                      <div className="mt-3 flex items-center justify-between gap-2">
                         <motion.a
                           href={link.url}
                           target="_blank"
                           rel="noopener noreferrer"
                           whileHover={{ scale: 1.05 }}
                           whileTap={{ scale: 0.95 }}
-                          className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-[var(--accent)] text-white font-medium text-sm shadow-md hover:shadow-lg transition-all"
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[var(--accent)] text-white font-medium text-xs shadow-sm hover:shadow transition-all"
                         >
                           Visit Link
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
                           </svg>
                         </motion.a>
 
                         {user?.role === 'admin' && (
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-1.5">
                             <motion.button
                               whileHover={{ scale: 1.1 }}
                               whileTap={{ scale: 0.9 }}
                               onClick={() => handleEdit(link)}
-                              className="p-2 text-[var(--primary)] hover:bg-blue-50 rounded-lg transition-colors"
+                              className="p-1.5 text-[var(--primary)] hover:bg-blue-50 rounded-lg transition-colors"
                               title="Edit"
                             >
-                              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                               </svg>
                             </motion.button>
@@ -342,10 +334,10 @@ export default function ExternalLinks() {
                               whileHover={{ scale: 1.1 }}
                               whileTap={{ scale: 0.9 }}
                               onClick={() => handleDelete(link.id)}
-                              className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                              className="p-1.5 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                               title="Delete"
                             >
-                              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                               </svg>
                             </motion.button>
@@ -354,6 +346,7 @@ export default function ExternalLinks() {
                       </div>
                     </motion.div>
                   ))}
+                </div>
                 </div>
               </motion.div>
             )}
@@ -367,18 +360,18 @@ export default function ExternalLinks() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.3 }}
-          className="text-center py-16 px-4 bg-gray-50 rounded-xl border-2 border-dashed border-gray-300"
+          className="text-center py-12 px-4 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300"
         >
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gray-200 mb-4">
-            <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-gray-200 mb-3">
+            <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
             </svg>
           </div>
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">No External Links Yet</h3>
-          <p className="text-gray-600 mb-6">Get started by adding your first external resource link.</p>
+          <h3 className="text-base font-semibold text-gray-900 mb-2">No External Links Yet</h3>
+          <p className="text-sm text-gray-600 mb-4">Get started by adding your first external resource link.</p>
           {user?.role === 'admin' && (
             <Button onClick={openAddModal}>
-              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
               </svg>
               Add First Link

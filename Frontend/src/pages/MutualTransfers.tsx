@@ -140,27 +140,20 @@ export default function MutualTransfers() {
 
   return (
     <div className="space-y-6">
-      {/* Professional Header */}
-      <motion.div
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="relative overflow-hidden bg-gradient-to-r from-[var(--primary)] to-[#1a4d8f] rounded-xl p-8 text-white shadow-lg"
-      >
-        <div className="relative z-10">
-          <div className="flex items-center gap-4 mb-3">
-            <div className="p-3 bg-white/20 backdrop-blur-sm rounded-lg">
-              <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
-              </svg>
-            </div>
+      {/* Minimalistic Header */}
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+        <div className="px-5 py-4 bg-blue-50 border-b border-blue-100">
+          <div className="flex items-center gap-3">
+            <svg className="w-6 h-6 text-[var(--primary)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+            </svg>
             <div>
-              <h1 className="text-3xl font-bold !text-white">Mutual Transfer Corner</h1>
-              <p className="text-white/90 text-sm mt-1">Connect with colleagues across Central Railway divisions to exchange posts and locations</p>
+              <h1 className="text-xl font-semibold text-[var(--primary)]">Mutual Transfer Corner</h1>
+              <p className="text-xs text-gray-600">Connect with colleagues for post and location exchanges</p>
             </div>
           </div>
         </div>
-        <div className="absolute -top-10 -right-10 w-40 h-40 bg-white/10 rounded-full blur-3xl"></div>
-      </motion.div>
+      </div>
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -168,15 +161,15 @@ export default function MutualTransfers() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="bg-white rounded-xl p-6 shadow-md border border-gray-200"
+          className="bg-white rounded-lg p-5 shadow-sm border border-gray-200"
         >
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-[var(--secondary)] mb-1">Total Listings</p>
-              <p className="text-3xl font-bold text-[var(--primary)]">{totalListings}</p>
+              <p className="text-xs font-medium text-[var(--secondary)] mb-1">Total Listings</p>
+              <p className="text-2xl font-bold text-[var(--primary)]">{totalListings}</p>
             </div>
-            <div className="p-3 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl text-white">
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="p-2 bg-[var(--primary)]/10 rounded-lg">
+              <svg className="w-5 h-5 text-[var(--primary)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
               </svg>
             </div>
@@ -187,15 +180,15 @@ export default function MutualTransfers() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
-          className="bg-white rounded-xl p-6 shadow-md border border-gray-200"
+          className="bg-white rounded-lg p-5 shadow-sm border border-gray-200"
         >
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-[var(--secondary)] mb-1">Active Listings</p>
-              <p className="text-3xl font-bold text-[var(--accent)]">{activeListings}</p>
+              <p className="text-xs font-medium text-[var(--secondary)] mb-1">Active Listings</p>
+              <p className="text-2xl font-bold text-[var(--accent)]">{activeListings}</p>
             </div>
-            <div className="p-3 bg-[var(--accent)]/10 rounded-lg">
-              <svg className="w-6 h-6 text-[var(--accent)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="p-2 bg-[var(--accent)]/10 rounded-lg">
+              <svg className="w-5 h-5 text-[var(--accent)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
             </div>
@@ -206,15 +199,15 @@ export default function MutualTransfers() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
-          className="bg-white rounded-xl p-6 shadow-md border border-gray-200"
+          className="bg-white rounded-lg p-5 shadow-sm border border-gray-200"
         >
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-[var(--secondary)] mb-1">Divisions Covered</p>
-              <p className="text-3xl font-bold text-[var(--secondary)]">5</p>
+              <p className="text-xs font-medium text-[var(--secondary)] mb-1">Divisions Covered</p>
+              <p className="text-2xl font-bold text-[var(--secondary)]">5</p>
             </div>
-            <div className="p-3 bg-[var(--secondary)]/10 rounded-lg">
-              <svg className="w-6 h-6 text-[var(--secondary)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="p-2 bg-[var(--secondary)]/10 rounded-lg">
+              <svg className="w-5 h-5 text-[var(--secondary)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
               </svg>
@@ -228,17 +221,17 @@ export default function MutualTransfers() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.4 }}
-        className="bg-white rounded-xl p-6 shadow-md border border-gray-200"
+        className="bg-white rounded-lg p-5 shadow-sm border border-gray-200"
       >
-        <div className="flex items-center gap-3 mb-5 pb-4 border-b border-gray-200">
+        <div className="flex items-center gap-3 mb-4 pb-3 border-b border-gray-200">
           <div className="p-2 bg-[var(--accent)]/10 rounded-lg">
-            <svg className="w-5 h-5 text-[var(--accent)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-4 h-4 text-[var(--accent)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
           </div>
           <div>
-            <h2 className="text-xl font-bold text-[var(--primary)]">Find Matching Opportunities</h2>
-            <p className="text-sm text-[var(--secondary)]">Search for suitable transfer candidates across divisions</p>
+            <h2 className="text-base font-bold text-[var(--primary)]">Find Matching Opportunities</h2>
+            <p className="text-xs text-[var(--secondary)]">Search for suitable transfer candidates across divisions</p>
           </div>
         </div>
 
@@ -286,14 +279,14 @@ export default function MutualTransfers() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.45 }}
-          className="bg-white rounded-xl p-6 shadow-md border border-gray-200"
+          className="bg-white rounded-lg p-5 shadow-sm border border-gray-200"
         >
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-green-100 rounded-lg">
-                <svg className="w-5 h-5 text-green-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4"/></svg>
+                <svg className="w-4 h-4 text-green-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4"/></svg>
               </div>
-              <h3 className="text-lg font-bold text-[var(--primary)]">Add New Transfer Request</h3>
+              <h3 className="text-base font-bold text-[var(--primary)]">Add New Transfer Request</h3>
             </div>
             <Button variant="secondary" onClick={()=> setShowForm(s=>!s)}>{showForm ? 'Hide Form' : 'Show Form'}</Button>
           </div>
@@ -450,14 +443,14 @@ export default function MutualTransfers() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.5 }}
-          className="bg-white rounded-xl p-6 shadow-md border border-gray-200"
+          className="bg-white rounded-lg p-5 shadow-sm border border-gray-200"
         >
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-[var(--primary)]/10 rounded-lg">
-                <svg className="w-5 h-5 text-[var(--primary)]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"/></svg>
+                <svg className="w-4 h-4 text-[var(--primary)]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"/></svg>
               </div>
-              <h3 className="text-lg font-bold text-[var(--primary)]">My Listings</h3>
+              <h3 className="text-base font-bold text-[var(--primary)]">My Listings</h3>
             </div>
             <Button variant="secondary" onClick={refreshMyListings}>Refresh</Button>
           </div>
@@ -539,29 +532,29 @@ export default function MutualTransfers() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.5 }}
-        className="bg-white rounded-xl p-6 shadow-md border border-gray-200"
+        className="bg-white rounded-lg p-5 shadow-sm border border-gray-200"
       >
-        <div className="flex items-center justify-between mb-5 pb-4 border-b border-gray-200">
+        <div className="flex items-center justify-between mb-4 pb-3 border-b border-gray-200">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-[var(--primary)]/10 rounded-lg">
-              <svg className="w-5 h-5 text-[var(--primary)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-4 h-4 text-[var(--primary)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
               </svg>
             </div>
             <div>
-              <h3 className="text-xl font-bold text-[var(--primary)]">Available Transfer Opportunities</h3>
-              <p className="text-sm text-[var(--secondary)]">{filteredListings.length} listings found</p>
+              <h3 className="text-base font-bold text-[var(--primary)]">Available Transfer Opportunities</h3>
+              <p className="text-xs text-[var(--secondary)]">{filteredListings.length} listings found</p>
             </div>
           </div>
         </div>
 
         {filteredListings.length === 0 ? (
-          <div className="text-center py-16 bg-gray-50 rounded-xl border-2 border-dashed border-gray-300">
-            <svg className="w-16 h-16 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className="text-center py-12 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
+            <svg className="w-12 h-12 mx-auto mb-3 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
             </svg>
-            <h4 className="text-lg font-semibold text-gray-700 mb-2">No Listings Found</h4>
-            <p className="text-sm text-[var(--secondary)] max-w-md mx-auto">
+            <h4 className="text-base font-semibold text-gray-700 mb-2">No Listings Found</h4>
+            <p className="text-xs text-[var(--secondary)] max-w-md mx-auto">
               No transfer opportunities match your search criteria. Try adjusting your filters or check back later.
             </p>
           </div>
@@ -573,7 +566,7 @@ export default function MutualTransfers() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: idx * 0.05 }}
-                className="border border-gray-200 rounded-xl p-5 hover:shadow-lg hover:border-[var(--primary)] transition-all duration-200"
+                className="border border-gray-200 rounded-lg p-4 hover:shadow-md hover:border-[var(--primary)] transition-all"
               >
                 <div className="flex flex-wrap gap-6">
                   {/* Left Section - Main Info */}
