@@ -376,6 +376,22 @@ exports.createOrder = async (req, res) => {
         if (payload.place) existingMembership.place = payload.place;
         if (payload.unit) existingMembership.unit = payload.unit;
 
+        // Update personal details if provided
+        if (payload.personalDetails) {
+          existingMembership.personalDetails = {
+            ...existingMembership.personalDetails,
+            ...payload.personalDetails,
+          };
+        }
+
+        // Update professional details if provided
+        if (payload.professionalDetails) {
+          existingMembership.professionalDetails = {
+            ...existingMembership.professionalDetails,
+            ...payload.professionalDetails,
+          };
+        }
+
         membership = existingMembership;
       } else {
         // If not upgrading, check if they already have the same type
@@ -560,6 +576,8 @@ exports.verifyPayment = async (req, res) => {
         user.department = membership.department || user.department;
         user.mobile = membership.mobile || user.mobile;
         user.name = membership.name || user.name;
+        user.dateOfBirth =
+          membership.personalDetails?.dateOfBirth || user.dateOfBirth;
 
         await user.save();
         console.log(
@@ -582,6 +600,7 @@ exports.verifyPayment = async (req, res) => {
           division: membership.division,
           department: membership.department,
           mobile: membership.mobile,
+          dateOfBirth: membership.personalDetails?.dateOfBirth,
           memberId: memberId,
           membershipType:
             membership.type === "ordinary" ? "Ordinary" : "Lifetime",
@@ -701,33 +720,6 @@ exports.submitMembership = async (req, res) => {
       });
     }
     return res.status(500).json({ success: false, message: "Server error" });
-  }
-};
-
-// GET /api/memberships (admin)
-exports.listMemberships = async (req, res) => {
-  try {
-    const { status, department, type } = req.query;
-    const query = {};
-
-    if (status) query.status = status;
-    if (department) query.department = department;
-    if (type) query.type = type;
-
-    const list = await Membership.find(query)
-      .sort({ createdAt: -1 })
-      .populate("user", "name email");
-
-    // Add expiry status to each membership
-    const membershipsWithStatus = list.map((membership) => ({
-      ...membership.toObject(),
-      isExpired: membership.isExpired(),
-    }));
-
-    return res.json(membershipsWithStatus);
-  } catch (err) {
-    console.error("List memberships error:", err);
-    return res.status(500).json({ message: "Server error" });
   }
 };
 

@@ -893,9 +893,7 @@ export async function submitMembership(
   });
 }
 
-export async function createMembershipOrder(
-  form: MembershipFormData
-): Promise<{
+export async function createMembershipOrder(form: MembershipFormData): Promise<{
   success: boolean;
   orderId: string;
   keyId: string;
@@ -903,7 +901,7 @@ export async function createMembershipOrder(
   membershipId: string;
   amount: number;
 }> {
-  // Send as JSON with only required fields for order creation
+  // Send as JSON with all required fields including personal and professional details
   const payload = {
     name: form.name,
     email: form.email,
@@ -916,6 +914,8 @@ export async function createMembershipOrder(
     type: form.type,
     paymentMethod: form.paymentMethod || "upi",
     paymentAmount: form.paymentAmount,
+    personalDetails: form.personalDetails || {},
+    professionalDetails: form.professionalDetails || {},
   };
 
   return request("/api/memberships/create-order", {
@@ -1000,6 +1000,10 @@ export async function bulkUploadMembers(
     method: "POST",
     body: formData,
   });
+}
+
+export async function getAllMemberships(): Promise<Membership[]> {
+  return request<Membership[]>("/api/memberships");
 }
 
 // Auth

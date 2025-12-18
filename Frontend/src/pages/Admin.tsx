@@ -61,6 +61,7 @@ import type {
   Suggestion,
 } from "../types";
 import BreakingNewsAdmin from "../components/BreakingNewsAdmin";
+import MembershipsAdmin from "../components/MembershipsAdmin";
 import { DIVISIONS } from "../types";
 import type { MemberUser, Setting } from "../services/api";
 import {
@@ -85,6 +86,7 @@ export default function Admin() {
     | "donations"
     | "achievements"
     | "breaking-news"
+    | "memberships"
   >("events");
   const [events, setEvents] = useState<EventItem[]>([]);
   const [manuals, setManuals] = useState<Manual[]>([]);
@@ -285,6 +287,7 @@ export default function Admin() {
       {tab === "association-body" && <AssociationBodyAdmin />}
       {tab === "achievements" && <AchievementsAdmin />}
       {tab === "donations" && <DonationsAdmin />}
+      {tab === "memberships" && <MembershipsAdmin />}
       {tab === "breaking-news" && <BreakingNewsAdmin />}
     </div>
   );
@@ -1910,22 +1913,22 @@ function DocumentsAdmin({
   // Filtered data
   const filteredCirculars = circulars.filter(
     (c) =>
-      c.subject.toLowerCase().includes(searchQueryCirculars.toLowerCase()) ||
+      c.subject?.toLowerCase().includes(searchQueryCirculars.toLowerCase()) ||
       c.boardNumber
-        .toLowerCase()
+        ?.toLowerCase()
         .includes(searchQueryCirculars.toLowerCase()) ||
-      c.dateOfIssue.includes(searchQueryCirculars)
+      c.dateOfIssue?.includes(searchQueryCirculars)
   );
 
   const filteredManuals = manuals.filter((m) =>
-    m.title.toLowerCase().includes(searchQueryManuals.toLowerCase())
+    m.title?.toLowerCase().includes(searchQueryManuals.toLowerCase())
   );
 
   const filteredCases = courtCases.filter(
     (c) =>
-      c.caseNumber.toLowerCase().includes(searchQueryCases.toLowerCase()) ||
-      c.subject.toLowerCase().includes(searchQueryCases.toLowerCase()) ||
-      c.date.includes(searchQueryCases)
+      c.caseNumber?.toLowerCase().includes(searchQueryCases.toLowerCase()) ||
+      c.subject?.toLowerCase().includes(searchQueryCases.toLowerCase()) ||
+      c.date?.includes(searchQueryCases)
   );
 
   // Circular state
@@ -3330,7 +3333,15 @@ function ForumAdmin({
             </label>
             <select
               value={category}
-              onChange={(e) => setCategory(e.target.value as "technical" | "social" | "organizational" | "general")}
+              onChange={(e) =>
+                setCategory(
+                  e.target.value as
+                    | "technical"
+                    | "social"
+                    | "organizational"
+                    | "general"
+                )
+              }
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent"
             >
               <option value="general">General</option>
@@ -4222,6 +4233,9 @@ function SettingsAdmin({
           )}
         </div>
       </motion.div>
+
+      {/* Membership Data Table */}
+      <MembershipsAdmin />
     </div>
   );
 }
@@ -5415,7 +5429,9 @@ function DonationsAdmin() {
       rows
         .map(
           (row) =>
-            "<tr>" + row.map((cell) => "<td>" + cell + "</td>").join("") + "</tr>"
+            "<tr>" +
+            row.map((cell) => "<td>" + cell + "</td>").join("") +
+            "</tr>"
         )
         .join(""),
       "</tbody>",
@@ -5811,7 +5827,7 @@ function DonationsAdmin() {
                           )
                         : "-"}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 font-mono text-xs">
+                    <td className="px-6 py-4 whitespace-nowrap text-xs text-gray-600 font-mono">
                       {donation.razorpayPaymentId ||
                         donation.paymentReference ||
                         "-"}
@@ -5933,7 +5949,10 @@ function AchievementsAdmin() {
       }
 
       if (editingId) {
-        await updateAchievement(editingId, formData as unknown as Partial<Achievement>);
+        await updateAchievement(
+          editingId,
+          formData as unknown as Partial<Achievement>
+        );
         alert("Achievement updated successfully!");
       } else {
         await createAchievement(formData as unknown as Partial<Achievement>);

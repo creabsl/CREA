@@ -149,6 +149,7 @@ export type MembershipStatus = "pending" | "active" | "expired" | "rejected";
 
 export type Membership = {
   id: string;
+  _id?: string;
   membershipId: string;
   name: string;
   designation: string;
