@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import Button from "../components/Button";
 import Input from "../components/Input";
@@ -71,6 +71,7 @@ import {
 
 export default function Admin() {
   usePageTitle("CREA • Admin");
+  const [searchParams] = useSearchParams();
   const [tab, setTab] = useState<
     | "events"
     | "documents"
@@ -85,6 +86,9 @@ export default function Admin() {
     | "achievements"
     | "breaking-news"
   >("events");
+  const [initialDocumentsSubTab, setInitialDocumentsSubTab] = useState<
+    "circulars" | "manuals" | "court-cases" | undefined
+  >(undefined);
   const [events, setEvents] = useState<EventItem[]>([]);
   const [manuals, setManuals] = useState<Manual[]>([]);
   const [circulars, setCirculars] = useState<Circular[]>([]);
@@ -108,6 +112,37 @@ export default function Admin() {
       .catch(console.error);
     getForumTopics().then(setForumTopics).catch(console.error);
     getSuggestions().then(setSuggestions).catch(console.error);
+
+    const tabFromUrl = searchParams.get("tab");
+    if (
+      tabFromUrl &&
+      [
+        "events",
+        "documents",
+        "forum",
+        "suggestions",
+        "members",
+        "settings",
+        "about",
+        "transfers",
+        "association-body",
+        "donations",
+        "achievements",
+        "breaking-news",
+      ].includes(tabFromUrl)
+    ) {
+      setTab(tabFromUrl as typeof tab);
+    }
+
+    const subTabFromUrl = searchParams.get("subTab");
+    if (
+      subTabFromUrl &&
+      ["circulars", "manuals", "court-cases"].includes(subTabFromUrl)
+    ) {
+      setInitialDocumentsSubTab(
+        subTabFromUrl as "circulars" | "manuals" | "court-cases"
+      );
+    }
   }, []);
 
   return (
@@ -237,6 +272,7 @@ export default function Admin() {
       {tab === "events" && <EventsAdmin data={events} onChange={setEvents} />}
       {tab === "documents" && (
         <DocumentsAdmin
+          initialSubTab={initialDocumentsSubTab}
           manuals={manuals}
           circulars={circulars}
           courtCases={cases}
@@ -1503,6 +1539,10 @@ function EventsAdmin({
   const [eventTab, setEventTab] = useState<"upcoming" | "completed">(
     "upcoming"
   );
+  const [editingEvent, setEditingEvent] = useState<EventItem | null>(null);
+  const [photoFiles, setPhotoFiles] = useState<File[]>([]);
+  const [existingPhotos, setExistingPhotos] = useState<string[]>([]);
+  const formRef = useRef<HTMLDivElement>(null);
 
   // Separate upcoming and completed events
   const today = new Date();
@@ -1562,9 +1602,72 @@ function EventsAdmin({
     }
   };
 
+  const handleEditEvent = (event: EventItem) => {
+    setEditingEvent(event);
+    setForm({
+      title: event.title,
+      date: event.date,
+      location: event.location,
+      description: event.description,
+      photos: event.photos || [],
+      breaking: event.breaking || false,
+    });
+    setExistingPhotos(event.photos || []);
+    setPhotoFiles([]);
+
+    // Scroll to form
+    setTimeout(() => {
+      formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 100);
+  };
+
+  const handleSaveEvent = async () => {
+    const eventData = {
+      ...form,
+      photos: existingPhotos,
+      files: photoFiles,
+    };
+
+    if (editingEvent) {
+      const updated = await updateEvent(editingEvent.id, eventData);
+      onChange(data.map((e) => (e.id === editingEvent.id ? updated : e)));
+    } else {
+      const created = await createEvent(eventData);
+      onChange([...data, created]);
+    }
+
+    // Reset form
+    setForm({
+      title: "",
+      date: "",
+      location: "",
+      description: "",
+      photos: [],
+      breaking: false,
+    });
+    setPhotoFiles([]);
+    setExistingPhotos([]);
+    setEditingEvent(null);
+  };
+
+  const handleCancelEdit = () => {
+    setForm({
+      title: "",
+      date: "",
+      location: "",
+      description: "",
+      photos: [],
+      breaking: false,
+    });
+    setPhotoFiles([]);
+    setExistingPhotos([]);
+    setEditingEvent(null);
+  };
+
   return (
     <div className="space-y-5">
       <motion.div
+        ref={formRef}
         className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm"
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
@@ -1585,7 +1688,7 @@ function EventsAdmin({
               />
             </svg>
           </span>
-          Add New Event
+          {editingEvent ? 'Edit Event' : 'Add New Event'}
         </h3>
         <div className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -1611,6 +1714,82 @@ function EventsAdmin({
             value={form.description}
             onChange={(e) => setForm({ ...form, description: e.target.value })}
           />
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Upload Event Photos
+            </label>
+            <input
+              type="file"
+              accept="image/*"
+              multiple
+              className="block w-full text-sm text-gray-600 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+              onChange={(e) => {
+                const files = Array.from(e.target.files || []);
+                setPhotoFiles((prev) => [...prev, ...files]);
+              }}
+            />
+            <p className="text-xs text-gray-500 mt-1">
+              Upload photos for completed events to showcase event highlights
+            </p>
+            {photoFiles.length > 0 && (
+              <div className="mt-3">
+                <p className="text-sm font-medium text-gray-700 mb-2">
+                  New Photos ({photoFiles.length}):
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {photoFiles.map((file, idx) => (
+                    <div key={idx} className="relative group">
+                      <img
+                        src={URL.createObjectURL(file)}
+                        alt={file.name}
+                        className="w-20 h-20 object-cover rounded border"
+                      />
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setPhotoFiles((prev) =>
+                            prev.filter((_, i) => i !== idx)
+                          )
+                        }
+                        className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full text-xs opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            {existingPhotos.length > 0 && (
+              <div className="mt-3">
+                <p className="text-sm font-medium text-gray-700 mb-2">
+                  Existing Photos ({existingPhotos.length}):
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {existingPhotos.map((url, idx) => (
+                    <div key={idx} className="relative group">
+                      <img
+                        src={url}
+                        alt={`Photo ${idx + 1}`}
+                        className="w-20 h-20 object-cover rounded border"
+                      />
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setExistingPhotos((prev) =>
+                            prev.filter((_, i) => i !== idx)
+                          )
+                        }
+                        className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full text-xs opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
           <div className="flex items-center justify-between gap-4">
             <label className="text-sm inline-flex items-center gap-2 font-medium text-gray-700 cursor-pointer">
               <input
@@ -1623,37 +1802,31 @@ function EventsAdmin({
               />
               Mark as Breaking News
             </label>
-            <Button
-              onClick={async () => {
-                const created = await createEvent(form);
-                onChange([...data, created]);
-                setForm({
-                  title: "",
-                  date: "",
-                  location: "",
-                  description: "",
-                  photos: [],
-                  breaking: false,
-                });
-              }}
-            >
-              <span className="flex items-center gap-2">
-                <svg
-                  className="w-4 h-4"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M12 4v16m8-8H4"
-                  />
-                </svg>
-                Add Event
-              </span>
-            </Button>
+            <div className="flex gap-2">
+              {editingEvent && (
+                <Button variant="secondary" onClick={handleCancelEdit}>
+                  Cancel
+                </Button>
+              )}
+              <Button onClick={handleSaveEvent}>
+                <span className="flex items-center gap-2">
+                  <svg
+                    className="w-4 h-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                      d="M12 4v16m8-8H4"
+                    />
+                  </svg>
+                  {editingEvent ? "Update Event" : "Add Event"}
+                </span>
+              </Button>
+            </div>
           </div>
         </div>
       </motion.div>
@@ -1820,24 +1993,54 @@ function EventsAdmin({
                       BREAKING
                     </span>
                   )}
+                  {e.photos && e.photos.length > 0 && (
+                    <span className="bg-blue-100 text-blue-700 px-2 py-0.5 rounded text-xs font-medium">
+                      {e.photos.length} Photo{e.photos.length > 1 ? "s" : ""}
+                    </span>
+                  )}
                 </div>
                 <div className="text-sm text-gray-600 mt-1">
                   {e.date} • {e.location}
                 </div>
+                {e.description && (
+                  <div className="text-sm text-gray-500 mt-1 line-clamp-2">
+                    {e.description}
+                  </div>
+                )}
               </div>
-              <div className="flex gap-2">
-                <Button
-                  variant="secondary"
-                  onClick={async () => {
-                    const upd = await updateEvent(e.id, {
-                      breaking: !e.breaking,
-                    });
-                    onChange(data.map((d) => (d.id === e.id ? upd : d)));
-                  }}
-                >
-                  Toggle Breaking
-                </Button>
-              </div>
+              {!selectMode && (
+                <div className="flex gap-2">
+                  <Button variant="secondary" onClick={() => handleEditEvent(e)}>
+                    <span className="flex items-center gap-1">
+                      <svg
+                        className="w-4 h-4"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth="2"
+                          d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                        />
+                      </svg>
+                      Edit
+                    </span>
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    onClick={async () => {
+                      const upd = await updateEvent(e.id, {
+                        breaking: !e.breaking,
+                      });
+                      onChange(data.map((d) => (d.id === e.id ? upd : d)));
+                    }}
+                  >
+                    Toggle Breaking
+                  </Button>
+                </div>
+              )}
             </div>
           ))}
           {currentViewEvents.length === 0 && (
@@ -1866,6 +2069,7 @@ function EventsAdmin({
 type DocumentSubTab = "circulars" | "manuals" | "court-cases";
 
 function DocumentsAdmin({
+  initialSubTab,
   manuals,
   circulars,
   courtCases,
@@ -1873,6 +2077,7 @@ function DocumentsAdmin({
   onCircularsChange,
   onCourtCasesChange,
 }: {
+  initialSubTab?: DocumentSubTab;
   manuals: Manual[];
   circulars: Circular[];
   courtCases: CourtCase[];
@@ -1880,7 +2085,13 @@ function DocumentsAdmin({
   onCircularsChange: (d: Circular[]) => void;
   onCourtCasesChange: (d: CourtCase[]) => void;
 }) {
-  const [subTab, setSubTab] = useState<DocumentSubTab>("circulars");
+  const [subTab, setSubTab] = useState<DocumentSubTab>(
+    initialSubTab || "circulars"
+  );
+
+  useEffect(() => {
+    if (initialSubTab) setSubTab(initialSubTab);
+  }, [initialSubTab]);
 
   // Select mode state
   const [selectModeCirculars, setSelectModeCirculars] = useState(false);
@@ -1907,10 +2118,7 @@ function DocumentsAdmin({
   // Filtered data
   const filteredCirculars = circulars.filter(
     (c) =>
-      c.subject.toLowerCase().includes(searchQueryCirculars.toLowerCase()) ||
-      c.boardNumber
-        .toLowerCase()
-        .includes(searchQueryCirculars.toLowerCase()) ||
+      c.title.toLowerCase().includes(searchQueryCirculars.toLowerCase()) ||
       c.dateOfIssue.includes(searchQueryCirculars)
   );
 
@@ -1926,7 +2134,7 @@ function DocumentsAdmin({
   );
 
   // Circular state
-  const [circularBoardNumber, setCircularBoardNumber] = useState("");
+  const [circularTitle, setCircularTitle] = useState("");
   const [circularSubject, setCircularSubject] = useState("");
   const [circularDateOfIssue, setCircularDateOfIssue] = useState("");
   const [circularUrl, setCircularUrl] = useState("");
@@ -1935,6 +2143,8 @@ function DocumentsAdmin({
 
   // Manual state
   const [manualTitle, setManualTitle] = useState("");
+  const [manualDate, setManualDate] = useState("");
+  const [manualSubject, setManualSubject] = useState("");
   const [manualUrl, setManualUrl] = useState("");
   const [manualFile, setManualFile] = useState<File | null>(null);
   const [manualCategory, setManualCategory] = useState<
@@ -1946,12 +2156,17 @@ function DocumentsAdmin({
   const [caseCaseNumber, setCaseCaseNumber] = useState("");
   const [caseDate, setCaseDate] = useState("");
   const [caseSubject, setCaseSubject] = useState("");
+  const [caseStatus, setCaseStatus] = useState<
+    "pending" | "ongoing" | "closed"
+  >("ongoing");
+  const [caseUrl, setCaseUrl] = useState("");
+  const [caseFile, setCaseFile] = useState<File | null>(null);
   const [editingCourtCase, setEditingCourtCase] = useState<CourtCase | null>(
     null
   );
 
   const resetCircularForm = () => {
-    setCircularBoardNumber("");
+    setCircularTitle("");
     setCircularSubject("");
     setCircularDateOfIssue("");
     setCircularUrl("");
@@ -1961,6 +2176,8 @@ function DocumentsAdmin({
 
   const resetManualForm = () => {
     setManualTitle("");
+    setManualDate("");
+    setManualSubject("");
     setManualUrl("");
     setManualFile(null);
     setManualCategory("general");
@@ -1971,12 +2188,15 @@ function DocumentsAdmin({
     setCaseCaseNumber("");
     setCaseDate("");
     setCaseSubject("");
+    setCaseStatus("ongoing");
+    setCaseUrl("");
+    setCaseFile(null);
     setEditingCourtCase(null);
   };
 
   const handleEditCircular = (c: Circular) => {
-    setCircularBoardNumber(c.boardNumber);
-    setCircularSubject(c.subject);
+    setCircularTitle(c.title);
+    setCircularSubject(c.subject || "");
     setCircularDateOfIssue(c.dateOfIssue);
     setCircularUrl(c.url || "");
     setCircularFile(null);
@@ -1985,6 +2205,8 @@ function DocumentsAdmin({
 
   const handleEditManual = (m: Manual) => {
     setManualTitle(m.title);
+    setManualDate(m.date || "");
+    setManualSubject(m.subject || "");
     setManualUrl(m.url || "");
     setManualFile(null);
     setManualCategory(m.category || "general");
@@ -1995,14 +2217,17 @@ function DocumentsAdmin({
     setCaseCaseNumber(cc.caseNumber);
     setCaseDate(cc.date);
     setCaseSubject(cc.subject);
+    setCaseStatus(cc.status || "ongoing");
+    setCaseUrl(cc.url || "");
+    setCaseFile(null);
     setEditingCourtCase(cc);
   };
 
   const handleSaveCircular = async () => {
     if (editingCircular) {
       const upd = await updateCircular(editingCircular.id, {
-        boardNumber: circularBoardNumber,
-        subject: circularSubject,
+        title: circularTitle,
+        subject: circularSubject || undefined,
         dateOfIssue: circularDateOfIssue,
         url: circularUrl || undefined,
         file: circularFile || undefined,
@@ -2013,8 +2238,8 @@ function DocumentsAdmin({
       resetCircularForm();
     } else {
       const c = await createCircular({
-        boardNumber: circularBoardNumber,
-        subject: circularSubject,
+        title: circularTitle,
+        subject: circularSubject || undefined,
         dateOfIssue: circularDateOfIssue,
         url: circularUrl || undefined,
         file: circularFile || undefined,
@@ -2028,6 +2253,8 @@ function DocumentsAdmin({
     if (editingManual) {
       const upd = await updateManual(editingManual.id, {
         title: manualTitle,
+        date: manualDate || undefined,
+        subject: manualSubject || undefined,
         url: manualUrl || undefined,
         file: manualFile || undefined,
         category: manualCategory,
@@ -2039,6 +2266,8 @@ function DocumentsAdmin({
     } else {
       const m = await createManual({
         title: manualTitle,
+        date: manualDate || undefined,
+        subject: manualSubject || undefined,
         url: manualUrl || undefined,
         file: manualFile || undefined,
         category: manualCategory,
@@ -2054,6 +2283,9 @@ function DocumentsAdmin({
         caseNumber: caseCaseNumber,
         date: caseDate,
         subject: caseSubject,
+        status: caseStatus,
+        url: caseUrl || undefined,
+        file: caseFile || undefined,
       });
       onCourtCasesChange(
         courtCases.map((d) => (d.id === editingCourtCase.id ? upd : d))
@@ -2064,6 +2296,9 @@ function DocumentsAdmin({
         caseNumber: caseCaseNumber,
         date: caseDate,
         subject: caseSubject,
+        status: caseStatus,
+        url: caseUrl || undefined,
+        file: caseFile || undefined,
       });
       onCourtCasesChange([cc, ...courtCases]);
       resetCourtCaseForm();
@@ -2239,23 +2474,21 @@ function DocumentsAdmin({
               {editingCircular ? "Edit Circular" : "Add New Circular"}
             </h3>
             <div className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <Input
-                  label="Board Number"
-                  value={circularBoardNumber}
-                  onChange={(e) => setCircularBoardNumber(e.target.value)}
-                />
-                <Input
-                  label="Date of Issue"
-                  type="date"
-                  value={circularDateOfIssue}
-                  onChange={(e) => setCircularDateOfIssue(e.target.value)}
-                />
-              </div>
+              <Input
+                label="Title"
+                value={circularTitle}
+                onChange={(e) => setCircularTitle(e.target.value)}
+              />
               <Input
                 label="Subject"
                 value={circularSubject}
                 onChange={(e) => setCircularSubject(e.target.value)}
+              />
+              <Input
+                label="Date of Issue"
+                type="date"
+                value={circularDateOfIssue}
+                onChange={(e) => setCircularDateOfIssue(e.target.value)}
               />
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <Input
@@ -2265,11 +2498,11 @@ function DocumentsAdmin({
                 />
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    File (PDF or Image)
+                    File (PDF/Image/DOC/DOCX)
                   </label>
                   <input
                     type="file"
-                    accept="application/pdf,image/*"
+                    accept="application/pdf,image/*,.doc,.docx"
                     className="block w-full text-sm text-gray-600 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100"
                     onChange={(e) =>
                       setCircularFile(e.target.files?.[0] || null)
@@ -2419,10 +2652,10 @@ function DocumentsAdmin({
                   )}
                   <div className="flex-1">
                     <div className="font-semibold text-gray-800">
-                      {c.subject}
+                      {c.title}
                     </div>
                     <div className="text-sm text-gray-600 mt-1">
-                      {c.boardNumber} • {c.dateOfIssue}
+                      {c.dateOfIssue}
                     </div>
                     {c.url && (
                       <div className="text-sm text-[var(--primary)] mt-1">
@@ -2500,6 +2733,19 @@ function DocumentsAdmin({
                 value={manualTitle}
                 onChange={(e) => setManualTitle(e.target.value)}
               />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Input
+                  label="Date (optional)"
+                  type="date"
+                  value={manualDate}
+                  onChange={(e) => setManualDate(e.target.value)}
+                />
+                <Input
+                  label="Subject/Description (optional)"
+                  value={manualSubject}
+                  onChange={(e) => setManualSubject(e.target.value)}
+                />
+              </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Category
@@ -2531,11 +2777,11 @@ function DocumentsAdmin({
                 />
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    File (PDF or Image)
+                    File (PDF/Image/DOC/DOCX)
                   </label>
                   <input
                     type="file"
-                    accept="application/pdf,image/*"
+                    accept="application/pdf,image/*,.doc,.docx"
                     className="block w-full text-sm text-gray-600 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
                     onChange={(e) => setManualFile(e.target.files?.[0] || null)}
                   />
@@ -2693,6 +2939,11 @@ function DocumentsAdmin({
                         </span>
                       )}
                     </div>
+                    <div className="text-sm text-gray-600 mt-1">
+                      {m.date && <span>{new Date(m.date).toLocaleDateString()}</span>}
+                      {m.date && m.subject && <span> • </span>}
+                      {m.subject && <span>{m.subject}</span>}
+                    </div>
                     {m.url && (
                       <div className="text-sm text-[var(--primary)] mt-1">
                         <a
@@ -2781,6 +3032,47 @@ function DocumentsAdmin({
                   value={caseSubject}
                   onChange={(e) => setCaseSubject(e.target.value)}
                 />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Status
+                </label>
+                <select
+                  value={caseStatus}
+                  onChange={(e) =>
+                    setCaseStatus(
+                      e.target.value as "pending" | "ongoing" | "closed"
+                    )
+                  }
+                  className="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-[var(--primary)] focus:ring-1 focus:ring-[var(--primary)]"
+                >
+                  <option value="pending">Pending</option>
+                  <option value="ongoing">Ongoing</option>
+                  <option value="closed">Closed</option>
+                </select>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Input
+                  label="URL (optional)"
+                  value={caseUrl}
+                  onChange={(e) => setCaseUrl(e.target.value)}
+                />
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    File (PDF/Image/DOC/DOCX) (optional)
+                  </label>
+                  <input
+                    type="file"
+                    accept="application/pdf,image/*,.doc,.docx"
+                    className="block w-full text-sm text-gray-600 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-red-50 file:text-red-700 hover:file:bg-red-100"
+                    onChange={(e) =>
+                      setCaseFile(e.target.files?.[0] || null)
+                    }
+                  />
+                  <div className="text-xs text-gray-500 mt-1">
+                    Provide either a URL or upload a file.
+                  </div>
+                </div>
               </div>
               <div className="flex gap-2">
                 <Button onClick={handleSaveCourtCase}>
@@ -2924,6 +3216,18 @@ function DocumentsAdmin({
                     <div className="text-sm text-gray-600 mt-1">
                       {new Date(c.date).toLocaleDateString()} • {c.subject}
                     </div>
+                    {c.url && (
+                      <div className="text-sm text-[var(--primary)] mt-1">
+                        <a
+                          className="underline hover:text-[var(--accent)]"
+                          href={c.url}
+                          target="_blank"
+                          rel="noreferrer"
+                        >
+                          View Document →
+                        </a>
+                      </div>
+                    )}
                   </div>
                   <div className="flex gap-2">
                     <Button
@@ -5847,7 +6151,10 @@ function AchievementsAdmin() {
       }
 
       if (editingId) {
-        await updateAchievement(editingId, formData as unknown as Partial<Achievement>);
+        await updateAchievement(
+          editingId,
+          formData as unknown as Partial<Achievement>
+        );
         alert("Achievement updated successfully!");
       } else {
         await createAchievement(formData as unknown as Partial<Achievement>);

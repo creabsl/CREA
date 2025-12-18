@@ -4,8 +4,8 @@ import { motion, AnimatePresence } from 'framer-motion'
 import Calendar from '../components/Calendar'
 import { EventIcon, ForumIcon, CircularIcon, CourtCaseIcon } from '../components/Icons'
 import { usePageTitle } from '../hooks/usePageTitle'
-import { getCirculars, getCourtCases, getEvents, getForumTopics, getMemberCounts, getTotals, getActiveAdvertisements, getActiveAchievements } from '../services/api'
-import type { Circular, CourtCase, EventItem, ForumTopic, MemberCount, Advertisement, Achievement } from '../types'
+import { getCirculars, getCourtCases, getEvents, getForumTopics, getMemberCounts, getTotals, getActiveAdvertisements, getActiveAchievements, getActiveBreakingNews } from '../services/api'
+import type { Circular, CourtCase, EventItem, ForumTopic, MemberCount, Advertisement, Achievement, BreakingNews } from '../types'
 
 // Advertisement Carousel Component
 function AdvertisementCarousel({ advertisements }: { advertisements: Advertisement[] }) {
@@ -185,12 +185,13 @@ export default function Dashboard() {
   const [cases, setCases] = useState<CourtCase[]>([])
   const [advertisements, setAdvertisements] = useState<Advertisement[]>([])
   const [achievements, setAchievements] = useState<Achievement[]>([])
+  const [breakingNews, setBreakingNews] = useState<BreakingNews[]>([])
   const navigate = useNavigate()
   usePageTitle('CREA • Dashboard')
   const [totals, setTotals] = useState<{ divisions: number; members: number; courtCases: number }>({ divisions: 0, members: 0, courtCases: 0 })
   useEffect(() => {
     const load = async () => {
-      const [counts, totals, events, topics, circulars, cases, advertisements, achievements] = await Promise.all([
+      const [counts, totals, events, topics, circulars, cases, advertisements, achievements, breakingNews] = await Promise.all([
         getMemberCounts(),
         getTotals(),
         getEvents(),
@@ -198,7 +199,8 @@ export default function Dashboard() {
         getCirculars(),
         getCourtCases(),
         getActiveAdvertisements().catch(() => []),
-        getActiveAchievements().catch(() => [])
+        getActiveAchievements().catch(() => []),
+        getActiveBreakingNews().catch(() => [])
       ])
       setCounts(counts)
       setTotals(totals)
@@ -208,6 +210,7 @@ export default function Dashboard() {
       setCases(cases)
       setAdvertisements(advertisements)
       setAchievements(achievements)
+      setBreakingNews(breakingNews)
     }
     load()
     const onStats = () => load()
@@ -377,23 +380,62 @@ export default function Dashboard() {
       {advertisements.length > 0 && <AdvertisementCarousel advertisements={advertisements} />}
 
       {/* Breaking News - Scrolling Ticker */}
-      {events.filter(e => e.breaking).length > 0 && (
-        <div className="relative overflow-hidden rounded-lg shadow-sm">
-          <div className="bg-[var(--accent)] text-[var(--text-dark)] px-4 py-2 font-bold text-sm uppercase text-center">
-            Breaking News
-          </div>
-          <div className="bg-[#fef9f0] border-b-2 border-[var(--accent)] py-3 overflow-hidden">
-            <motion.div
-              animate={{ x: [0, -1000] }}
-              transition={{ duration: 20, repeat: Infinity, ease: 'linear' }}
-              className="whitespace-nowrap text-sm text-gray-700"
-            >
-              {events.filter(e => e.breaking).map((event, idx) => (
-                <span key={idx} className="mx-8">
-                  🔔 {event.title} - {new Date(event.date).toLocaleDateString('en-US', { day: '2-digit', month: 'short', year: 'numeric' })}
-                </span>
-              ))}
-            </motion.div>
+      {(breakingNews.length > 0 || events.filter((e) => e.breaking).length > 0) && (
+        <div className="bg-white border-l-4 border-red-600 shadow-sm overflow-hidden">
+          <style>{`
+            @keyframes scroll-left {
+              0% { transform: translateX(100%); }
+              100% { transform: translateX(-100%); }
+            }
+            .ticker-scroll {
+              display: inline-block;
+              white-space: nowrap;
+              animation: scroll-left 60s linear infinite;
+            }
+            .ticker-scroll:hover {
+              animation-play-state: paused;
+            }
+          `}</style>
+          <div className="flex items-center h-9">
+            <div className="bg-red-600 text-white px-3 h-full flex items-center flex-shrink-0">
+              <span className="font-semibold text-xs uppercase tracking-wide">
+                Breaking News
+              </span>
+            </div>
+            <div className="flex-1 overflow-hidden relative bg-gray-50">
+              <div className="ticker-scroll py-2">
+                {breakingNews.map((news, idx) => (
+                  <span
+                    key={`bn-${idx}`}
+                    className="inline-flex items-center mx-6 text-gray-800"
+                  >
+                    <span className="font-medium text-sm">{news.title}</span>
+                    <span className="mx-2 text-gray-400">•</span>
+                    <span className="text-xs text-gray-500">
+                      {news.description}
+                    </span>
+                  </span>
+                ))}
+                {events
+                  .filter((e) => e.breaking)
+                  .map((event, idx) => (
+                    <span
+                      key={`ev-${idx}`}
+                      className="inline-flex items-center mx-6 text-gray-800"
+                    >
+                      <span className="font-medium text-sm">{event.title}</span>
+                      <span className="mx-2 text-gray-400">•</span>
+                      <span className="text-xs text-gray-500">
+                        {new Date(event.date).toLocaleDateString("en-US", {
+                          day: "2-digit",
+                          month: "short",
+                          year: "numeric",
+                        })}
+                      </span>
+                    </span>
+                  ))}
+              </div>
+            </div>
           </div>
         </div>
       )}

@@ -22,6 +22,8 @@ import type {
   BreakingNews
 } from '../types'
 
+import type { DocumentFeedItem } from '../types'
+
 // Base URL for backend API
 const API_URL = import.meta.env?.VITE_API_URL || 'http://localhost:5001'
 
@@ -93,6 +95,56 @@ async function request<T>(path: string, opts: RequestInit = {}): Promise<T> {
   return res.json() as Promise<T>
 }
 
+function filenameFromDisposition(v: string | null): string | null {
+  if (!v) return null
+  const m = /filename\*?=(?:UTF-8''|\")?([^;\"]+)/i.exec(v)
+  if (!m?.[1]) return null
+  try {
+    return decodeURIComponent(m[1].replace(/\"/g, '').trim())
+  } catch {
+    return m[1].replace(/\"/g, '').trim()
+  }
+}
+
+export async function downloadDocument(downloadPath: string, fallbackName = 'document'): Promise<void> {
+  const token = getToken()
+  const headers: Record<string, string> = {}
+  if (token) headers.Authorization = `Bearer ${token}`
+
+  let res = await fetch(`${API_URL}${downloadPath}`, { headers })
+  if (res.status === 401) {
+    const refreshed = await refreshAccessToken()
+    if (refreshed) {
+      const newToken = getToken()
+      const retryHeaders: Record<string, string> = {}
+      if (newToken) retryHeaders.Authorization = `Bearer ${newToken}`
+      res = await fetch(`${API_URL}${downloadPath}`, { headers: retryHeaders })
+    }
+  }
+
+  if (!res.ok) {
+    let msg = `Download failed (${res.status})`
+    try {
+      const data = (await res.json()) as { message?: string }
+      msg = data?.message || msg
+    } catch {
+      // ignore
+    }
+    throw new Error(msg)
+  }
+
+  const blob = await res.blob()
+  const name = filenameFromDisposition(res.headers.get('content-disposition')) || fallbackName
+  const objectUrl = window.URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = objectUrl
+  a.download = name
+  document.body.appendChild(a)
+  a.click()
+  a.remove()
+  window.URL.revokeObjectURL(objectUrl)
+}
+
 // Utilities
 const toDateStr = (d?: string | Date) => {
   if (!d) return ''
@@ -126,9 +178,22 @@ export async function getEvents(): Promise<EventItem[]> {
   }))
 }
 
-export async function createEvent(input: Omit<EventItem, 'id'>): Promise<EventItem> {
-  const payload = { ...input, isBreakingNews: !!input.breaking }
-  const e = await request<EventDTO>('/api/events', { method: 'POST', body: JSON.stringify(payload) })
+export async function createEvent(input: Omit<EventItem, 'id'> & { files?: File[] }): Promise<EventItem> {
+  let body: BodyInit
+  if (input.files && input.files.length > 0) {
+    const fd = new FormData()
+    fd.append('title', input.title)
+    fd.append('description', input.description)
+    fd.append('date', input.date)
+    fd.append('location', input.location)
+    fd.append('breaking', String(!!input.breaking))
+    input.files.forEach(file => fd.append('photos', file))
+    body = fd
+  } else {
+    const payload = { ...input, isBreakingNews: !!input.breaking }
+    body = JSON.stringify(payload)
+  }
+  const e = await request<EventDTO>('/api/events', { method: 'POST', body })
   return {
     id: e._id,
     title: e.title,
@@ -140,9 +205,23 @@ export async function createEvent(input: Omit<EventItem, 'id'>): Promise<EventIt
   }
 }
 
-export async function updateEvent(id: string, patch: Partial<EventItem>): Promise<EventItem> {
-  const payload = { ...patch, isBreakingNews: patch.breaking }
-  const e = await request<EventDTO>(`/api/events/${id}`, { method: 'PUT', body: JSON.stringify(payload) })
+export async function updateEvent(id: string, patch: Partial<EventItem> & { files?: File[] }): Promise<EventItem> {
+  let body: BodyInit
+  if (patch.files && patch.files.length > 0) {
+    const fd = new FormData()
+    if (patch.title) fd.append('title', patch.title)
+    if (patch.description) fd.append('description', patch.description)
+    if (patch.date) fd.append('date', patch.date)
+    if (patch.location) fd.append('location', patch.location)
+    if (patch.breaking !== undefined) fd.append('breaking', String(patch.breaking))
+    if (patch.photos) fd.append('existingPhotos', JSON.stringify(patch.photos))
+    patch.files.forEach(file => fd.append('photos', file))
+    body = fd
+  } else {
+    const payload = { ...patch, isBreakingNews: patch.breaking }
+    body = JSON.stringify(payload)
+  }
+  const e = await request<EventDTO>(`/api/events/${id}`, { method: 'PUT', body })
   return {
     id: e._id,
     title: e.title,
@@ -160,40 +239,42 @@ export async function deleteEvent(id: string): Promise<{ success: boolean }> {
 }
 
 // Circulars
-type CircularDTO = { _id: string; boardNumber: string; subject: string; dateOfIssue: string; url: string }
+type CircularDTO = { _id: string; title: string; subject?: string; dateOfIssue: string; url?: string; fileName?: string; createdAt?: string }
 export async function getCirculars(): Promise<Circular[]> {
   const list = await request<CircularDTO[]>('/api/circulars')
-  return list.map(c => ({ id: c._id, boardNumber: c.boardNumber, subject: c.subject, dateOfIssue: toDateStr(c.dateOfIssue), url: c.url }))
+  return list.map(c => ({ id: c._id, title: c.title, subject: c.subject, dateOfIssue: toDateStr(c.dateOfIssue), url: c.url, fileName: c.fileName }))
 }
 export async function createCircular(input: Omit<Circular, 'id'> & { file?: File }): Promise<Circular> {
   let body: BodyInit
   if (input.file) {
     const fd = new FormData()
-    fd.append('boardNumber', input.boardNumber)
-    fd.append('subject', input.subject)
+    fd.append('title', input.title)
     fd.append('dateOfIssue', input.dateOfIssue)
+    if (input.subject) fd.append('subject', input.subject)
+    if (input.url) fd.append('url', input.url)
     fd.append('file', input.file)
     body = fd
   } else {
     body = JSON.stringify(input)
   }
   const c = await request<CircularDTO>('/api/circulars', { method: 'POST', body })
-  return { id: c._id, boardNumber: c.boardNumber, subject: c.subject, dateOfIssue: toDateStr(c.dateOfIssue), url: c.url }
+  return { id: c._id, title: c.title, subject: c.subject, dateOfIssue: toDateStr(c.dateOfIssue), url: c.url, fileName: c.fileName }
 }
 export async function updateCircular(id: string, patch: Partial<Circular> & { file?: File }): Promise<Circular> {
   let body: BodyInit
   if (patch.file) {
     const fd = new FormData()
-    if (patch.boardNumber) fd.append('boardNumber', patch.boardNumber)
-    if (patch.subject) fd.append('subject', patch.subject)
+    if (patch.title) fd.append('title', patch.title)
     if (patch.dateOfIssue) fd.append('dateOfIssue', patch.dateOfIssue)
+    if (patch.subject) fd.append('subject', patch.subject)
+    if (patch.url) fd.append('url', patch.url)
     fd.append('file', patch.file)
     body = fd
   } else {
     body = JSON.stringify(patch)
   }
   const c = await request<CircularDTO>(`/api/circulars/${id}`, { method: 'PUT', body })
-  return { id: c._id, boardNumber: c.boardNumber, subject: c.subject, dateOfIssue: toDateStr(c.dateOfIssue), url: c.url }
+  return { id: c._id, title: c.title, subject: c.subject, dateOfIssue: toDateStr(c.dateOfIssue), url: c.url, fileName: c.fileName }
 }
 export async function deleteCircular(id: string): Promise<{ success: boolean }> {
   await request(`/api/circulars/${id}`, { method: 'DELETE' })
@@ -201,36 +282,44 @@ export async function deleteCircular(id: string): Promise<{ success: boolean }> 
 }
 
 // Manuals
-type ManualDTO = { _id: string; title: string; url: string }
+type ManualDTO = { _id: string; title: string; date?: string; subject?: string; url?: string; category?: string; fileName?: string; createdAt?: string }
 export async function getManuals(): Promise<Manual[]> {
   const list = await request<ManualDTO[]>('/api/manuals')
-  return list.map(m => ({ id: m._id, title: m.title, url: m.url }))
+  return list.map(m => ({ id: m._id, title: m.title, date: m.date ? toDateStr(m.date) : undefined, subject: m.subject, url: m.url, category: m.category as Manual['category'], fileName: m.fileName }))
 }
 export async function createManual(input: Omit<Manual, 'id'> & { file?: File }): Promise<Manual> {
   let body: BodyInit
   if (input.file) {
     const fd = new FormData()
     fd.append('title', input.title)
+    if (input.date) fd.append('date', input.date)
+    if (input.subject) fd.append('subject', input.subject)
+    if (input.url) fd.append('url', input.url)
+    if (input.category) fd.append('category', input.category)
     fd.append('file', input.file)
     body = fd
   } else {
     body = JSON.stringify(input)
   }
   const m = await request<ManualDTO>('/api/manuals', { method: 'POST', body })
-  return { id: m._id, title: m.title, url: m.url }
+  return { id: m._id, title: m.title, date: m.date ? toDateStr(m.date) : undefined, subject: m.subject, url: m.url, category: m.category as Manual['category'], fileName: m.fileName }
 }
 export async function updateManual(id: string, patch: Partial<Manual> & { file?: File }): Promise<Manual> {
   let body: BodyInit
   if (patch.file) {
     const fd = new FormData()
     if (patch.title) fd.append('title', patch.title)
+    if (patch.date) fd.append('date', patch.date)
+    if (patch.subject) fd.append('subject', patch.subject)
+    if (patch.url) fd.append('url', patch.url)
+    if (patch.category) fd.append('category', patch.category)
     fd.append('file', patch.file)
     body = fd
   } else {
     body = JSON.stringify(patch)
   }
   const m = await request<ManualDTO>(`/api/manuals/${id}`, { method: 'PUT', body })
-  return { id: m._id, title: m.title, url: m.url }
+  return { id: m._id, title: m.title, date: m.date ? toDateStr(m.date) : undefined, subject: m.subject, url: m.url, category: m.category as Manual['category'], fileName: m.fileName }
 }
 export async function deleteManual(id: string): Promise<{ success: boolean }> {
   await request(`/api/manuals/${id}`, { method: 'DELETE' })
@@ -238,22 +327,49 @@ export async function deleteManual(id: string): Promise<{ success: boolean }> {
 }
 
 // Court cases
-type CourtCaseDTO = { _id: string; caseNumber: string; date: string; subject: string }
+type CourtCaseDTO = { _id: string; caseNumber: string; date: string; subject: string; status?: 'pending' | 'ongoing' | 'closed'; url?: string; fileName?: string; createdAt?: string }
 export async function getCourtCases(): Promise<CourtCase[]> {
   const list = await request<CourtCaseDTO[]>('/api/court-cases')
-  return list.map(c => ({ id: c._id, caseNumber: c.caseNumber, date: toDateStr(c.date), subject: c.subject }))
+  return list.map(c => ({ id: c._id, caseNumber: c.caseNumber, date: toDateStr(c.date), subject: c.subject, status: c.status, url: c.url, fileName: c.fileName }))
 }
-export async function createCourtCase(input: Omit<CourtCase, 'id'>): Promise<CourtCase> {
+export async function createCourtCase(input: Omit<CourtCase, 'id'> & { file?: File }): Promise<CourtCase> {
+  if (input.file) {
+    const formData = new FormData()
+    formData.append('caseNumber', input.caseNumber)
+    formData.append('date', input.date)
+    formData.append('subject', input.subject)
+    if (input.status) formData.append('status', input.status)
+    if (input.url) formData.append('url', input.url)
+    formData.append('file', input.file)
+    const c = await request<CourtCaseDTO>('/api/court-cases', { method: 'POST', body: formData })
+    return { id: c._id, caseNumber: c.caseNumber, date: toDateStr(c.date), subject: c.subject, status: c.status, url: c.url, fileName: c.fileName }
+  }
   const c = await request<CourtCaseDTO>('/api/court-cases', { method: 'POST', body: JSON.stringify(input) })
-  return { id: c._id, caseNumber: c.caseNumber, date: toDateStr(c.date), subject: c.subject }
+  return { id: c._id, caseNumber: c.caseNumber, date: toDateStr(c.date), subject: c.subject, status: c.status, url: c.url, fileName: c.fileName }
 }
-export async function updateCourtCase(id: string, patch: Partial<CourtCase>): Promise<CourtCase> {
+export async function updateCourtCase(id: string, patch: Partial<CourtCase> & { file?: File }): Promise<CourtCase> {
+  if (patch.file) {
+    const formData = new FormData()
+    if (patch.caseNumber) formData.append('caseNumber', patch.caseNumber)
+    if (patch.date) formData.append('date', patch.date)
+    if (patch.subject) formData.append('subject', patch.subject)
+    if (patch.status) formData.append('status', patch.status)
+    if (patch.url) formData.append('url', patch.url)
+    formData.append('file', patch.file)
+    const c = await request<CourtCaseDTO>(`/api/court-cases/${id}`, { method: 'PUT', body: formData })
+    return { id: c._id, caseNumber: c.caseNumber, date: toDateStr(c.date), subject: c.subject, status: c.status, url: c.url, fileName: c.fileName }
+  }
   const c = await request<CourtCaseDTO>(`/api/court-cases/${id}`, { method: 'PUT', body: JSON.stringify(patch) })
-  return { id: c._id, caseNumber: c.caseNumber, date: toDateStr(c.date), subject: c.subject }
+  return { id: c._id, caseNumber: c.caseNumber, date: toDateStr(c.date), subject: c.subject, status: c.status, url: c.url, fileName: c.fileName }
 }
 export async function deleteCourtCase(id: string): Promise<{ success: boolean }> {
   await request(`/api/court-cases/${id}`, { method: 'DELETE' })
   return { success: true }
+}
+
+// Unified documents feed (Circulars + Manuals + Court Cases)
+export async function getDocumentsFeed(): Promise<DocumentFeedItem[]> {
+  return request<DocumentFeedItem[]>('/api/documents')
 }
 
 // Suggestions
@@ -1013,17 +1129,19 @@ export async function getAchievementById(id: string): Promise<Achievement> {
   return await request<Achievement>(`/api/achievements/${id}`)
 }
 
-export async function createAchievement(data: Partial<Achievement>): Promise<Achievement> {
+export async function createAchievement(data: Partial<Achievement> | FormData): Promise<Achievement> {
+  const body = data instanceof FormData ? data : JSON.stringify(data)
   return await request<Achievement>('/api/achievements', {
     method: 'POST',
-    body: JSON.stringify(data)
+    body
   })
 }
 
-export async function updateAchievement(id: string, data: Partial<Achievement>): Promise<Achievement> {
+export async function updateAchievement(id: string, data: Partial<Achievement> | FormData): Promise<Achievement> {
+  const body = data instanceof FormData ? data : JSON.stringify(data)
   return await request<Achievement>(`/api/achievements/${id}`, {
     method: 'PUT',
-    body: JSON.stringify(data)
+    body
   })
 }
 
