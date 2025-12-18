@@ -3,7 +3,13 @@ import { motion } from 'framer-motion'
 import { usePageTitle } from '../hooks/usePageTitle'
 import Input from '../components/Input'
 import Button from '../components/Button'
-import { createDonation } from '../services/api'
+import { createDonationOrder, verifyDonationPayment } from '../services/api'
+
+declare global {
+  interface Window {
+    Razorpay: any;
+  }
+}
 
 export default function Donations() {
   usePageTitle('CREA • Support Our Mission')
@@ -55,6 +61,8 @@ export default function Donations() {
 
   const [showEmployeeFields, setShowEmployeeFields] = useState(false)
   const [submitted, setSubmitted] = useState(false)
+  const [submitting, setSubmitting] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   const handleInputChange = (field: string, value: string | boolean) => {
     setFormData(prev => ({ ...prev, [field]: value }))
@@ -63,43 +71,119 @@ export default function Donations() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
+    if (!isFormValid()) {
+      setError('Please fill all required fields')
+      return
+    }
+
+    setSubmitting(true)
+    setError(null)
+    
     try {
-      const data = await createDonation({
+      // Step 1: Create order on backend
+      const orderResponse = await createDonationOrder({
         ...formData,
         amount: parseFloat(formData.amount) || 0
       })
-      
-      if (data) {
-        setSubmitted(true)
-        
-        // Reset form after showing success message
-        setTimeout(() => {
-          setFormData({
-            fullName: '',
-            email: '',
-            mobile: '',
-            isEmployee: false,
-            employeeId: '',
-            designation: '',
-            division: '',
-            department: '',
-            amount: '',
-            purpose: 'general',
-            isAnonymous: false,
-            address: '',
-            city: '',
-            state: '',
-            pincode: '',
-            message: ''
-          })
-          setShowEmployeeFields(false)
-          setSubmitted(false)
-        }, 5000)
+
+      if (!orderResponse.success) {
+        setError('Failed to create payment order')
+        setSubmitting(false)
+        return
       }
-    } catch (error) {
+
+      // Step 2: Load Razorpay script if not already loaded
+      if (!window.Razorpay) {
+        const script = document.createElement('script')
+        script.src = 'https://checkout.razorpay.com/v1/checkout.js'
+        script.onload = () => openRazorpayModal(orderResponse)
+        script.onerror = () => {
+          setError('Failed to load Razorpay. Please try again.')
+          setSubmitting(false)
+        }
+        document.body.appendChild(script)
+      } else {
+        openRazorpayModal(orderResponse)
+      }
+    } catch (error: any) {
       console.error('Error submitting donation:', error)
-      alert('An error occurred. Please try again.')
+      setError(error.message || 'An error occurred. Please try again.')
+      setSubmitting(false)
     }
+  }
+
+  const openRazorpayModal = (orderResponse: any) => {
+    const options = {
+      key: orderResponse.keyId,
+      amount: orderResponse.amount * 100, // amount in paise
+      currency: 'INR',
+      name: 'Central Railway Engineers Association',
+      description: `Donation - ${formData.purpose}`,
+      order_id: orderResponse.orderId,
+      prefill: {
+        name: formData.fullName,
+        email: formData.email,
+        contact: formData.mobile,
+      },
+      theme: {
+        color: '#0d2c54',
+      },
+      handler: async function (response: any) {
+        try {
+          // Step 3: Verify payment on backend
+          const verifyResponse = await verifyDonationPayment({
+            razorpay_order_id: response.razorpay_order_id,
+            razorpay_payment_id: response.razorpay_payment_id,
+            razorpay_signature: response.razorpay_signature,
+          })
+
+          if (verifyResponse.success) {
+            setSubmitted(true)
+            setSubmitting(false)
+            
+            // Reset form after showing success message
+            setTimeout(() => {
+              setFormData({
+                fullName: '',
+                email: '',
+                mobile: '',
+                isEmployee: false,
+                employeeId: '',
+                designation: '',
+                division: '',
+                department: '',
+                amount: '',
+                purpose: 'general',
+                isAnonymous: false,
+                address: '',
+                city: '',
+                state: '',
+                pincode: '',
+                message: ''
+              })
+              setShowEmployeeFields(false)
+              setSubmitted(false)
+            }, 5000)
+          } else {
+            setError('Payment verification failed. Please contact support.')
+            setSubmitting(false)
+          }
+        } catch (error: any) {
+          console.error('Error verifying payment:', error)
+          setError('Payment verification failed. Please contact support.')
+          setSubmitting(false)
+        }
+      },
+      modal: {
+        ondismiss: function () {
+          setSubmitting(false)
+          setError('Payment cancelled')
+        },
+      },
+    }
+
+    const razorpay = new window.Razorpay(options)
+    razorpay.open()
   }
 
   const isFormValid = () => {
@@ -129,12 +213,12 @@ export default function Donations() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
             </svg>
           </div>
-          <h2 className="text-2xl font-bold text-[var(--primary)] mb-4">Thank You for Your Generosity!</h2>
+          <h2 className="text-2xl font-bold text-[var(--primary)] mb-4">Payment Successful!</h2>
           <p className="text-gray-600 text-base mb-5">
-            Your contribution of <span className="font-bold text-[var(--accent)]">₹{formData.amount}</span> will make a significant difference in supporting our mission.
+            Your contribution of <span className="font-bold text-[var(--accent)]">₹{formData.amount}</span> has been successfully processed. Thank you for your generosity!
           </p>
-          <p className="text-xs text-gray-500 mb-5">
-            Payment gateway integration is currently being set up. You will receive confirmation details via email once the payment is processed.
+          <p className="text-sm text-gray-600 mb-5">
+            A receipt has been sent to your email address. Your donation will make a significant difference in supporting our mission.
           </p>
           <div className="flex items-center justify-center gap-2 text-xs text-gray-500">
             <svg className="w-4 h-4 text-[var(--primary)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -423,6 +507,23 @@ export default function Donations() {
             />
           </div>
 
+          {/* Error Message */}
+          {error && (
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-start gap-3">
+              <svg className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <div className="flex-1">
+                <p className="text-sm font-medium text-red-800">{error}</p>
+              </div>
+              <button onClick={() => setError(null)} className="text-red-600 hover:text-red-800">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+          )}
+
           {/* Submit Button */}
           <div className="flex items-center justify-between pt-4 border-t">
             <p className="text-xs text-gray-500 max-w-md">
@@ -430,13 +531,25 @@ export default function Donations() {
             </p>
             <Button
               type="submit"
-              disabled={!isFormValid()}
+              disabled={!isFormValid() || submitting}
               className="px-8 py-3 text-base"
             >
-              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-              </svg>
-              Proceed to Donate
+              {submitting ? (
+                <>
+                  <svg className="animate-spin w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                  </svg>
+                  Processing...
+                </>
+              ) : (
+                <>
+                  <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                  </svg>
+                  Proceed to Donate
+                </>
+              )}
             </Button>
           </div>
         </form>
