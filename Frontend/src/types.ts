@@ -235,4 +235,19 @@ export type Achievement = {
   updatedAt: string
 }
 
-
+export type BreakingNews = {
+  _id: string
+  title: string
+  description: string
+  imageUrl?: string
+  priority: number
+  isActive: boolean
+  expiresAt?: string | null
+  createdBy: {
+    _id: string
+    name: string
+    email: string
+  }
+  createdAt: string
+  updatedAt: string
+}

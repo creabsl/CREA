@@ -18,7 +18,8 @@ import type {
   Achievement,
   Donation,
   PendingForumPost,
-  PendingForumComment
+  PendingForumComment,
+  BreakingNews
 } from '../types'
 
 // Base URL for backend API
@@ -993,6 +994,46 @@ export async function updateAchievement(id: string, data: Partial<Achievement>):
 export async function deleteAchievement(id: string): Promise<void> {
   await request<void>(`/api/achievements/${id}`, {
     method: 'DELETE'
+  })
+}
+
+// ==================== BREAKING NEWS ====================
+
+export async function getActiveBreakingNews(): Promise<BreakingNews[]> {
+  return await request<BreakingNews[]>('/api/breaking-news/active')
+}
+
+export async function getAllBreakingNews(): Promise<BreakingNews[]> {
+  return await request<BreakingNews[]>('/api/breaking-news')
+}
+
+export async function getBreakingNewsById(id: string): Promise<BreakingNews> {
+  return await request<BreakingNews>(`/api/breaking-news/${id}`)
+}
+
+export async function createBreakingNews(data: Partial<BreakingNews>): Promise<BreakingNews> {
+  return await request<BreakingNews>('/api/breaking-news', {
+    method: 'POST',
+    body: JSON.stringify(data)
+  })
+}
+
+export async function updateBreakingNews(id: string, data: Partial<BreakingNews>): Promise<BreakingNews> {
+  return await request<BreakingNews>(`/api/breaking-news/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(data)
+  })
+}
+
+export async function deleteBreakingNews(id: string): Promise<void> {
+  await request<void>(`/api/breaking-news/${id}`, {
+    method: 'DELETE'
+  })
+}
+
+export async function toggleBreakingNewsStatus(id: string): Promise<BreakingNews> {
+  return await request<BreakingNews>(`/api/breaking-news/${id}/toggle`, {
+    method: 'PATCH'
   })
 }
 

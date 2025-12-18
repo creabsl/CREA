@@ -315,14 +315,16 @@ export default function Events() {
   usePageTitle('CREA • Events')
 
   useEffect(() => { 
-    getEvents().then((d)=>{ setEvents(d.filter(e => !e.breaking)); setLoading(false) })
+    getEvents().then((d)=>{ setEvents(d); setLoading(false) })
   }, [])
 
   const today = new Date()
   today.setHours(0, 0, 0, 0)
   
+  // Only exclude breaking news from upcoming events (show current breaking news on Dashboard)
+  // But include all past events (including past breaking news) in completed events
   const upcomingEvents = useMemo(() => events.filter((e) => !e.breaking && new Date(e.date) >= today), [events, today])
-  const completedEvents = useMemo(() => events.filter((e) => !e.breaking && new Date(e.date) < today), [events, today])
+  const completedEvents = useMemo(() => events.filter((e) => new Date(e.date) < today), [events, today])
   
   const displayedEvents = eventType === 'upcoming' ? upcomingEvents : completedEvents
 

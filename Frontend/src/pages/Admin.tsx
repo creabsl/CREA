@@ -10,13 +10,14 @@ import { StaggerContainer, StaggerItem } from '../components/StaggerAnimation'
 import { usePageTitle } from '../hooks/usePageTitle'
 import { createCircular, createCourtCase, createEvent, createForumTopic, createManual, deleteCircular, deleteCourtCase, deleteEvent, deleteForumTopic, deleteManual, getCirculars, getCourtCases, getEvents, getForumTopics, getManuals, getSuggestions, deleteSuggestion, updateCircular, updateCourtCase, updateEvent, updateForumTopic, updateManual, adminListUsers, adminUpdateUser, notifyStatsChanged, getSettings, updateMultipleSettings, getMutualTransfers, createMutualTransfer, updateMutualTransfer, deleteMutualTransfer, getBodyMembers, createBodyMember, updateBodyMember, deleteBodyMember, getAllAchievements, createAchievement, updateAchievement, deleteAchievement } from '../services/api'
 import type { Circular, CourtCase, EventItem, ForumTopic, Manual, Suggestion, Division, MutualTransfer, BodyMember, Achievement } from '../types'
+import BreakingNewsAdmin from '../components/BreakingNewsAdmin'
 import { DIVISIONS } from '../types'
 import type { MemberUser, Setting } from '../services/api'
 import { defaultTimelineStops, defaultPastEvents, type TimelineStop, type PastEvent } from '../data/aboutDefaults'
 
 export default function Admin() {
   usePageTitle('CREA • Admin')
-  const [tab, setTab] = useState<'events'|'documents'|'forum'|'suggestions'|'members'|'settings'|'about'|'transfers'|'association-body'|'donations'|'achievements'>('events')
+  const [tab, setTab] = useState<'events'|'documents'|'forum'|'suggestions'|'members'|'settings'|'about'|'transfers'|'association-body'|'donations'|'achievements'|'breaking-news'>('events')
   const [events, setEvents] = useState<EventItem[]>([])
   const [manuals, setManuals] = useState<Manual[]>([])
   const [circulars, setCirculars] = useState<Circular[]>([])
@@ -96,7 +97,7 @@ export default function Admin() {
 
       {/* Tab Navigation */}
       <div className="flex gap-2 flex-wrap">
-        {(['events','documents','forum','suggestions','members','settings','transfers','association-body','achievements','donations'] as const).map(k => (
+        {(['events','documents','forum','suggestions','members','settings','transfers','association-body','achievements','donations','breaking-news'] as const).map(k => (
           <motion.button 
             key={k} 
             onClick={()=>setTab(k)} 
@@ -108,7 +109,7 @@ export default function Admin() {
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
           >
-            {k === 'settings' ? 'Membership' : k === 'transfers' ? 'Mutual Transfers' : k.split('-').map(word => word[0].toUpperCase() + word.slice(1)).join(' ')}
+            {k === 'settings' ? 'Membership' : k === 'transfers' ? 'Mutual Transfers' : k === 'breaking-news' ? 'Breaking News' : k.split('-').map(word => word[0].toUpperCase() + word.slice(1)).join(' ')}
           </motion.button>
         ))}
         <motion.button 
@@ -137,6 +138,7 @@ export default function Admin() {
   {tab==='association-body' && <AssociationBodyAdmin />}
   {tab==='achievements' && <AchievementsAdmin />}
   {tab==='donations' && <DonationsAdmin />}
+  {tab==='breaking-news' && <BreakingNewsAdmin />}
     </div>
   )
 }
@@ -794,8 +796,19 @@ function EventsAdmin({ data, onChange }: { data: EventItem[]; onChange: (d: Even
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [deleting, setDeleting] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
+  const [eventTab, setEventTab] = useState<'upcoming' | 'completed'>('upcoming')
 
-  const filteredEvents = data.filter(e => 
+  // Separate upcoming and completed events
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  
+  const upcomingEvents = data.filter(e => new Date(e.date) >= today)
+  const completedEvents = data.filter(e => new Date(e.date) < today)
+  
+  // Get current view events
+  const currentViewEvents = eventTab === 'upcoming' ? upcomingEvents : completedEvents
+
+  const filteredEvents = currentViewEvents.filter(e => 
     e.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
     e.location.toLowerCase().includes(searchQuery.toLowerCase()) ||
     e.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -907,16 +920,16 @@ function EventsAdmin({ data, onChange }: { data: EventItem[]; onChange: (d: Even
           </div>
         )}
         <div className="bg-gradient-to-r from-gray-50 to-gray-100 px-6 py-4 border-b border-gray-200">
-          <div className="flex items-center justify-between">
-            <h3 className="text-lg font-semibold text-gray-800">Existing Events ({filteredEvents.length}{searchQuery && ` of ${data.length}`})</h3>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold text-gray-800">Existing Events ({filteredEvents.length}{searchQuery && ` of ${currentViewEvents.length}`})</h3>
             <div className="flex items-center gap-3">
               {selectMode ? (
                 <>
-                  {data.length > 0 && (
+                  {currentViewEvents.length > 0 && (
                     <label className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer hover:text-gray-900">
                       <input
                         type="checkbox"
-                        checked={selected.size === data.length && data.length > 0}
+                        checked={selected.size === filteredEvents.length && filteredEvents.length > 0}
                         onChange={toggleSelectAll}
                         className="w-4 h-4 rounded border-gray-300 text-[var(--primary)] focus:ring-[var(--primary)]"
                       />
@@ -934,6 +947,28 @@ function EventsAdmin({ data, onChange }: { data: EventItem[]; onChange: (d: Even
                 filteredEvents.length > 0 && <Button variant="secondary" onClick={() => setSelectMode(true)}>Select</Button>
               )}
             </div>
+          </div>
+          <div className="flex gap-2">
+            <button
+              onClick={() => { setEventTab('upcoming'); setSelected(new Set()); setSearchQuery(''); }}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                eventTab === 'upcoming'
+                  ? 'bg-white text-[var(--primary)] shadow-sm'
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              Upcoming ({upcomingEvents.length})
+            </button>
+            <button
+              onClick={() => { setEventTab('completed'); setSelected(new Set()); setSearchQuery(''); }}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                eventTab === 'completed'
+                  ? 'bg-white text-[var(--primary)] shadow-sm'
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              Completed ({completedEvents.length})
+            </button>
           </div>
         </div>
         <div className="divide-y divide-gray-100">
@@ -959,8 +994,8 @@ function EventsAdmin({ data, onChange }: { data: EventItem[]; onChange: (d: Even
               </div>
             </div>
           ))}
-          {data.length === 0 && <div className="p-8 text-center text-gray-500">No events found. Add your first event above.</div>}
-          {data.length > 0 && filteredEvents.length === 0 && (
+          {currentViewEvents.length === 0 && <div className="p-8 text-center text-gray-500">No {eventTab} events found. Add your first event above.</div>}
+          {currentViewEvents.length > 0 && filteredEvents.length === 0 && (
             <div className="p-8 text-center text-gray-500">
               No events match your search. <button onClick={() => setSearchQuery('')} className="text-[var(--primary)] underline hover:text-[var(--accent)]">Clear search</button>
             </div>

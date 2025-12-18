@@ -61,6 +61,59 @@ const sampleAchievements = [
     date: new Date('2024-06-01'),
     category: 'Growth Milestone',
     isActive: true
+  },
+  {
+    type: 'award',
+    title: 'Engineer Excellence Award',
+    description: 'Railway Engineering Excellence recognized at national level conference.',
+    date: new Date('2024-05-15'),
+    category: 'Excellence Award',
+    imageUrl: 'https://images.unsplash.com/photo-1531482615713-2afd69097998?w=800',
+    isActive: true
+  },
+  {
+    type: 'milestone',
+    title: 'New Technical Training Center',
+    description: 'Inauguration of state-of-the-art technical training center for railway engineers in Bhusawal.',
+    date: new Date('2024-04-20'),
+    category: 'Infrastructure',
+    imageUrl: 'https://images.unsplash.com/photo-1524178232363-1fb2b075b655?w=800',
+    isActive: true
+  },
+  {
+    type: 'courtCase',
+    title: 'Working Hours Policy Victory',
+    description: 'Court ruled in favor of reasonable working hours and overtime compensation for railway engineers.',
+    date: new Date('2024-03-10'),
+    category: 'Legal Victory',
+    isActive: true
+  },
+  {
+    type: 'award',
+    title: 'Community Service Recognition',
+    description: 'CREA recognized for outstanding community service and social welfare initiatives.',
+    date: new Date('2024-02-18'),
+    category: 'Service Award',
+    imageUrl: 'https://images.unsplash.com/photo-1559027615-cd4628902d4a?w=800',
+    isActive: true
+  },
+  {
+    type: 'milestone',
+    title: 'Digital Transformation Initiative',
+    description: 'Successfully completed digital transformation of all CREA operations and member services.',
+    date: new Date('2024-01-25'),
+    category: 'Technology',
+    imageUrl: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=800',
+    isActive: true
+  },
+  {
+    type: 'award',
+    title: 'Best Practice Award for Member Welfare',
+    description: 'Received recognition for innovative member welfare programs and benefits.',
+    date: new Date('2023-12-05'),
+    category: 'Welfare Award',
+    imageUrl: 'https://images.unsplash.com/photo-1552664730-d307ca884978?w=800',
+    isActive: true
   }
 ];
 

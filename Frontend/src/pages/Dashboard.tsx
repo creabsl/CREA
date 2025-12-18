@@ -452,8 +452,8 @@ export default function Dashboard() {
           </div>
           
           <div className="p-5">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-              {achievements.slice(0, 6).map((achievement) => (
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+              {achievements.slice(0, 12).map((achievement) => (
                 <div
                   key={achievement._id}
                   className="bg-gray-50 rounded border border-gray-200 overflow-hidden hover:border-blue-400 hover:bg-blue-50 transition-all group"
