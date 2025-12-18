@@ -46,6 +46,7 @@ import {
   deleteForumTopic,
   getSuggestions,
   deleteSuggestion,
+  getAllDonations,
 } from "../services/api";
 import type {
   Circular,
@@ -213,6 +214,8 @@ export default function Admin() {
               ? "Mutual Transfers"
               : k === "breaking-news"
               ? "Breaking News"
+              : k === "members"
+              ? "Users"
               : k
                   .split("-")
                   .map((word) => word[0].toUpperCase() + word.slice(1))
@@ -1149,7 +1152,7 @@ function MembersAdmin({
                 />
               </svg>
             </span>
-            Member Management ({data.length} members)
+            User Management ({data.length} users)
           </h3>
         </div>
         <div className="overflow-x-auto">
@@ -5267,6 +5270,7 @@ function MutualTransfersAdmin({
 function DonationsAdmin() {
   const [donations, setDonations] = useState<import("../types").Donation[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     fetchDonations();
@@ -5275,18 +5279,20 @@ function DonationsAdmin() {
   const fetchDonations = async () => {
     try {
       setLoading(true);
-      const token = localStorage.getItem("token");
-      const response = await fetch("http://localhost:5001/api/donations", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      const data = await response.json();
-      if (data.success) {
-        setDonations(data.data);
-      }
+      setError(null);
+
+      console.log("Fetching donations from API...");
+
+      const data = await getAllDonations();
+      console.log("Donations data received:", data);
+      console.log("Number of donations:", data?.length || 0);
+
+      setDonations(data || []);
     } catch (error) {
       console.error("Error fetching donations:", error);
+      setError(
+        error instanceof Error ? error.message : "Failed to fetch donations"
+      );
     } finally {
       setLoading(false);
     }
@@ -5448,6 +5454,20 @@ function DonationsAdmin() {
     );
   }
 
+  if (error) {
+    return (
+      <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
+        <div className="text-red-700 font-medium mb-2">
+          Error Loading Donations
+        </div>
+        <div className="text-red-600 text-sm">{error}</div>
+        <Button onClick={fetchDonations} className="mt-4">
+          Try Again
+        </Button>
+      </div>
+    );
+  }
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -5591,6 +5611,18 @@ function DonationsAdmin() {
         </Button>
       </div>
 
+      {/* Debug Info */}
+      {import.meta.env.DEV && (
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-sm">
+          <div className="font-semibold text-blue-900 mb-2">Debug Info:</div>
+          <div className="text-blue-800">
+            <div>Total donations fetched: {donations.length}</div>
+            <div>Loading: {loading ? "Yes" : "No"}</div>
+            <div>Error: {error || "None"}</div>
+          </div>
+        </div>
+      )}
+
       {/* Donations Table */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
         <div className="overflow-x-auto">
@@ -5601,10 +5633,13 @@ function DonationsAdmin() {
                   Date
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Donor
+                  Donor Name
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Contact
+                  Email
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Mobile
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Amount
@@ -5613,10 +5648,31 @@ function DonationsAdmin() {
                   Purpose
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Type
+                  Employee
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Status
+                  Employee ID
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Designation
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Division
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Department
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Payment Status
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Payment Method
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Payment Date
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Payment ID
                 </th>
               </tr>
             </thead>
@@ -5624,7 +5680,7 @@ function DonationsAdmin() {
               {donations.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={7}
+                    colSpan={15}
                     className="px-6 py-12 text-center text-gray-500"
                   >
                     No donations yet
@@ -5648,17 +5704,10 @@ function DonationsAdmin() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center gap-2">
-                        <div>
-                          <div className="text-sm font-medium text-gray-900">
-                            {donation.isAnonymous
-                              ? "Anonymous Donor"
-                              : donation.fullName}
-                          </div>
-                          {donation.isEmployee && donation.designation && (
-                            <div className="text-xs text-gray-500">
-                              {donation.designation}
-                            </div>
-                          )}
+                        <div className="text-sm font-medium text-gray-900">
+                          {donation.isAnonymous
+                            ? "Anonymous Donor"
+                            : donation.fullName || "N/A"}
                         </div>
                         {donation.isAnonymous && (
                           <span className="px-2 py-0.5 bg-gray-100 text-gray-600 text-xs rounded-full font-medium">
@@ -5667,14 +5716,18 @@ function DonationsAdmin() {
                         )}
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                       {donation.isAnonymous ? (
-                        <span className="text-sm text-gray-400">Hidden</span>
+                        <span className="text-gray-400">Hidden</span>
                       ) : (
-                        <div className="text-sm text-gray-900">
-                          <div>{donation.email}</div>
-                          <div className="text-gray-500">{donation.mobile}</div>
-                        </div>
+                        donation.email || "N/A"
+                      )}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {donation.isAnonymous ? (
+                        <span className="text-gray-400">Hidden</span>
+                      ) : (
+                        donation.mobile || "N/A"
                       )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -5694,27 +5747,32 @@ function DonationsAdmin() {
                             : "bg-gray-100 text-gray-700"
                         }`}
                       >
-                        {donation.purpose.charAt(0).toUpperCase() +
-                          donation.purpose.slice(1)}
+                        {donation.purpose?.charAt(0).toUpperCase() +
+                          donation.purpose?.slice(1) || "General"}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex flex-col gap-1">
-                        <span
-                          className={`px-2 py-1 text-xs rounded-full font-medium inline-block w-fit ${
-                            donation.isEmployee
-                              ? "bg-[var(--primary)]/10 text-[var(--primary)]"
-                              : "bg-gray-100 text-gray-600"
-                          }`}
-                        >
-                          {donation.isEmployee ? "Employee" : "Public"}
-                        </span>
-                        {donation.isEmployee && donation.division && (
-                          <span className="text-xs text-gray-500">
-                            {donation.division}
-                          </span>
-                        )}
-                      </div>
+                      <span
+                        className={`px-2 py-1 text-xs rounded-full font-medium ${
+                          donation.isEmployee
+                            ? "bg-[var(--primary)]/10 text-[var(--primary)]"
+                            : "bg-gray-100 text-gray-600"
+                        }`}
+                      >
+                        {donation.isEmployee ? "Yes" : "No"}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {donation.employeeId || "-"}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {donation.designation || "-"}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {donation.division || "-"}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {donation.department || "-"}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span
@@ -5726,9 +5784,37 @@ function DonationsAdmin() {
                             : "bg-yellow-100 text-yellow-700"
                         }`}
                       >
-                        {donation.paymentStatus.charAt(0).toUpperCase() +
-                          donation.paymentStatus.slice(1)}
+                        {donation.paymentStatus?.charAt(0).toUpperCase() +
+                          donation.paymentStatus?.slice(1) || "Pending"}
                       </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {donation.paymentMethod ? (
+                        <span className="px-2 py-1 bg-blue-50 text-blue-700 text-xs rounded-full font-medium">
+                          {donation.paymentMethod.toUpperCase()}
+                        </span>
+                      ) : (
+                        "-"
+                      )}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {donation.paymentDate
+                        ? new Date(donation.paymentDate).toLocaleString(
+                            "en-IN",
+                            {
+                              day: "2-digit",
+                              month: "short",
+                              year: "numeric",
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            }
+                          )
+                        : "-"}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 font-mono text-xs">
+                      {donation.razorpayPaymentId ||
+                        donation.paymentReference ||
+                        "-"}
                     </td>
                   </tr>
                 ))
