@@ -175,128 +175,170 @@ function RightAdSpace({ ad }: { ad: EventAd | null }) {
 function AutoRotatingSlideshow({ photos, onImageClick }: { photos: string[], onImageClick: (url: string) => void }) {
   const [currentIndex, setCurrentIndex] = useState(0)
   const [isPaused, setIsPaused] = useState(false)
+  const photosPerView = 3
 
-  useEffect(() => {
-    if (isPaused || photos.length <= 1) return
-    
-    const interval = setInterval(() => {
-      setCurrentIndex((prev) => (prev + 1) % photos.length)
-    }, 3000) // Change image every 3 seconds
-    
-    return () => clearInterval(interval)
-  }, [photos.length, isPaused])
-
-  const goToNext = () => {
-    setCurrentIndex((prev) => (prev + 1) % photos.length)
-  }
-
-  const goToPrev = () => {
-    setCurrentIndex((prev) => (prev - 1 + photos.length) % photos.length)
-  }
-
-  const goToSlide = (index: number) => {
-    setCurrentIndex(index)
-  }
-
-  return (
-    <div 
-      className="bg-gray-50 rounded-xl p-4 border border-gray-200"
-      onMouseEnter={() => setIsPaused(true)}
-      onMouseLeave={() => setIsPaused(false)}
-    >
-      <div className="flex gap-4 items-start">
-        {/* Main slideshow container */}
-        <div className="relative w-full max-w-2xl mx-auto">
-          <div className="relative aspect-[4/3] bg-gradient-to-br from-gray-100 to-gray-200 rounded-lg overflow-hidden shadow-md group">
-          <AnimatePresence mode="wait">
-            <motion.img
-              key={currentIndex}
-              src={photos[currentIndex]}
-              alt={`Event photo ${currentIndex + 1}`}
-              className="w-full h-full object-cover cursor-pointer"
-              initial={{ opacity: 0, scale: 1.05 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.98 }}
-              transition={{ duration: 0.6, ease: "easeInOut" }}
-              onClick={() => onImageClick(photos[currentIndex])}
-            />
-          </AnimatePresence>
-
-          {/* Navigation arrows - visible on hover */}
-          {photos.length > 1 && (
-            <>
-              <button
-                onClick={(e) => { e.stopPropagation(); goToPrev(); }}
-                className="absolute left-2 top-1/2 -translate-y-1/2 bg-white/95 hover:bg-white text-slate-800 p-2 rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-all duration-300 hover:scale-105"
-                aria-label="Previous photo"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 19l-7-7 7-7" />
-                </svg>
-              </button>
-              <button
-                onClick={(e) => { e.stopPropagation(); goToNext(); }}
-                className="absolute right-2 top-1/2 -translate-y-1/2 bg-white/95 hover:bg-white text-slate-800 p-2 rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-all duration-300 hover:scale-105"
-                aria-label="Next photo"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 5l7 7-7 7" />
-                </svg>
-              </button>
-            </>
-          )}
-
-          {/* Photo counter badge */}
-          <div className="absolute top-2 left-2 bg-black/70 backdrop-blur-sm text-white px-2.5 py-1 rounded-md text-xs font-semibold flex items-center gap-1.5">
-            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-            </svg>
-            {currentIndex + 1} / {photos.length}
-          </div>
-
-          {/* Click to expand hint */}
-          <div className="absolute top-2 right-2 bg-black/70 backdrop-blur-sm text-white px-2 py-1 rounded-md text-xs font-medium opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center gap-1">
-            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" />
-            </svg>
-            View
-          </div>
-
-          {/* Pause indicator */}
-          {isPaused && photos.length > 1 && (
-            <div className="absolute bottom-2 left-2 bg-black/70 backdrop-blur-sm text-white px-2 py-1 rounded-md text-xs font-medium flex items-center gap-1">
-              <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zM7 8a1 1 0 012 0v4a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v4a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
-              </svg>
-              Paused
-            </div>
-          )}
-        </div>
-
-        {/* Thumbnail navigation */}
-        {photos.length > 1 && (
-          <div className="flex items-center justify-center gap-1.5 mt-3 flex-wrap">
+  // If less than 3 photos, show static grid without carousel
+  if (photos.length < 3) {
+    return (
+      <div className="relative">
+        <div className="relative overflow-hidden rounded-xl shadow-md">
+          <div className={`flex ${photos.length === 1 ? 'justify-center' : 'justify-between'} gap-3`}>
             {photos.map((photo, idx) => (
-              <button
+              <motion.div
                 key={idx}
-                onClick={() => goToSlide(idx)}
-                className={`transition-all duration-300 rounded overflow-hidden border-2 ${
-                  idx === currentIndex 
-                    ? 'border-gray-900 ring-2 ring-gray-900/20 scale-105' 
-                    : 'border-gray-300 hover:border-gray-500 opacity-60 hover:opacity-100'
-                }`}
-                aria-label={`Go to photo ${idx + 1}`}
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.5 }}
+                className="relative rounded-lg overflow-hidden bg-gray-100 cursor-pointer group shadow-lg"
+                style={{ 
+                  width: photos.length === 1 ? '100%' : `calc((100% - 0.75rem) / 2)`,
+                  aspectRatio: '4/3'
+                }}
+                onClick={() => onImageClick(photo)}
               >
                 <img 
                   src={photo} 
-                  alt={`Thumbnail ${idx + 1}`}
-                  className="w-10 h-10 object-cover"
+                  alt={`Event photo ${idx + 1}`}
+                  className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
                 />
-              </button>
+                
+                {/* Hover overlay */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                  <div className="absolute bottom-2 left-1/2 -translate-x-1/2 bg-white/95 rounded-full p-2">
+                    <svg className="w-5 h-5 text-gray-900" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" />
+                    </svg>
+                  </div>
+                </div>
+
+                {/* Photo number */}
+                <div className="absolute top-2 right-2 bg-black/70 backdrop-blur-sm text-white px-2 py-1 rounded-md text-xs font-semibold">
+                  {idx + 1}/{photos.length}
+                </div>
+              </motion.div>
             ))}
           </div>
-        )}
         </div>
+      </div>
+    )
+  }
+
+  // For 3+ photos, use sliding carousel
+  const extendedPhotos = [...photos, ...photos, ...photos]
+
+  useEffect(() => {
+    if (isPaused) return
+    
+    const interval = setInterval(() => {
+      setCurrentIndex((prev) => prev + 1)
+    }, 3000)
+    
+    return () => clearInterval(interval)
+  }, [isPaused])
+
+  // Reset to middle section when reaching end for infinite effect
+  useEffect(() => {
+    if (currentIndex >= photos.length * 2) {
+      setTimeout(() => {
+        setCurrentIndex(photos.length)
+      }, 700)
+    } else if (currentIndex < photos.length) {
+      setTimeout(() => {
+        setCurrentIndex(photos.length)
+      }, 700)
+    }
+  }, [currentIndex, photos.length])
+
+  const goToNext = () => {
+    setCurrentIndex((prev) => prev + 1)
+  }
+
+  const goToPrev = () => {
+    setCurrentIndex((prev) => prev - 1)
+  }
+
+  const slidePercentage = (currentIndex * 100) / photosPerView
+
+  return (
+    <div 
+      className="relative"
+      onMouseEnter={() => setIsPaused(true)}
+      onMouseLeave={() => setIsPaused(false)}
+    >
+      {/* Horizontal Sliding Container - Shows 3 photos */}
+      <div className="relative overflow-hidden rounded-xl shadow-md">
+        <div 
+          className="flex gap-3 transition-transform duration-700 ease-in-out"
+          style={{ transform: `translateX(-${slidePercentage}%)` }}
+        >
+          {extendedPhotos.map((photo, idx) => {
+            const actualIndex = idx % photos.length
+            return (
+              <div
+                key={`${idx}`}
+                className="relative flex-shrink-0 aspect-[4/3] rounded-lg overflow-hidden bg-gray-100 cursor-pointer group shadow-lg"
+                style={{ width: `calc((100% - ${(photosPerView - 1) * 0.75}rem) / ${photosPerView})` }}
+                onClick={() => onImageClick(photo)}
+              >
+                <img 
+                  src={photo} 
+                  alt={`Event photo ${actualIndex + 1}`}
+                  className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
+                />
+                
+                {/* Hover overlay */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                  <div className="absolute bottom-2 left-1/2 -translate-x-1/2 bg-white/95 rounded-full p-2">
+                    <svg className="w-5 h-5 text-gray-900" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" />
+                    </svg>
+                  </div>
+                </div>
+
+                {/* Photo number */}
+                <div className="absolute top-2 right-2 bg-black/70 backdrop-blur-sm text-white px-2 py-1 rounded-md text-xs font-semibold">
+                  {actualIndex + 1}/{photos.length}
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      </div>
+
+      {/* Navigation arrows */}
+      <button
+        onClick={(e) => { e.stopPropagation(); goToPrev(); }}
+        className="absolute left-3 top-1/2 -translate-y-1/2 bg-white/95 hover:bg-white text-gray-900 p-3 rounded-full shadow-xl opacity-0 hover:opacity-100 transition-all duration-300 hover:scale-110 z-10"
+        aria-label="Previous photos"
+      >
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 19l-7-7 7-7" />
+        </svg>
+      </button>
+      <button
+        onClick={(e) => { e.stopPropagation(); goToNext(); }}
+        className="absolute right-3 top-1/2 -translate-y-1/2 bg-white/95 hover:bg-white text-gray-900 p-3 rounded-full shadow-xl opacity-0 hover:opacity-100 transition-all duration-300 hover:scale-110 z-10"
+        aria-label="Next photos"
+      >
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 5l7 7-7 7" />
+        </svg>
+      </button>
+
+      {/* Dot indicators */}
+      <div className="flex items-center justify-center gap-2 mt-4">
+        {photos.map((_, idx) => (
+          <button
+            key={idx}
+            onClick={() => setCurrentIndex(photos.length + idx)}
+            className={`transition-all duration-300 rounded-full ${
+              (currentIndex % photos.length) === idx 
+                ? 'w-8 h-2.5 bg-gray-900' 
+                : 'w-2.5 h-2.5 bg-gray-300 hover:bg-gray-500'
+            }`}
+            aria-label={`Go to photo ${idx + 1}`}
+          />
+        ))}
       </div>
     </div>
   )
@@ -387,7 +429,7 @@ export default function Events() {
           <Spinner size={60} />
         </div>
       ) : (
-        <StaggerContainer className="grid grid-cols-1 gap-8">
+        <StaggerContainer className={`grid ${eventType === 'upcoming' ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3' : 'grid-cols-1'} gap-8`}>
           {displayedEvents.map((e, index) => {
             const isCompleted = new Date(e.date) < today
             return (
@@ -499,7 +541,7 @@ export default function Events() {
               ) : (
                 // Upcoming Event Card
                 <motion.div 
-                  className="group relative rounded-2xl bg-white border-2 border-blue-100 shadow-md overflow-hidden hover:shadow-xl transition-all duration-300"
+                  className="group relative rounded-2xl bg-white border-2 border-blue-100 shadow-md overflow-hidden hover:shadow-xl transition-all duration-300 h-full flex flex-col"
                   whileHover={{ y: -4, transition: SPRING.hover }}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -507,84 +549,50 @@ export default function Events() {
                 >
                   <div className="h-1.5 bg-gradient-to-r from-[var(--primary)] via-blue-600 to-[var(--primary)]"></div>
                   
-                  <div className="p-6 sm:p-8">
-                    <div className="mb-6">
-                      <h3 className="text-2xl sm:text-3xl font-bold text-[var(--primary)] mb-4 leading-tight">
+                  <div className="p-4 sm:p-5 flex flex-col flex-1">
+                    {/* Header with title, date, and location - compact layout */}
+                    <div className="mb-4">
+                      <h3 className="text-xl font-bold text-[var(--primary)] mb-2">
                         {e.title}
                       </h3>
                       
-                      <div className="flex flex-col sm:flex-row gap-3">
-                        <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-blue-50 text-blue-700 flex-1">
-                          <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <div className="flex flex-col sm:flex-row gap-2 text-sm">
+                        <div className="flex items-center gap-2 text-blue-600 font-medium">
+                          <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                           </svg>
-                          <span className="font-semibold text-sm">
-                            {new Date(e.date).toLocaleDateString('en-US', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' })}
-                          </span>
+                          {new Date(e.date).toLocaleDateString('en-US', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' })}
                         </div>
-                        <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-blue-50 text-blue-700 flex-1">
-                          <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <div className="flex items-center gap-2 text-blue-600 font-medium">
+                          <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                           </svg>
-                          <span className="font-semibold text-sm">{e.location}</span>
+                          {e.location}
                         </div>
                       </div>
                     </div>
 
                     {e.description && (
-                      <div className="mb-6 p-5 rounded-xl bg-blue-50/40 border border-blue-100">
-                        <h4 className="text-xs font-bold uppercase tracking-wider mb-2 text-blue-700 flex items-center gap-2">
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h7" />
-                          </svg>
-                          Event Details
-                        </h4>
-                        <p className="text-gray-800 leading-relaxed whitespace-pre-line text-sm">
-                          {e.description}
-                        </p>
+                      <div className="mb-4 text-sm text-gray-700 leading-relaxed">
+                        {e.description}
                       </div>
                     )}
 
                     {e.photos?.length > 0 && (
-                      <div className="p-5 rounded-xl bg-blue-50/40 border border-blue-100">
-                        <div className="flex items-center justify-between mb-4">
-                          <h4 className="text-xs font-bold uppercase tracking-wider text-blue-700 flex items-center gap-2">
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <div>
+                        <div className="flex items-center gap-2 mb-3">
+                          <h4 className="text-xs font-bold uppercase tracking-wide text-blue-700 flex items-center gap-1">
+                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                             </svg>
-                            Event Photos
+                            Photos
                           </h4>
-                          <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-blue-100 text-blue-700">
+                          <span className="px-1.5 py-0.5 rounded text-xs font-bold bg-blue-100 text-blue-700">
                             {e.photos.length}
                           </span>
                         </div>
-                        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-                          {e.photos.map((p, idx) => (
-                            <motion.div
-                              key={idx}
-                              className="relative group/photo aspect-square rounded-lg overflow-hidden shadow-md cursor-pointer bg-gray-100"
-                              whileHover={{ scale: 1.05, y: -2 }}
-                              whileTap={{ scale: 0.98 }}
-                              onClick={() => setOpenImg(p)}
-                            >
-                              <img 
-                                src={p} 
-                                alt={`Event photo ${idx + 1}`}
-                                className="w-full h-full object-cover transition-transform duration-300 group-hover/photo:scale-110"
-                              />
-                              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover/photo:opacity-100 transition-opacity duration-300">
-                                <div className="absolute inset-0 flex items-center justify-center">
-                                  <div className="bg-white/90 backdrop-blur-sm rounded-full p-2.5 transform scale-90 group-hover/photo:scale-100 transition-transform">
-                                    <svg className="w-5 h-5 text-gray-900" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" />
-                                    </svg>
-                                  </div>
-                                </div>
-                              </div>
-                            </motion.div>
-                          ))}
-                        </div>
+                        <AutoRotatingSlideshow photos={e.photos} onImageClick={setOpenImg} />
                       </div>
                     )}
                   </div>
