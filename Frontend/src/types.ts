@@ -19,10 +19,12 @@ export type EventItem = {
 
 export type Circular = {
   id: string
-  boardNumber: string
-  subject: string
+  title: string
+  boardNumber?: string
+  subject?: string
   dateOfIssue: string
   url?: string
+  fileName?: string
 }
 
 export type CourtCase = {
@@ -30,10 +32,27 @@ export type CourtCase = {
   caseNumber: string
   date: string
   subject: string
+  status?: 'pending' | 'ongoing' | 'closed'
+  url?: string
+  fileName?: string
 }
 
 export type ManualCategory = 'technical' | 'social' | 'organizational' | 'general'
-export type Manual = { id: string; title: string; url?: string; category?: ManualCategory }
+export type Manual = { id: string; title: string; date?: string; subject?: string; url?: string; category?: ManualCategory; fileName?: string }
+
+export type DocumentType = 'circular' | 'manual' | 'court-case'
+export type DocumentFeedItem = {
+  id: string
+  type: DocumentType
+  title: string
+  uploadedAt: string | null
+  label: string
+  fileName: string | null
+  mimeType: string | null
+  size: number | null
+  externalUrl: string | null
+  downloadUrl: string | null
+}
 
 export type BodyMember = { id: string; name: string; designation: string; photoUrl: string; division: Division }
 

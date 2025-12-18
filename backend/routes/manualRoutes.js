@@ -6,7 +6,7 @@ const express = require('express');
 const router = express.Router();
 
 const c = crud(Manual);
-router.get('/', c.list);
+router.get('/', protect, c.list);
 
 // Create manual with optional file upload
 router.post('/', protect, adminOnly, uploadSingle('manuals'), async (req, res) => {
@@ -15,6 +15,9 @@ router.post('/', protect, adminOnly, uploadSingle('manuals'), async (req, res) =
 		const doc = {
 			title: body.title,
 		};
+		if (body.date) doc.date = body.date;
+		if (body.subject) doc.subject = body.subject;
+		if (body.category) doc.category = body.category;
 		if (req.file) {
 			doc.fileName = req.file.filename;
 			doc.mimeType = req.file.mimetype;

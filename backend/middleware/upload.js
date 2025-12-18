@@ -22,8 +22,13 @@ function storageFor(subdir) {
 }
 
 function fileFilter(_req, file, cb) {
-  const ok = file.mimetype === 'application/pdf' || file.mimetype.startsWith('image/');
-  if (!ok) return cb(new Error('Only images or PDF allowed'));
+  const ok =
+    file.mimetype === 'application/pdf' ||
+    file.mimetype.startsWith('image/') ||
+    file.mimetype === 'application/msword' ||
+    file.mimetype ===
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+  if (!ok) return cb(new Error('Only images, PDF, DOC, or DOCX allowed'));
   return cb(null, true);
 }
 

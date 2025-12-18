@@ -1,38 +1,22 @@
-import React, { useEffect, useState } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import React, { useEffect, useMemo, useState } from 'react'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { usePageTitle } from '../hooks/usePageTitle'
 import { useAuth } from '../context/auth'
 import Button from '../components/Button'
 import DataTable from '../components/DataTable'
-import FileUploader from '../components/FileUploader'
-import Modal from '../components/Modal'
-import Input from '../components/Input'
 import { format } from 'date-fns'
-import { getCirculars, getManuals, getCourtCases } from '../services/api'
-import type { Circular, Manual, CourtCase } from '../types'
+import { downloadDocument, getDocumentsFeed } from '../services/api'
+import type { DocumentFeedItem, DocumentType } from '../types'
 
-// Backend API URL for file access
-const API_URL = import.meta.env?.VITE_API_URL || 'http://localhost:5001'
-
-type DocumentType = 'circular' | 'manual' | 'court-case'
-
-interface Document extends Record<string, unknown> {
-  id: string
-  title: string
-  description: string
-  date: string
-  type: DocumentType
-  fileUrl: string
-  // Circular specific
-  boardNumber?: string
-  category?: string
-  // Manual specific
-  section?: string
-  // Court case specific
-  status?: string
-  caseNumber?: string
-  courtName?: string
-  nextHearingDate?: string
+const adminSubTabFor = (t: DocumentType) => {
+  switch (t) {
+    case 'circular':
+      return 'circulars'
+    case 'manual':
+      return 'manuals'
+    case 'court-case':
+      return 'court-cases'
+  }
 }
 
 const TABS: { value: DocumentType; label: string; icon: React.ReactNode }[] = [
@@ -67,12 +51,13 @@ const TABS: { value: DocumentType; label: string; icon: React.ReactNode }[] = [
 
 export default function Documents() {
   const [searchParams] = useSearchParams()
+  const navigate = useNavigate()
   const tabFromUrl = searchParams.get('tab') as DocumentType | null
   const [activeTab, setActiveTab] = useState<DocumentType>(tabFromUrl && ['circular', 'manual', 'court-case'].includes(tabFromUrl) ? tabFromUrl : 'circular')
-  const [isAddModalOpen, setIsAddModalOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
-  const [documents, setDocuments] = useState<Document[]>([])
+  const [documents, setDocuments] = useState<DocumentFeedItem[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const { user } = useAuth()
   const isAdmin = user?.role === 'admin'
 
@@ -80,57 +65,15 @@ export default function Documents() {
   useEffect(() => {
     async function fetchDocuments() {
       setLoading(true)
+      setError(null)
       try {
-        const [circulars, manuals, courtCases] = await Promise.all([
-          getCirculars(),
-          getManuals(),
-          getCourtCases()
-        ])
-
-        // Helper to build full URL for files
-        const getFullUrl = (url: string | undefined): string => {
-          if (!url || url === '#') return '#'
-          // If it's already a full URL (http/https), return as-is
-          if (url.startsWith('http://') || url.startsWith('https://')) return url
-          // Otherwise, prepend the API URL
-          return `${API_URL}${url}`
-        }
-
-        const allDocs: Document[] = [
-          // Transform circulars
-          ...circulars.map((c: Circular): Document => ({
-            id: c.id,
-            title: c.subject,
-            description: `Board Number: ${c.boardNumber}`,
-            date: c.dateOfIssue,
-            type: 'circular',
-            fileUrl: getFullUrl(c.url),
-            boardNumber: c.boardNumber
-          })),
-          // Transform manuals
-          ...manuals.map((m: Manual): Document => ({
-            id: m.id,
-            title: m.title,
-            description: 'Manual document',
-            date: '',
-            type: 'manual',
-            fileUrl: getFullUrl(m.url),
-            category: m.category
-          })),
-          // Transform court cases
-          ...courtCases.map((cc: CourtCase): Document => ({
-            id: cc.id,
-            title: cc.subject,
-            description: `Case Number: ${cc.caseNumber}`,
-            date: cc.date,
-            type: 'court-case',
-            fileUrl: '#',
-            caseNumber: cc.caseNumber
-          }))
-        ]
-        setDocuments(allDocs)
+        const list = await getDocumentsFeed()
+        setDocuments(list)
       } catch (error) {
         console.error('Failed to fetch documents:', error)
+        const msg = error instanceof Error ? error.message : 'Failed to fetch documents'
+        setError(msg)
+        setDocuments([])
       } finally {
         setLoading(false)
       }
@@ -147,99 +90,92 @@ export default function Documents() {
 
   usePageTitle('CREA • Documents')
 
-  const filteredDocuments = documents.filter(doc => 
-    doc.type === activeTab && 
-    (doc.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-     doc.description.toLowerCase().includes(searchQuery.toLowerCase()))
-  )
+  const filteredDocuments = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase()
+    return documents.filter(doc => {
+      if (doc.type !== activeTab) return false
+      if (!q) return true
+      return (
+        doc.title.toLowerCase().includes(q) ||
+        (doc.label || '').toLowerCase().includes(q)
+      )
+    })
+  }, [documents, activeTab, searchQuery])
 
   const getColumns = (type: DocumentType) => {
-    const baseColumns = [
+    const labelHeader = type === 'circular' ? 'Subject' : type === 'manual' ? 'Category' : 'Status'
+
+    return [
       {
-        key: 'title' as keyof Document,
+        key: 'title' as keyof DocumentFeedItem,
         header: 'Title',
-        render: (row: Document) => (
-          <div>
-            <div className="font-medium text-gray-900">{row.title}</div>
-            <div className="text-sm text-gray-500">{row.description}</div>
-          </div>
+        render: (row: DocumentFeedItem) => (
+          <div className="font-medium text-gray-900">{row.title}</div>
         )
       },
       {
-        key: 'date' as keyof Document,
-        header: 'Date',
-        render: (row: Document) => row.date ? format(new Date(row.date), 'MMM d, yyyy') : '-'
+        key: 'uploadedAt' as keyof DocumentFeedItem,
+        header: 'Uploaded',
+        render: (row: DocumentFeedItem) => row.uploadedAt ? format(new Date(row.uploadedAt), 'MMM d, yyyy') : '-'
       },
       {
-        key: 'fileUrl' as keyof Document,
-        header: 'File',
-        render: (row: Document) => row.fileUrl && row.fileUrl !== '#' ? (
-          <button 
-            onClick={() => window.open(row.fileUrl, '_blank', 'noopener,noreferrer')}
-            className="text-[var(--primary)] hover:text-[var(--accent)] flex items-center gap-2 transition-colors cursor-pointer"
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-            </svg>
-            <span>View Document</span>
-            <svg className="w-3 h-3 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-            </svg>
-          </button>
-        ) : (
-          <span className="text-gray-400">No file</span>
-        )
+        key: 'label' as keyof DocumentFeedItem,
+        header: labelHeader,
+        render: (row: DocumentFeedItem) => {
+          if (type === 'manual') {
+            const v = (row.label || 'general')
+            return (
+              <span className="inline-flex px-2 py-1 text-xs font-medium bg-gray-200 text-gray-700 rounded-full">
+                {v.charAt(0).toUpperCase() + v.slice(1)}
+              </span>
+            )
+          }
+          return <div className="text-sm text-gray-700">{row.label || '-'}</div>
+        }
+      },
+      {
+        key: 'downloadUrl' as keyof DocumentFeedItem,
+        header: 'Download',
+        render: (row: DocumentFeedItem) => {
+          if (row.downloadUrl) {
+            const fallbackName = row.fileName || `${row.type}-${row.id}`
+            return (
+              <button
+                onClick={() => downloadDocument(row.downloadUrl as string, fallbackName)}
+                className="text-[var(--primary)] hover:text-[var(--accent)] flex items-center gap-2 transition-colors cursor-pointer"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                </svg>
+                <span>Download</span>
+              </button>
+            )
+          }
+          if (row.externalUrl) {
+            return (
+              <button
+                onClick={() => window.open(row.externalUrl as string, '_blank', 'noopener,noreferrer')}
+                className="text-[var(--primary)] hover:text-[var(--accent)] flex items-center gap-2 transition-colors cursor-pointer"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 4h6m0 0v6m0-6L10 14" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 10v10a1 1 0 001 1h10" />
+                </svg>
+                <span>Open Link</span>
+              </button>
+            )
+          }
+          return <span className="text-gray-400">No file</span>
+        }
       }
     ]
-
-    if (type === 'circular') {
-      return [
-        ...baseColumns,
-        { 
-          key: 'boardNumber' as keyof Document,
-          header: 'Board Number', 
-          render: (row: Document) => row.boardNumber || '-'
-        }
-      ]
-    }
-
-    if (type === 'manual') {
-      return [
-        ...baseColumns.slice(0, 1), // Title column
-        { 
-          key: 'category' as keyof Document,
-          header: 'Category', 
-          render: (row: Document) => row.category ? (
-            <span className="inline-flex px-2 py-1 text-xs font-medium bg-gray-200 text-gray-700 rounded-full">
-              {row.category.charAt(0).toUpperCase() + row.category.slice(1)}
-            </span>
-          ) : (
-            <span className="text-gray-400">General</span>
-          )
-        },
-        ...baseColumns.slice(1) // Date and File columns
-      ]
-    }
-
-    if (type === 'court-case') {
-      return [
-        ...baseColumns,
-        { 
-          key: 'caseNumber' as keyof Document,
-          header: 'Case Number', 
-          render: (row: Document) => row.caseNumber || '-'
-        }
-      ]
-    }
-
-    return baseColumns
   }
 
   const getAddButtonText = (type: DocumentType) => {
     switch (type) {
-      case 'circular': return 'Add Circular'
-      case 'manual': return 'Add Manual'
-      case 'court-case': return 'Add Court Case'
+      case 'circular': return 'Upload Circular'
+      case 'manual': return 'Upload Manual'
+      case 'court-case': return 'Upload Court Case'
     }
   }
 
@@ -283,7 +219,7 @@ export default function Documents() {
             </div>
             {isAdmin && (
               <Button 
-                onClick={() => setIsAddModalOpen(true)}
+                onClick={() => navigate(`/admin?tab=documents&subTab=${adminSubTabFor(activeTab)}`)}
                 className="text-sm"
               >
                 <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -340,6 +276,16 @@ export default function Documents() {
       </div>
 
       {/* Document Content */}
+      {error && (
+        <div className="bg-white rounded-lg shadow-sm border border-red-200 p-4">
+          <div className="text-sm text-red-700">
+            {error}
+          </div>
+          <div className="text-xs text-gray-600 mt-1">
+            If this says 404, restart the backend so `/api/documents` is available. If it says 401, log out/in to refresh your token.
+          </div>
+        </div>
+      )}
       {loading ? (
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-12">
           <div className="text-center">
@@ -370,7 +316,7 @@ export default function Documents() {
               }
             </p>
             {!searchQuery && isAdmin && (
-              <Button onClick={() => setIsAddModalOpen(true)} className="text-sm">
+              <Button onClick={() => navigate(`/admin?tab=documents&subTab=${adminSubTabFor(activeTab)}`)} className="text-sm">
                 <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
                 </svg>
@@ -380,55 +326,6 @@ export default function Documents() {
           </div>
         </div>
       )}
-
-      <Modal
-        open={isAddModalOpen}
-        onClose={() => setIsAddModalOpen(false)}
-        title={getAddButtonText(activeTab)}
-      >
-        <form className="space-y-4">
-          <Input label="Title *" placeholder="Enter document title" />
-          <Input label="Description" placeholder="Enter document description" />
-          
-          {activeTab === 'circular' && (
-            <Input label="Category" placeholder="Enter document category" />
-          )}
-
-          {activeTab === 'manual' && (
-            <Input label="Section" placeholder="Enter manual section" />
-          )}
-
-          {activeTab === 'court-case' && (
-            <>
-              <Input label="Case Number *" placeholder="Enter case number" />
-              <Input label="Court Name *" placeholder="Enter court name" />
-              <Input type="date" label="Next Hearing Date" />
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
-                <select className="block w-full rounded-md border-gray-300 shadow-sm focus:border-gray-500 focus:ring-blue-500">
-                  <option value="ongoing">Ongoing</option>
-                  <option value="closed">Closed</option>
-                  <option value="pending">Pending</option>
-                </select>
-              </div>
-            </>
-          )}
-
-          <div className="mt-6">
-            <FileUploader
-              accept=".pdf,.doc,.docx"
-              maxFiles={1}
-              onFiles={() => {}}
-              hint="Upload document (PDF, DOC, DOCX)"
-            />
-          </div>
-
-          <div className="flex justify-end gap-3 pt-4">
-            <Button variant="ghost" onClick={() => setIsAddModalOpen(false)}>Cancel</Button>
-            <Button>Save Document</Button>
-          </div>
-        </form>
-      </Modal>
     </div>
   )
 }
