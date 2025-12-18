@@ -82,7 +82,7 @@ exports.refreshAccessToken = async (req, res) => {
     }
 
     const newToken = generateToken(user._id);
-    return res.json({ token: newToken });
+    return res.json({ accessToken: newToken });
   } catch (e) {
     console.error('refreshAccessToken error:', e.message);
     return res.status(401).json({ message: 'Invalid refresh token' });

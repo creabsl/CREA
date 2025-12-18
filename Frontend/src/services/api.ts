@@ -27,8 +27,36 @@ const API_URL = import.meta.env?.VITE_API_URL || 'http://localhost:5001'
 
 // Token management
 const TOKEN_KEY = 'crea:token'
+const REFRESH_TOKEN_KEY = 'crea:refresh_token'
 const getToken = () => localStorage.getItem(TOKEN_KEY)
 const setToken = (t: string | null) => t ? localStorage.setItem(TOKEN_KEY, t) : localStorage.removeItem(TOKEN_KEY)
+const getRefreshToken = () => localStorage.getItem(REFRESH_TOKEN_KEY)
+const setRefreshToken = (t: string | null) => t ? localStorage.setItem(REFRESH_TOKEN_KEY, t) : localStorage.removeItem(REFRESH_TOKEN_KEY)
+
+// Token refresh helper
+async function refreshAccessToken(): Promise<boolean> {
+  try {
+    const refreshToken = getRefreshToken()
+    if (!refreshToken) return false
+    
+    const res = await fetch(`${API_URL}/api/auth/refresh-token`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refreshToken })
+    })
+    
+    if (!res.ok) return false
+    
+    const data = await res.json() as { accessToken?: string }
+    if (data.accessToken) {
+      setToken(data.accessToken)
+      return true
+    }
+    return false
+  } catch {
+    return false
+  }
+}
 
 // Fetch helper
 async function request<T>(path: string, opts: RequestInit = {}): Promise<T> {
@@ -38,7 +66,20 @@ async function request<T>(path: string, opts: RequestInit = {}): Promise<T> {
   const isForm = typeof FormData !== 'undefined' && opts.body instanceof FormData
   if (!isForm) headers['Content-Type'] = headers['Content-Type'] || 'application/json'
   if (token) headers.Authorization = `Bearer ${token}`
-  const res = await fetch(`${API_URL}${path}`, { ...opts, headers })
+  let res = await fetch(`${API_URL}${path}`, { ...opts, headers })
+  
+  // If 401, try to refresh token and retry once
+  if (res.status === 401) {
+    const refreshed = await refreshAccessToken()
+    if (refreshed) {
+      const newToken = getToken()
+      if (newToken) {
+        headers.Authorization = `Bearer ${newToken}`
+        res = await fetch(`${API_URL}${path}`, { ...opts, headers })
+      }
+    }
+  }
+  
   if (!res.ok) {
     let msg = `Request failed (${res.status})`
     try {
@@ -451,7 +492,7 @@ export async function rejectForumComment(postId: string, commentIndex: number): 
 export type Notification = {
   _id: string
   userId: string
-  type: 'forum' | 'event' | 'document' | 'membership' | 'transfer' | 'suggestion' | 'system' | 'association'
+  type: 'forum' | 'event' | 'document' | 'membership' | 'transfer' | 'suggestion' | 'system' | 'association' | 'breaking'
   title: string
   message: string
   link?: string
@@ -535,29 +576,22 @@ export async function submitMembership(form: MembershipFormData): Promise<Member
 }
 
 export async function createMembershipOrder(form: MembershipFormData): Promise<{ success: boolean; orderId: string; keyId: string; membershipDbId: string; membershipId: string; amount: number }> {
-  const formData = new FormData()
+  // Send as JSON with only required fields for order creation
+  const payload = {
+    name: form.name,
+    email: form.email,
+    mobile: form.mobile,
+    designation: form.designation,
+    division: form.division,
+    department: form.department,
+    place: form.place,
+    unit: form.unit,
+    type: form.type,
+    paymentMethod: form.paymentMethod || 'upi',
+    paymentAmount: form.paymentAmount
+  }
   
-  // Add basic fields
-  Object.entries(form).forEach(([key, value]) => {
-    if (key !== 'documents' && key !== 'personalDetails' && key !== 'professionalDetails') {
-      formData.append(key, String(value))
-    }
-  })
-
-  // Add nested objects
-  if (form.personalDetails) {
-    Object.entries(form.personalDetails).forEach(([key, value]) => {
-      if (value) formData.append(`personalDetails[${key}]`, String(value))
-    })
-  }
-
-  if (form.professionalDetails) {
-    Object.entries(form.professionalDetails).forEach(([key, value]) => {
-      if (value) formData.append(`professionalDetails[${key}]`, String(value))
-    })
-  }
-
-  return request('/api/memberships/create-order', { method: 'POST', body: formData })
+  return request('/api/memberships/create-order', { method: 'POST', body: JSON.stringify(payload) })
 }
 
 export async function verifyMembershipPayment(data: { razorpay_order_id: string; razorpay_payment_id: string; razorpay_signature: string }): Promise<{ success: boolean; message: string; membershipId: string; membershipNumber: string; status: string; paymentStatus: string }> {
@@ -700,12 +734,14 @@ export async function requestOtp(email: string, name?: string): Promise<{ succes
   return request('/api/auth/request-otp', { method: 'POST', body: JSON.stringify({ email, name }) })
 }
 
-type VerifyOtpDTO = { _id: string; name: string; email: string; role?: 'admin' | 'member'; token?: string; designation?: string; division?: string; department?: string; mobile?: string; membershipType?: string; memberId?: string; isMember?: boolean }
+type VerifyOtpDTO = { _id: string; name: string; email: string; role?: 'admin' | 'member'; token?: string; refreshToken?: string; designation?: string; division?: string; department?: string; mobile?: string; membershipType?: string; memberId?: string; isMember?: boolean }
 export async function verifyOtp(email: string, code: string, name?: string, password?: string): Promise<User> {
   if (!email || !code) throw new Error('Email and OTP code are required')
   const res = await request<VerifyOtpDTO>('/api/auth/verify-otp', { method: 'POST', body: JSON.stringify({ email, code, name, password }) })
   const token = (res as unknown as { token?: string }).token
+  const refreshToken = (res as unknown as { refreshToken?: string }).refreshToken
   if (token) setToken(token)
+  if (refreshToken) setRefreshToken(refreshToken)
   return { 
     id: res._id, 
     name: res.name, 

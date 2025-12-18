@@ -3,85 +3,37 @@ import { motion } from 'framer-motion'
 export default function LoadingScreen({ message = "Loading..." }: { message?: string }) {
   return (
     <motion.div 
-      className="fixed inset-0 bg-white/90 backdrop-blur-sm z-50 flex flex-col items-center justify-center"
+      className="fixed inset-0 bg-white/95 backdrop-blur-sm z-50 flex flex-col items-center justify-center"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       transition={{ duration: 0.2 }}
     >
-      {/* Chase spinner */}
-      <div className="sk-chase" style={{ width: '64px', height: '64px' }}>
-        <div className="sk-chase-dot"></div>
-        <div className="sk-chase-dot"></div>
-        <div className="sk-chase-dot"></div>
-        <div className="sk-chase-dot"></div>
-        <div className="sk-chase-dot"></div>
-        <div className="sk-chase-dot"></div>
-
-        <style>{`
-          .sk-chase {
-            position: relative;
-            animation: sk-chase 2.5s infinite linear both;
-          }
-
-          .sk-chase-dot {
-            width: 100%;
-            height: 100%;
-            position: absolute;
-            left: 0;
-            top: 0;
-            animation: sk-chase-dot 2.0s infinite ease-in-out both;
-          }
-
-          .sk-chase-dot:before {
-            content: '';
-            display: block;
-            width: 25%;
-            height: 25%;
-            background-color: var(--primary);
-            border-radius: 100%;
-            animation: sk-chase-dot-before 2.0s infinite ease-in-out both;
-          }
-
-          .sk-chase-dot:nth-child(1) { animation-delay: -1.1s; }
-          .sk-chase-dot:nth-child(2) { animation-delay: -1.0s; }
-          .sk-chase-dot:nth-child(3) { animation-delay: -0.9s; }
-          .sk-chase-dot:nth-child(4) { animation-delay: -0.8s; }
-          .sk-chase-dot:nth-child(5) { animation-delay: -0.7s; }
-          .sk-chase-dot:nth-child(6) { animation-delay: -0.6s; }
-          .sk-chase-dot:nth-child(1):before { animation-delay: -1.1s; }
-          .sk-chase-dot:nth-child(2):before { animation-delay: -1.0s; }
-          .sk-chase-dot:nth-child(3):before { animation-delay: -0.9s; }
-          .sk-chase-dot:nth-child(4):before { animation-delay: -0.8s; }
-          .sk-chase-dot:nth-child(5):before { animation-delay: -0.7s; }
-          .sk-chase-dot:nth-child(6):before { animation-delay: -0.6s; }
-
-          @keyframes sk-chase {
-            100% { transform: rotate(360deg); }
-          }
-
-          @keyframes sk-chase-dot {
-            80%, 100% { transform: rotate(360deg); }
-          }
-
-          @keyframes sk-chase-dot-before {
-            50% {
-              transform: scale(0.4);
-            }
-            100%, 0% {
-              transform: scale(1.0);
-            }
-          }
-        `}</style>
-      </div>
-      
-      <motion.p 
-        className="mt-6 text-base text-gray-700 font-medium"
-        animate={{ opacity: [0.6, 1, 0.6] }}
-        transition={{ duration: 1.5, repeat: Infinity }}
+      {/* Simple minimalistic spinner */}
+      <svg 
+        className="animate-spin text-[var(--primary)]" 
+        width="48" 
+        height="48" 
+        viewBox="0 0 24 24" 
+        fill="none"
       >
+        <circle 
+          className="opacity-25" 
+          cx="12" 
+          cy="12" 
+          r="10" 
+          stroke="currentColor" 
+          strokeWidth="3"
+        />
+        <path 
+          className="opacity-75" 
+          fill="currentColor" 
+          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+        />
+      </svg>
+      <p className="mt-4 text-sm text-gray-600 font-medium">
         {message}
-      </motion.p>
+      </p>
     </motion.div>
   )
 }

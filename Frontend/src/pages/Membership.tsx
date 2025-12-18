@@ -2,11 +2,20 @@ import { useState, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
 import Input from "../components/Input";
 import Button from "../components/Button";
-import { submitMembership, getMembershipPricing } from "../services/api";
+import { getMembershipPricing, createMembershipOrder, verifyMembershipPayment } from "../services/api";
 import { usePageTitle } from "../hooks/usePageTitle";
 import type { MembershipFormData } from "../services/api";
 import FileUploader from "../components/FileUploader";
 import { STATES, getCitiesForState } from "../data/statesAndCities";
+
+declare global {
+  interface Window {
+    Razorpay: new (options: Record<string, unknown>) => {
+      open: () => void;
+      close: () => void;
+    };
+  }
+}
 
 type Form = MembershipFormData;
 
@@ -17,6 +26,7 @@ export default function Membership() {
   const [step, setStep] = useState(1);
   const [isFormValid, setIsFormValid] = useState(false);
   const [isStep2Valid, setIsStep2Valid] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [membershipFees, setMembershipFees] = useState({
     ordinary: 500,
     lifetime: 10000,
@@ -194,16 +204,140 @@ export default function Membership() {
 
   const submit = async () => {
     setSubmitting(true);
+    setError(null);
+    
     try {
-      const res = await submitMembership(form);
-      if (res.success && res.membershipId) {
-        setMembershipId(res.membershipId);
-        setStep(5); // Success step
+      // Validate all required fields
+      if (!form.name?.trim() || !form.email?.trim() || !form.mobile?.trim() || 
+          !form.designation?.trim() || !form.division?.trim() || 
+          !form.department?.trim() || !form.type || !form.paymentAmount) {
+        setError("Please fill all required fields");
+        setSubmitting(false);
+        return;
+      }
+
+      // Step 1: Create order on backend
+      const orderResponse = await createMembershipOrder({
+        name: form.name,
+        email: form.email,
+        mobile: form.mobile,
+        designation: form.designation,
+        division: form.division,
+        department: form.department,
+        place: form.place || "",
+        unit: form.unit || "",
+        type: form.type,
+        paymentMethod: form.paymentMethod || "upi",
+        paymentStatus: form.paymentStatus,
+        paymentAmount: form.paymentAmount,
+        status: form.status,
+        personalDetails: form.personalDetails,
+        professionalDetails: form.professionalDetails,
+      });
+
+      if (!orderResponse.success) {
+        setError("Failed to create payment order");
+        setSubmitting(false);
+        return;
+      }
+
+      // Step 2: Load Razorpay script if not already loaded
+      if (!window.Razorpay) {
+        const script = document.createElement("script");
+        script.src = "https://checkout.razorpay.com/v1/checkout.js";
+        script.onload = () => openRazorpayModal(orderResponse);
+        script.onerror = () => {
+          setError("Failed to load Razorpay. Please try again.");
+          setSubmitting(false);
+        };
+        document.body.appendChild(script);
+      } else {
+        openRazorpayModal(orderResponse);
       }
     } catch (error) {
-      console.error("Membership submission error:", error);
+      console.error("Error processing membership:", error);
+      const errorMessage = error instanceof Error ? error.message : "An error occurred. Please try again.";
+      setError(errorMessage);
+      setSubmitting(false);
     }
-    setSubmitting(false);
+  };
+
+  const openRazorpayModal = (orderResponse: Record<string, unknown>) => {
+    const options: Record<string, unknown> = {
+      key: orderResponse.keyId,
+      amount: Math.round((orderResponse.amount as number) * 100),
+      currency: "INR",
+      order_id: orderResponse.orderId,
+      name: "CREA",
+      description: `Membership - ${form.type}`,
+      prefill: {
+        name: form.name,
+        email: form.email,
+        contact: form.mobile,
+      },
+      method: {
+        upi: true,
+        card: true,
+        wallet: true,
+        netbanking: true,
+      },
+      upi: {
+        flow: 'otp',
+      },
+      handler: async (response: Record<string, unknown>) => {
+        // Step 3: Verify payment on backend
+        try {
+          const verifyResponse = await verifyMembershipPayment({
+            razorpay_order_id: response.razorpay_order_id as string,
+            razorpay_payment_id: response.razorpay_payment_id as string,
+            razorpay_signature: response.razorpay_signature as string,
+          });
+
+          if (verifyResponse.success) {
+            setMembershipId(verifyResponse.membershipNumber);
+            setStep(5); // Success step
+            
+            // Reset form after showing success message
+            setTimeout(() => {
+              setForm({
+                name: "",
+                designation: "",
+                division: "Bhusawal",
+                department: "",
+                place: "",
+                unit: "",
+                mobile: "",
+                email: "",
+                type: "ordinary",
+                paymentMethod: "upi",
+                paymentStatus: "completed",
+                paymentAmount: 500,
+                status: "active",
+                personalDetails: {},
+                professionalDetails: {},
+                documents: [],
+              });
+              setShowForm(false);
+              setStep(1);
+            }, 5000);
+          } else {
+            setError(verifyResponse.message || "Payment verification failed");
+          }
+        } catch (error: any) {
+          setError("Payment verification failed: " + (error.message || "Unknown error"));
+        }
+        setSubmitting(false);
+      },
+      modal: {
+        ondismiss: () => {
+          setError("Payment cancelled");
+          setSubmitting(false);
+        },
+      },
+    };
+
+    const rzp = new window.Razorpay(options);
+    rzp.open();
   };
 
   if (!showForm) {
@@ -525,6 +659,21 @@ export default function Membership() {
           </p>
         </motion.div>
 
+        {error && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-4 sm:mb-6 bg-red-50 border border-red-200 rounded-lg p-3 sm:p-4"
+          >
+            <div className="flex items-start gap-2 sm:gap-3">
+              <svg className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4v.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <p className="text-xs sm:text-sm text-red-700">{error}</p>
+            </div>
+          </motion.div>
+        )}
+
         {membershipId ? (
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
@@ -772,7 +921,7 @@ export default function Membership() {
                         }
                       }}
                       required
-                      pattern="[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$"
+                      pattern="[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}"
                       title="Please enter a valid email address"
                     />
                   </div>

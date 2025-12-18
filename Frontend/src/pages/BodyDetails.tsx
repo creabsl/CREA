@@ -6,7 +6,7 @@ import { DIVISIONS } from '../types'
 import { usePageTitle } from '../hooks/usePageTitle'
 import SegmentedControl from '../components/SegmentedControl'
 
-// Demo data - will be replaced with actual API data if available
+// Demo data
 const demoMembers: BodyMember[] = [
   {
     id: '1',
@@ -116,105 +116,51 @@ export default function BodyDetails() {
   }
 
   return (
-    <div className="space-y-8 pb-8">
-      {/* Hero Header with Enhanced Gradient & Pattern */}
-      <motion.div
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#0d2c54] via-[#19417d] to-[#1a4d8f] p-12 md:p-16 text-white shadow-2xl"
-      >
-        <div className="relative z-10">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-            <div className="text-center md:text-left">
-              <motion.div 
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
-                transition={{ duration: 0.5, delay: 0.2 }}
-                className="inline-flex items-center gap-3 mb-4"
-              >
-                <div className="p-3 bg-white/20 rounded-2xl backdrop-blur-sm ring-4 ring-white/10">
-                  <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                  </svg>
-                </div>
-                <div>
-                  <h1 className="text-4xl md:text-5xl font-extrabold !text-white tracking-tight" style={{ color: 'white' }}>Association Body</h1>
-                  <p className="text-white/80 text-sm md:text-base mt-1 font-medium">Leadership & Executive Committee</p>
-                </div>
-              </motion.div>
-              <p className="text-white/90 text-base md:text-lg max-w-2xl leading-relaxed">
-                Meet the dedicated office bearers leading the Central Railway Engineers Association across all divisions
-              </p>
+    <div className="space-y-6">
+      {/* Minimalistic Header */}
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+        <div className="px-6 py-4 bg-blue-50 border-b border-blue-100">
+          <div className="flex items-center gap-3">
+            <svg className="w-6 h-6 text-[var(--primary)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+            </svg>
+            <div>
+              <h1 className="text-xl font-semibold text-[var(--primary)]">Association Body</h1>
+              <p className="text-xs text-gray-600">Executive Committee Members</p>
             </div>
-            
-            {/* Stats Cards */}
-            <motion.div 
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.3 }}
-              className="flex gap-4"
-            >
-              <div className="bg-white/10 backdrop-blur-md rounded-2xl px-6 py-4 text-center border border-white/20">
-                <div className="text-3xl font-bold text-white">{list.length}</div>
-                <div className="text-white/70 text-sm font-medium mt-1">Members</div>
-              </div>
-              <div className="bg-white/10 backdrop-blur-md rounded-2xl px-6 py-4 text-center border border-white/20">
-                <div className="text-3xl font-bold text-[var(--accent)]">5</div>
-                <div className="text-white/70 text-sm font-medium mt-1">Divisions</div>
-              </div>
-            </motion.div>
           </div>
         </div>
-        
-        {/* Enhanced Decorative elements */}
-        <div className="absolute -right-32 -top-32 w-96 h-96 bg-gradient-to-br from-[var(--accent)]/20 to-white/10 rounded-full blur-3xl"></div>
-        <div className="absolute -left-32 -bottom-32 w-96 h-96 bg-gradient-to-tr from-blue-400/20 to-white/10 rounded-full blur-3xl"></div>
-        <div className="absolute top-10 right-1/4 w-2 h-2 bg-white/40 rounded-full animate-ping"></div>
-        <div className="absolute bottom-10 left-1/3 w-3 h-3 bg-[var(--accent)]/40 rounded-full animate-pulse"></div>
-        
-        {/* Grid Pattern Overlay */}
-        <div className="absolute inset-0 opacity-5" style={{ 
-          backgroundImage: 'linear-gradient(white 1px, transparent 1px), linear-gradient(90deg, white 1px, transparent 1px)',
-          backgroundSize: '50px 50px'
-        }}></div>
-      </motion.div>
+      </div>
 
-      {/* Division Selector */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3, delay: 0.1 }}
-        className="flex justify-center"
-      >
+      {/* Division Selection */}
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-5">
+        <div className="flex items-center gap-2 mb-3">
+          <svg className="w-5 h-5 text-[var(--primary)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+          </svg>
+          <h2 className="text-base font-semibold text-[var(--primary)]">Select Division</h2>
+        </div>
         <SegmentedControl
           options={DIVISIONS.map(d => ({ label: d, value: d }))}
           value={selectedDivision}
           onChange={(v) => setSelectedDivision(v as Division)}
         />
-      </motion.div>
+      </div>
 
-      {/* All Members Section */}
+      {/* Members Grid */}
       {list.length === 0 ? (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="text-center py-12 bg-white rounded-xl shadow-md border border-gray-200"
-        >
-          <div className="inline-block p-4 bg-gray-100 rounded-full mb-4">
-            <svg className="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div className="text-center py-12 bg-white rounded-lg shadow-sm border border-gray-200">
+          <div className="inline-block p-3 bg-gray-100 rounded-lg mb-3">
+            <svg className="w-10 h-10 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
             </svg>
           </div>
-          <h3 className="text-xl font-semibold text-gray-700 mb-2">No Members Found</h3>
-          <p className="text-gray-500">There are no body members for {selectedDivision} division yet.</p>
-        </motion.div>
+          <h3 className="text-base font-semibold text-gray-700 mb-1">No Members Found</h3>
+          <p className="text-sm text-gray-500">No body members for {selectedDivision} division yet.</p>
+        </div>
       ) : (
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, delay: 0.2 }}
-        >
+        <motion.div>
           {/* Section Title */}
           <div className="text-center mb-8">
             <motion.h2 

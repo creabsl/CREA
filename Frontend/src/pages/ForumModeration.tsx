@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import { usePageTitle } from '../hooks/usePageTitle'
 import Button from '../components/Button'
-import { getPendingForumPosts, getPendingForumComments, approveForumPost, rejectForumPost, approveForumComment, rejectForumComment, type PendingForumPost, type PendingForumComment } from '../services/api'
+import { getPendingForumPosts, getPendingForumComments, approveForumPost, rejectForumPost, approveForumComment, rejectForumComment } from '../services/api'
+import type { PendingForumPost, PendingForumComment } from '../types'
 
 export default function ForumModeration() {
   usePageTitle('CREA • Forum Moderation')
@@ -208,7 +209,7 @@ export default function ForumModeration() {
                           </span>
                           <span className="text-sm text-gray-500">by {post.author}</span>
                         </div>
-                        <p className="text-sm text-gray-400">{post.createdAtStr || new Date(post.createdAt).toLocaleDateString()}</p>
+                        <p className="text-sm text-gray-400">{new Date(post.createdAt).toLocaleDateString()}</p>
                       </div>
                     </div>
                     <p className="text-gray-700 mb-4 whitespace-pre-wrap">{post.content}</p>
