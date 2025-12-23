@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import Logo from "../assets/crea-logo.svg";
 import PrivacyPolicyModal from "./PrivacyPolicyModal";
+import TermsOfServiceModal from "./TermsOfServiceModal";
 
 type IconProps = { className?: string };
 
@@ -56,7 +57,7 @@ const supportLinks = [
   { label: "Membership Support", href: "tel:+9195503011162" },
   { label: "Suggestion Box", to: "/suggestions" },
   { label: "Privacy Policy", action: "privacy" },
-  { label: "Terms of Service", href: "#" },
+  { label: "Terms of Service", action: "terms" },
 ];
 
 const socialLinks = [
@@ -83,6 +84,7 @@ const socialLinks = [
 export default function Footer() {
   const year = new Date().getFullYear();
   const [isPrivacyModalOpen, setIsPrivacyModalOpen] = useState(false);
+  const [isTermsModalOpen, setIsTermsModalOpen] = useState(false);
 
   return (
     <footer className="mt-8 border-t bg-white/80 backdrop-blur">
@@ -174,6 +176,13 @@ export default function Footer() {
                     >
                       {label}
                     </button>
+                  ) : action === "terms" ? (
+                    <button
+                      onClick={() => setIsTermsModalOpen(true)}
+                      className="text-xs sm:text-sm text-gray-500 transition hover:text-[var(--primary)] hover:underline"
+                    >
+                      {label}
+                    </button>
                   ) : (
                     <a
                       href={href}
@@ -208,9 +217,12 @@ export default function Footer() {
             >
               Privacy Policy
             </button>
-            <a href="#" className="transition hover:text-[var(--primary)]">
+            <button
+              onClick={() => setIsTermsModalOpen(true)}
+              className="transition hover:text-[var(--primary)] hover:underline"
+            >
               Terms of Use
-            </a>
+            </button>
             <a
               href="mailto:creabsl@gmail.com"
               className="transition hover:text-[var(--primary)]"
@@ -223,6 +235,10 @@ export default function Footer() {
       <PrivacyPolicyModal 
         isOpen={isPrivacyModalOpen} 
         onClose={() => setIsPrivacyModalOpen(false)} 
+      />
+      <TermsOfServiceModal 
+        isOpen={isTermsModalOpen} 
+        onClose={() => setIsTermsModalOpen(false)} 
       />
     </footer>
   );
