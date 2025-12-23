@@ -189,6 +189,13 @@ export default function Dashboard() {
   const navigate = useNavigate()
   usePageTitle('CREA • Dashboard')
   const [totals, setTotals] = useState<{ divisions: number; members: number; courtCases: number }>({ divisions: 0, members: 0, courtCases: 0 })
+  const [calendarYear, setCalendarYear] = useState(new Date().getFullYear())
+  const [calendarMonth, setCalendarMonth] = useState(new Date().getMonth())
+  
+  const handleMonthChange = (year: number, month: number) => {
+    setCalendarYear(year)
+    setCalendarMonth(month)
+  }
   useEffect(() => {
     const load = async () => {
       const [counts, totals, events, topics, circulars, cases, advertisements, achievements, breakingNews] = await Promise.all([
@@ -782,13 +789,14 @@ export default function Dashboard() {
             transition={{ delay: 1.3, duration: 0.5 }}
           >
             <Calendar 
-              year={new Date().getFullYear()} 
-              month={new Date().getMonth()} 
+              year={calendarYear} 
+              month={calendarMonth} 
               markers={events.map(e => ({
                 date: e.date,
                 title: e.title,
                 type: e.breaking ? 'breaking' : 'event'
               }))}
+              onMonthChange={handleMonthChange}
             />
           </motion.div>
         </div>
