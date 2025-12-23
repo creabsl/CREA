@@ -36,6 +36,7 @@ export type CourtCase = {
   caseNumber: string;
   date: string;
   subject: string;
+  url?: string;
 };
 
 export type ManualCategory =
@@ -48,6 +49,8 @@ export type Manual = {
   title: string;
   url?: string;
   category?: ManualCategory;
+  date?: string;
+  subject?: string;
 };
 
 export type BodyMember = {

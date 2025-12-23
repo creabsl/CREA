@@ -25,7 +25,7 @@ import type {
 } from "../types";
 
 // Base URL for backend API
-const API_URL = import.meta.env?.VITE_API_URL || "http://localhost:5001";
+const API_URL = import.meta.env?.VITE_API_URL || "https://crea-main.onrender.com";
 
 // Token management
 const TOKEN_KEY = "crea:token";
