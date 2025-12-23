@@ -6,7 +6,7 @@ const { protect, adminOnly } = require('../middleware/authMiddleware');
 const { uploadSingle } = require('../middleware/upload');
 
 const c = crud(CourtCase);
-router.get('/', protect, c.list);
+router.get('/', c.list);
 
 // Create court case with optional file upload
 router.post('/', protect, adminOnly, uploadSingle('court-cases'), async (req, res) => {

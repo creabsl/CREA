@@ -6,7 +6,7 @@ const { protect, adminOnly } = require('../middleware/authMiddleware');
 const { uploadSingle } = require('../middleware/upload');
 
 const c = crud(Circular);
-router.get('/', protect, c.list);
+router.get('/', c.list);
 
 // Create circular with optional file
 router.post('/', protect, adminOnly, uploadSingle('circulars'), async (req, res) => {
