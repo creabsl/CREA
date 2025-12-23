@@ -21,7 +21,6 @@ import type {
   PendingForumComment,
   BreakingNews,
   DocumentFeedItem,
-  DocumentType,
 } from "../types";
 
 // Base URL for backend API
