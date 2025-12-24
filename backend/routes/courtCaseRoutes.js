@@ -1,0 +1,11 @@
+const express = require('express');
+const router = express.Router();
+const CourtCase = require('../models/courtCaseModel');
+const { crud } = require('../controllers/basicCrudFactory');
+const { protect, adminOnly } = require('../middleware/authMiddleware');
+const c = crud(CourtCase);
+router.get('/', c.list);
+router.post('/', protect, adminOnly, c.create);
+router.put('/:id', protect, adminOnly, c.update);
+router.delete('/:id', protect, adminOnly, c.remove);
+module.exports = router;
