@@ -13,7 +13,7 @@ import { usePageTitle } from '../hooks/usePageTitle'
 import { useAuth } from '../context/auth'
 import Input from '../components/Input'
 
-const API_URL = import.meta.env?.VITE_API_URL || 'http://localhost:5001'
+const API_URL = import.meta.env?.VITE_API_URL || 'https://api.crea.org.in'
 
 // Auto-rotating slideshow component for completed events
 function AutoRotatingSlideshow({ photos, onImageClick }: { photos: string[], onImageClick: (url: string) => void }) {

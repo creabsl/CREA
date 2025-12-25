@@ -12,7 +12,7 @@ import { getCirculars, getManuals, getCourtCases } from '../services/api'
 import type { Circular, Manual, CourtCase } from '../types'
 
 // Backend API URL for file access
-const API_URL = import.meta.env?.VITE_API_URL || 'http://localhost:5001'
+const API_URL = import.meta.env?.VITE_API_URL || 'https://api.crea.org.in'
 
 type DocumentType = 'circular' | 'manual' | 'court-case'
 

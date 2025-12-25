@@ -1337,7 +1337,7 @@ function MembersAdmin({
                                     const res = await fetch(
                                       `${
                                         import.meta.env.VITE_API_URL ||
-                                        "http://localhost:5001"
+                                        "https://api.crea.org.in"
                                       }/api/users/${u.id}/generate-member-id`,
                                       {
                                         method: "POST",
@@ -1746,7 +1746,7 @@ function EventsAdmin({
                   let photoSrc = photo;
                   // Handle relative paths - prepend API URL
                   if (typeof photo === 'string' && !photo.startsWith('http') && !photo.startsWith('data:')) {
-                    const API_URL = import.meta.env?.VITE_API_URL || 'http://localhost:5001';
+                    const API_URL = import.meta.env?.VITE_API_URL || 'https://api.crea.org.in';
                     photoSrc = `${API_URL}${photo.startsWith('/') ? photo : '/' + photo}`;
                   }
                   
@@ -4074,7 +4074,7 @@ function SuggestionsAdmin({
                             key={idx}
                             href={`${
                               import.meta.env?.VITE_API_URL ||
-                              "http://localhost:5001"
+                              "https://api.crea.org.in"
                             }/uploads/suggestions/${fileName}`}
                             target="_blank"
                             rel="noopener noreferrer"
@@ -4274,7 +4274,7 @@ function SettingsAdmin({
                       const response = await fetch(
                         `${
                           import.meta.env?.VITE_API_URL ||
-                          "http://localhost:5001"
+                          "https://api.crea.org.in"
                         }/api/settings/initialize`,
                         {
                           method: "POST",

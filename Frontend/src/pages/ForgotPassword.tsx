@@ -4,7 +4,7 @@ import Input from "../components/Input";
 import { Link } from "react-router-dom";
 import { usePageTitle } from "../hooks/usePageTitle";
 
-const API_URL = import.meta.env?.VITE_API_URL || 'http://localhost:5001';
+const API_URL = import.meta.env?.VITE_API_URL || 'https://api.crea.org.in';
 
 export default function ForgotPassword() {
   usePageTitle("CREA • Forgot password");

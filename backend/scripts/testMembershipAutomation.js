@@ -5,7 +5,7 @@
 
 const axios = require("axios");
 
-const API_BASE = "http://localhost:5001/api";
+const API_BASE = "https://api.crea.org.in/api";
 
 // Test data
 const testUser = {
@@ -73,7 +73,7 @@ async function testGetMemberships() {
 async function runTests() {
   console.log("🚀 Starting Membership System Tests\n");
   console.log(
-    "📌 Make sure the backend server is running on http://localhost:5001\n"
+    "📌 Make sure the backend server is running on https://api.crea.org.in\n"
   );
   console.log("=".repeat(60));
 
