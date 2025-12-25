@@ -1,7 +1,7 @@
 import { NavLink, Link } from "react-router-dom";
 import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { DURATION, TWEEN } from "../animations";
+import { TWEEN } from "../animations";
 import logo from "../assets/crea-logo.svg";
 import NavDropdown from "./NavDropdown";
 import { useAuth } from "../context/auth";
