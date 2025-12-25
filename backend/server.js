@@ -19,9 +19,10 @@ const corsOptions = {
     
     // Allowed domains
     const allowedOrigins = [
+	  'https://crea.org.in'
       'http://localhost:5173', 
       'http://localhost:5174',
-      process.env.CLIENT_URL, // We will set this on the server
+      //process.env.CLIENT_URL, // We will set this on the server
       // Add your Cloudflare URL here later, e.g., 'https://crea-final.pages.dev'
     ];
     
