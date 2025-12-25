@@ -1,6 +1,6 @@
 // Cloudflare Pages Worker for SPA routing
 export default {
-  async fetch(request) {
+  async fetch(request, env) {
     const url = new URL(request.url);
     const pathname = url.pathname;
 
@@ -20,7 +20,10 @@ export default {
     }
 
     // For everything else (routes), serve index.html
-    const indexResponse = await env.ASSETS.fetch(new Request(new URL('/index.html', url)));
+    const indexUrl = new URL('/index.html', url);
+    const indexRequest = new Request(indexUrl, request);
+    const indexResponse = await env.ASSETS.fetch(indexRequest);
+    
     return new Response(indexResponse.body, {
       status: 200,
       headers: indexResponse.headers,
