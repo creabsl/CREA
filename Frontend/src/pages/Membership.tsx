@@ -1211,8 +1211,10 @@ export default function Membership() {
                               className="relative flex cursor-pointer rounded border bg-white p-3 shadow-sm hover:border-[var(--primary)] transition-colors focus:outline-none"
                             >
                               <input
+                                id={`payment-${method}`}
                                 type="radio"
                                 name="payment"
+                                value={method}
                                 className="sr-only"
                                 checked={form.paymentMethod === method}
                                 onChange={() =>

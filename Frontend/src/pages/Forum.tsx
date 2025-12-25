@@ -157,6 +157,9 @@ export default function Forum() {
                 </svg>
               </div>
               <input 
+                id="forum-search"
+                name="search"
+                type="search"
                 placeholder="Search topics..." 
                 value={query} 
                 onChange={(e)=>setQuery(e.target.value)} 
@@ -372,6 +375,9 @@ export default function Forum() {
                       <div className="mt-4 pt-4 border-t">
                         <div className="flex gap-2">
                           <input 
+                            id={`comment-input-${p.id}`}
+                            name="comment"
+                            type="text"
                             value={commentInputs[p.id] || ''} 
                             onChange={(e)=>setCommentInputs(s=>({...s,[p.id]:e.target.value}))} 
                             placeholder="Write a comment..." 
@@ -414,7 +420,10 @@ export default function Forum() {
                   </svg>
                   Create a Post
                 </h4>
+                <label htmlFor="new-post-textarea" className="sr-only">Write your post</label>
                 <textarea 
+                  id="new-post-textarea"
+                  name="post-content"
                   value={reply} 
                   onChange={(e)=>setReply(e.target.value)} 
                   rows={4} 

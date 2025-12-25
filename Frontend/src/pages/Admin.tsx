@@ -6198,7 +6198,7 @@ function AchievementsAdmin() {
     setType(achievement.type);
     setTitle(achievement.title);
     setDescription(achievement.description);
-    setDate(achievement.date.split("T")[0]);
+    setDate(achievement.date ? achievement.date.split("T")[0] : "");
     setImageUrl(achievement.imageUrl || "");
     setCategory(achievement.category || "");
     setIsActive(achievement.isActive);

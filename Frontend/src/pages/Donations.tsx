@@ -348,8 +348,10 @@ export default function Donations() {
               
               {/* Employee Checkbox */}
               <div className="flex items-center pt-6">
-                <label className="flex items-center gap-2 cursor-pointer">
+                <label htmlFor="is-employee-checkbox" className="flex items-center gap-2 cursor-pointer">
                   <input
+                    id="is-employee-checkbox"
+                    name="isEmployee"
                     type="checkbox"
                     checked={showEmployeeFields}
                     onChange={(e) => {
@@ -447,8 +449,10 @@ export default function Donations() {
 
               {/* Anonymous Donation */}
               <div className="md:col-span-2 flex items-center">
-                <label className="flex items-center gap-2 cursor-pointer">
+                <label htmlFor="anonymous-checkbox" className="flex items-center gap-2 cursor-pointer">
                   <input
+                    id="anonymous-checkbox"
+                    name="isAnonymous"
                     type="checkbox"
                     checked={formData.isAnonymous}
                     onChange={(e) => handleInputChange('isAnonymous', e.target.checked)}

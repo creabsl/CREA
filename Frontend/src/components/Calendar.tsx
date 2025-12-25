@@ -28,8 +28,8 @@ export default function Calendar({ year, month, markers = [], onMonthChange }: {
       const arr = map.get(key) || []
       arr.push({ title: undefined, content: undefined, type: undefined })
       map.set(key, arr)
-    } else if (typeof m === 'object') {
-      const key = (m.date || '').split('T')[0]
+    } else if (typeof m === 'object' && m.date) {
+      const key = m.date.split('T')[0]
       const arr = map.get(key) || []
       arr.push({ title: m.title, content: m.content, type: m.type })
       map.set(key, arr)

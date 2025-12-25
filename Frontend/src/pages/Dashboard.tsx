@@ -69,7 +69,11 @@ function AdvertisementCarousel({ advertisements }: { advertisements: Advertiseme
                   <div className="w-full h-80 rounded-lg shadow-lg overflow-hidden">
                     {currentAd.videoUrl.includes('youtube.com') || currentAd.videoUrl.includes('youtu.be') ? (
                       <iframe
-                        src={`https://www.youtube.com/embed/${currentAd.videoUrl.split('v=')[1]?.split('&')[0] || currentAd.videoUrl.split('/').pop()}`}
+                        src={`https://www.youtube.com/embed/${
+                          currentAd.videoUrl.includes('v=') 
+                            ? currentAd.videoUrl.split('v=')[1]?.split('&')[0] 
+                            : currentAd.videoUrl.split('/').pop() || ''
+                        }`}
                         className="w-full h-full"
                         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                         allowFullScreen
@@ -504,11 +508,11 @@ export default function Dashboard() {
                   <div className="p-2.5">
                     <div className="flex items-center gap-1.5 mb-1.5">
                       <div className="text-xs text-gray-500">
-                        {new Date(achievement.date).toLocaleDateString('en-US', { 
+                        {achievement.date ? new Date(achievement.date).toLocaleDateString('en-US', { 
                           day: 'numeric', 
                           month: 'short', 
                           year: 'numeric' 
-                        })}
+                        }) : 'Date not available'}
                       </div>
                       {achievement.category && (
                         <>
