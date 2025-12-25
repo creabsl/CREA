@@ -11,7 +11,6 @@ dotenv.config();
 const app = express();
 
 // Middleware
-// Middleware
 const corsOptions = {
   origin: function (origin, callback) {
     // Allow requests with no origin (like mobile apps or curl requests)
@@ -21,8 +20,9 @@ const corsOptions = {
     const allowedOrigins = [
       'http://localhost:5173', 
       'http://localhost:5174',
+      'https://crea.org.in',
+      'https://www.crea.org.in',
       process.env.CLIENT_URL, // We will set this on the server
-      // Add your Cloudflare URL here later, e.g., 'https://crea-final.pages.dev'
     ];
     
     // checks if the origin is in the allowed list or if it's a preview deployment
@@ -35,7 +35,6 @@ const corsOptions = {
   credentials: true,
   optionsSuccessStatus: 200
 };
-app.use(cors(corsOptions));
 app.use(cors(corsOptions));
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
