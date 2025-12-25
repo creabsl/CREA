@@ -24,7 +24,7 @@ import type {
 } from "../types";
 
 // Base URL for backend API
-export const API_URL = "https://api.crea.org.in/api";
+export const API_URL = "https://api.crea.org.in";
 
 // Token management
 const TOKEN_KEY = "crea:token";
