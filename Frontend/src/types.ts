@@ -252,8 +252,12 @@ export type Donation = {
   updatedAt: string;
 };
 
-export type AdvertisementType = "announcement" | "achievement" | "notification";
-export type AdvertisementPriority = "high" | "medium" | "low";
+export type AdvertisementType =
+  | "announcement"
+  | "achievement"
+  | "promotion"
+  | "event";
+export type AdvertisementPriority = "high" | "normal";
 
 export type Advertisement = {
   _id: string;
@@ -314,7 +318,7 @@ export type BreakingNews = {
   updatedAt: string;
 };
 
-export type DocumentType = 'circular' | 'manual' | 'court-case';
+export type DocumentType = "circular" | "manual" | "court-case";
 
 export type DocumentFeedItem = {
   id: string;

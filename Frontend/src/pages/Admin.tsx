@@ -47,6 +47,10 @@ import {
   getSuggestions,
   deleteSuggestion,
   getAllDonations,
+  getAllAdvertisements,
+  createAdvertisement,
+  updateAdvertisement,
+  deleteAdvertisement,
 } from "../services/api";
 import type {
   Circular,
@@ -62,6 +66,7 @@ import type {
 } from "../types";
 import BreakingNewsAdmin from "../components/BreakingNewsAdmin";
 import MembershipsAdmin from "../components/MembershipsAdmin";
+import AdvertisementsAdmin from "../components/AdvertisementsAdmin";
 import { DIVISIONS } from "../types";
 import type { MemberUser, Setting } from "../services/api";
 import {
@@ -91,6 +96,7 @@ export default function Admin() {
     | "achievements"
     | "breaking-news"
     | "memberships"
+    | "advertisements"
   >((urlTab as any) || "events");
   const [documentSubTab, setDocumentSubTab] = useState<
     "circulars" | "manuals" | "court-cases"
@@ -194,6 +200,7 @@ export default function Admin() {
         {(
           [
             "events",
+            "advertisements",
             "documents",
             "forum",
             "suggestions",
@@ -247,6 +254,7 @@ export default function Admin() {
       </div>
 
       {tab === "events" && <EventsAdmin data={events} onChange={setEvents} />}
+      {tab === "advertisements" && <AdvertisementsAdmin />}
       {tab === "documents" && (
         <DocumentsAdmin
           manuals={manuals}
