@@ -11,7 +11,32 @@ dotenv.config();
 const app = express();
 
 // Middleware
-app.use(cors());
+// Middleware
+const corsOptions = {
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    
+    // Allowed domains
+    const allowedOrigins = [
+      'http://localhost:5173', 
+      'http://localhost:5174',
+      process.env.CLIENT_URL, // We will set this on the server
+      // Add your Cloudflare URL here later, e.g., 'https://crea-final.pages.dev'
+    ];
+    
+    // checks if the origin is in the allowed list or if it's a preview deployment
+    if (allowedOrigins.indexOf(origin) !== -1 || origin.includes('.pages.dev')) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true,
+  optionsSuccessStatus: 200
+};
+app.use(cors(corsOptions));
+app.use(cors(corsOptions));
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
