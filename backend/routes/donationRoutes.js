@@ -13,7 +13,11 @@ const {
 const { protect, adminOnly } = require('../middleware/authMiddleware');
 
 // Payment routes (public)
-router.post('/create-order', createOrder);
+router.post('/create-order', (req, res, next) => {
+  console.log('[Donation Route] POST /create-order hit');
+  console.log('[Donation Route] Request body:', req.body);
+  createOrder(req, res, next);
+});
 router.post('/verify-payment', verifyPayment);
 
 // Download receipt (public - requires donation ID)

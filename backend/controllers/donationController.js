@@ -8,11 +8,17 @@ const path = require('path');
 
 // Initialize Razorpay instance
 let razorpay = null;
+console.log('[Donation Controller] RAZORPAY_KEY_ID:', process.env.RAZORPAY_KEY_ID ? 'present' : 'MISSING');
+console.log('[Donation Controller] RAZORPAY_KEY_SECRET:', process.env.RAZORPAY_KEY_SECRET ? 'present' : 'MISSING');
+
 if (process.env.RAZORPAY_KEY_ID && process.env.RAZORPAY_KEY_SECRET) {
   razorpay = new Razorpay({
     key_id: process.env.RAZORPAY_KEY_ID,
     key_secret: process.env.RAZORPAY_KEY_SECRET
   });
+  console.log('[Donation Controller] Razorpay initialized successfully');
+} else {
+  console.log('[Donation Controller] WARNING: Razorpay NOT initialized - missing credentials');
 }
 
 // Email transporter configuration
@@ -154,7 +160,18 @@ const sendReceiptEmail = async (donation, receiptPath, razorpayPaymentId) => {
  */
 exports.createOrder = async (req, res) => {
   try {
+    // Check if Razorpay is initialized
+    if (!razorpay) {
+      console.error('Razorpay not initialized. KEY_ID:', process.env.RAZORPAY_KEY_ID ? 'present' : 'missing', 'KEY_SECRET:', process.env.RAZORPAY_KEY_SECRET ? 'present' : 'missing');
+      return res.status(500).json({ 
+        success: false, 
+        message: 'Razorpay is not configured. Please check your environment variables.' 
+      });
+    }
+
     const { fullName, email, mobile, amount, purpose, isEmployee, employeeId, designation, division, department, isAnonymous, address, city, state, pincode, message, paymentMethod, upiId } = req.body;
+
+    console.log('Received donation request:', { fullName, email, mobile, amount, purpose });
 
     if (!fullName || !email || !mobile || !amount || amount <= 0) {
       return res.status(400).json({ 
@@ -169,7 +186,7 @@ exports.createOrder = async (req, res) => {
       email,
       mobile,
       amount: Math.round(amount * 100) / 100, // Ensure valid amount
-      purpose,
+      purpose: (purpose || 'general').toLowerCase(),
       isEmployee: isEmployee || false,
       employeeId,
       designation,
@@ -186,7 +203,9 @@ exports.createOrder = async (req, res) => {
       paymentStatus: 'pending'
     });
 
+    console.log('Saving donation:', donation);
     await donation.save();
+    console.log('Donation saved successfully with ID:', donation._id);
 
     // Create Razorpay Order (amount in paise)
     const options = {
@@ -195,15 +214,18 @@ exports.createOrder = async (req, res) => {
       receipt: `donation_${donation._id.toString()}`,
       notes: {
         donationId: donation._id.toString(),
-        purpose: purpose
+        purpose: donation.purpose
       }
     };
 
+    console.log('Creating Razorpay order with options:', options);
     const order = await razorpay.orders.create(options);
+    console.log('Razorpay order created:', order.id);
 
     // Save Razorpay order ID to donation
     donation.razorpayOrderId = order.id;
     await donation.save();
+    console.log('Donation updated with Razorpay order ID');
 
     res.status(201).json({
       success: true,
@@ -213,11 +235,15 @@ exports.createOrder = async (req, res) => {
       amount: donation.amount
     });
   } catch (error) {
-    console.error('Error creating donation order:', error);
+    console.error('Error creating donation order:');
+    console.error('Message:', error.message);
+    console.error('Stack:', error.stack);
+    console.error('Full error:', JSON.stringify(error, null, 2));
     res.status(500).json({ 
       success: false, 
       message: 'Failed to create order',
-      error: error.message 
+      error: error.message,
+      stack: error.stack
     });
   }
 };
@@ -268,10 +294,12 @@ exports.verifyPayment = async (req, res) => {
     let paymentMethod = 'card';
     let upiId = null;
     try {
-      const paymentDetails = await razorpay.payments.fetch(razorpay_payment_id);
-      paymentMethod = paymentDetails.method || 'card'; // upi, card, netbanking, wallet
-      if (paymentDetails.vpa) {
-        upiId = paymentDetails.vpa; // VPA for UPI payments
+      if (razorpay) {
+        const paymentDetails = await razorpay.payments.fetch(razorpay_payment_id);
+        paymentMethod = paymentDetails.method || 'card'; // upi, card, netbanking, wallet
+        if (paymentDetails.vpa) {
+          upiId = paymentDetails.vpa; // VPA for UPI payments
+        }
       }
     } catch (fetchError) {
       console.error('Error fetching payment details:', fetchError);

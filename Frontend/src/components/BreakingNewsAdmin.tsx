@@ -14,10 +14,10 @@ export default function BreakingNewsAdmin() {
   const [formData, setFormData] = useState({
     title: '',
     description: '',
-    imageUrl: '',
     priority: 5,
     isActive: true,
-    expiresAt: ''
+    expiresDate: '',
+    expiresTime: ''
   })
 
   useEffect(() => {
@@ -41,10 +41,10 @@ export default function BreakingNewsAdmin() {
     setFormData({
       title: '',
       description: '',
-      imageUrl: '',
       priority: 5,
       isActive: true,
-      expiresAt: ''
+      expiresDate: '',
+      expiresTime: ''
     })
     setEditingItem(null)
     setShowForm(false)
@@ -55,9 +55,14 @@ export default function BreakingNewsAdmin() {
     setLoading(true)
 
     try {
+      let expiresAt = null
+      if (formData.expiresDate && formData.expiresTime) {
+        expiresAt = `${formData.expiresDate}T${formData.expiresTime}:00`
+      }
+
       const payload = {
         ...formData,
-        expiresAt: formData.expiresAt || null
+        expiresAt
       }
 
       if (editingItem) {
@@ -79,14 +84,23 @@ export default function BreakingNewsAdmin() {
   }
 
   const handleEdit = (item: BreakingNews) => {
+    let expiresDate = ''
+    let expiresTime = ''
+    
+    if (item.expiresAt) {
+      const date = new Date(item.expiresAt)
+      expiresDate = date.toISOString().split('T')[0]
+      expiresTime = date.toTimeString().slice(0, 5)
+    }
+
     setEditingItem(item)
     setFormData({
       title: item.title,
       description: item.description,
-      imageUrl: item.imageUrl || '',
       priority: item.priority,
       isActive: item.isActive,
-      expiresAt: item.expiresAt ? new Date(item.expiresAt).toISOString().slice(0, 16) : ''
+      expiresDate,
+      expiresTime
     })
     setShowForm(true)
   }
@@ -179,17 +193,6 @@ export default function BreakingNewsAdmin() {
               />
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Image URL (Optional)
-              </label>
-              <Input
-                value={formData.imageUrl}
-                onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
-                placeholder="https://example.com/image.jpg"
-              />
-            </div>
-
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -204,16 +207,33 @@ export default function BreakingNewsAdmin() {
                 />
                 <p className="text-xs text-gray-500 mt-1">Higher priority appears first</p>
               </div>
+            </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Expires At (Optional)
-                </label>
-                <Input
-                  type="datetime-local"
-                  value={formData.expiresAt}
-                  onChange={(e) => setFormData({ ...formData, expiresAt: e.target.value })}
-                />
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-3">
+                Expires At (Optional)
+              </label>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">
+                    Date
+                  </label>
+                  <Input
+                    type="date"
+                    value={formData.expiresDate}
+                    onChange={(e) => setFormData({ ...formData, expiresDate: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">
+                    Time
+                  </label>
+                  <Input
+                    type="time"
+                    value={formData.expiresTime}
+                    onChange={(e) => setFormData({ ...formData, expiresTime: e.target.value })}
+                  />
+                </div>
               </div>
             </div>
 
@@ -294,9 +314,6 @@ export default function BreakingNewsAdmin() {
                   <tr key={item._id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm font-medium text-gray-900">{item.title}</div>
-                      {item.imageUrl && (
-                        <div className="text-xs text-gray-500 mt-1">Has image</div>
-                      )}
                     </td>
                     <td className="px-6 py-4">
                       <div className="text-sm text-gray-500 max-w-xs truncate">

@@ -1,5 +1,8 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import Logo from "../assets/crea-logo.svg";
+import PrivacyPolicyModal from "./PrivacyPolicyModal";
+import TermsOfServiceModal from "./TermsOfServiceModal";
 
 type IconProps = { className?: string };
 
@@ -53,12 +56,8 @@ const supportLinks = [
   { label: "Meet the Developers", to: "/developers" },
   { label: "Membership Support", href: "tel:+9195503011162" },
   { label: "Suggestion Box", to: "/suggestions" },
-  {
-    label: "Privacy Policy",
-    href: "https://api.crea.org.in/uploads/document/CREA_Short_Privacy_Policy.pdf",
-    target: "_blank",
-  },
-  { label: "Terms of Service", href: "#" },
+  { label: "Privacy Policy", action: "privacy" },
+  { label: "Terms of Service", action: "terms" },
 ];
 
 const socialLinks = [
@@ -84,6 +83,8 @@ const socialLinks = [
 
 export default function Footer() {
   const year = new Date().getFullYear();
+  const [isPrivacyModalOpen, setIsPrivacyModalOpen] = useState(false);
+  const [isTermsModalOpen, setIsTermsModalOpen] = useState(false);
 
   return (
     <footer className="mt-8 border-t bg-white/80 backdrop-blur">
@@ -159,7 +160,7 @@ export default function Footer() {
               Stay Connected
             </h3>
             <ul className="mt-2 space-y-1.5">
-              {supportLinks.map(({ label, href, to, target }) => (
+              {supportLinks.map(({ label, href, to, target, action }: any) => (
                 <li key={label}>
                   {to ? (
                     <Link
@@ -168,6 +169,20 @@ export default function Footer() {
                     >
                       {label}
                     </Link>
+                  ) : action === "privacy" ? (
+                    <button
+                      onClick={() => setIsPrivacyModalOpen(true)}
+                      className="text-xs sm:text-sm text-[var(--primary)] transition hover:text-[var(--accent)] text-left"
+                    >
+                      {label}
+                    </button>
+                  ) : action === "terms" ? (
+                    <button
+                      onClick={() => setIsTermsModalOpen(true)}
+                      className="text-xs sm:text-sm text-[var(--primary)] transition hover:text-[var(--accent)] text-left"
+                    >
+                      {label}
+                    </button>
                   ) : (
                     <a
                       href={href}
@@ -196,26 +211,35 @@ export default function Footer() {
             reserved.
           </div>
           <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-            <a
-              href="https://api.crea.org.in/uploads/document/CREA_Short_Privacy_Policy.pdf"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="transition hover:text-[var(--primary)]"
+            <button
+              onClick={() => setIsPrivacyModalOpen(true)}
+              className="text-[var(--primary)] transition hover:text-[var(--accent)]"
             >
               Privacy Policy
-            </a>
-            <a href="#" className="transition hover:text-[var(--primary)]">
+            </button>
+            <button
+              onClick={() => setIsTermsModalOpen(true)}
+              className="text-[var(--primary)] transition hover:text-[var(--accent)]"
+            >
               Terms of Use
-            </a>
+            </button>
             <a
-              href="mailto:secretary@crea.org"
+              href="mailto:creabsl@gmail.com"
               className="transition hover:text-[var(--primary)]"
             >
-              secretary@crea.org
+              creabsl@gmail.com
             </a>
           </div>
         </div>
       </div>
+      <PrivacyPolicyModal 
+        isOpen={isPrivacyModalOpen} 
+        onClose={() => setIsPrivacyModalOpen(false)} 
+      />
+      <TermsOfServiceModal 
+        isOpen={isTermsModalOpen} 
+        onClose={() => setIsTermsModalOpen(false)} 
+      />
     </footer>
   );
 }

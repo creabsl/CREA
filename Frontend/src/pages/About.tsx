@@ -8,6 +8,7 @@ import Card from '../components/Card'
 import { usePageTitle } from '../hooks/usePageTitle'
 import { useAuth } from '../context/auth'
 import Modal from '../components/Modal'
+import { getTotals } from '../services/api'
 
 // Simple Chevron Icons
 const ChevronLeftIcon = ({ className }: { className?: string }) => (
@@ -120,9 +121,28 @@ export default function About() {
   const [expandedFaq, setExpandedFaq] = useState<number | null>(null)
   const [showUploadModal, setShowUploadModal] = useState(false)
   const [charterPdfUrl, setCharterPdfUrl] = useState('/charter-of-demand-demo.pdf')
+  const [memberCount, setMemberCount] = useState(0)
+  const [divisions, setDivisions] = useState(5)
   // Admin milestone creation moved to Admin Panel
 
   const isAdmin = user?.role === 'admin'
+
+  // Fetch actual member count from API
+  useEffect(() => {
+    const fetchTotals = async () => {
+      try {
+        const data = await getTotals()
+        setMemberCount(data.members)
+        setDivisions(data.divisions)
+      } catch (error) {
+        console.error('Failed to fetch totals:', error)
+        // Use default fallback values
+        setMemberCount(1000)
+        setDivisions(5)
+      }
+    }
+    fetchTotals()
+  }, [])
 
   const handlePdfDownload = () => {
     // Create a demo PDF download
@@ -307,11 +327,11 @@ export default function About() {
                   <div className="text-xs sm:text-sm md:text-base text-gray-300">Years of Service</div>
                 </div>
                 <div className="text-center border-x border-[var(--secondary)]">
-                  <CountUp end={5} duration={1.5} suffix="" />
+                  <CountUp end={divisions} duration={1.5} suffix="" />
                   <div className="text-xs sm:text-sm md:text-base text-gray-300">Divisions</div>
                 </div>
                 <div className="text-center">
-                  <CountUp end={1000} duration={2.5} suffix="+" />
+                  <CountUp end={memberCount} duration={2.5} suffix="+" />
                   <div className="text-xs sm:text-sm md:text-base text-gray-300">Members</div>
                 </div>
               </motion.div>
@@ -350,7 +370,7 @@ export default function About() {
       </div>
 
       {/* Interactive Timeline */}
-      <div className="relative bg-gradient-to-br from-[#0a2343] via-[var(--primary)] to-[#0a2343] rounded-3xl p-8 md:p-12 overflow-hidden">
+      <div className="relative bg-gradient-to-br from-[#0a2343] via-[var(--primary)] to-[#0a2343] rounded-2xl sm:rounded-3xl p-4 sm:p-6 md:p-12 overflow-hidden">
         {/* Background decoration */}
         <div className="absolute inset-0 opacity-10">
           <div className="absolute inset-0" style={{
@@ -359,23 +379,23 @@ export default function About() {
         </div>
 
         <div className="relative z-10">
-          <div className="text-center mb-12">
-            <h2 className="text-4xl md:text-5xl font-bold text-white mb-4" style={{ color: '#ffffff', textShadow: '0 2px 4px rgba(221, 212, 212, 0.3)' }}>Our Journey Through Time</h2>
-            <p className="text-xl text-gray-200">Milestones in CREA's history</p>
+          <div className="text-center mb-8 sm:mb-10 md:mb-12">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-2 sm:mb-3 md:mb-4 px-2" style={{ color: '#ffffff', textShadow: '0 2px 4px rgba(221, 212, 212, 0.3)' }}>Our Journey Through Time</h2>
+            <p className="text-sm sm:text-base md:text-lg lg:text-xl text-gray-200 px-2">Milestones in CREA's history</p>
           </div>
           
           {/* Enhanced Train Track Timeline */}
-          <div className="relative mt-16 mb-12">
+          <div className="relative mt-8 sm:mt-12 md:mt-16 mb-8 sm:mb-10 md:mb-12 px-2 sm:px-0">
             {/* Glowing track */}
-            <div className="absolute top-1/2 left-0 right-0 h-1 -translate-y-1/2">
+            <div className="absolute top-1/2 left-2 right-2 sm:left-0 sm:right-0 h-0.5 sm:h-1 -translate-y-1/2">
               <div className="absolute inset-0 bg-gradient-to-r from-[var(--secondary)] via-[var(--accent)] to-[var(--secondary)] opacity-30 blur-sm"></div>
               <div className="absolute inset-0 bg-gradient-to-r from-[var(--secondary)] via-[var(--accent)] to-[var(--secondary)]"></div>
             </div>
 
             {/* Stations/Stops */}
-            <div className="relative flex justify-between items-center px-4">
+            <div className="relative flex justify-center sm:justify-between items-center gap-1 sm:gap-2 md:gap-4 px-0 sm:px-2 md:px-4">
               {timelineStops.map((stop, idx) => (
-                <div key={idx} className="flex flex-col items-center flex-1">
+                <div key={idx} className="flex flex-col items-center flex-1 min-w-0">
                   <motion.button
                     onClick={() => goToStop(idx)}
                     whileHover={{ scale: 1.1 }}
@@ -393,24 +413,24 @@ export default function About() {
                       />
                     )}
                     
-                    {/* Stop circle */}
+                    {/* Stop circle - Responsive sizes */}
                     <div
-                      className={`relative w-20 h-20 md:w-24 md:h-24 rounded-full flex items-center justify-center text-3xl md:text-4xl shadow-2xl transition-all duration-500 ${
+                      className={`relative w-12 h-12 sm:w-16 sm:h-16 md:w-20 md:h-20 lg:w-24 lg:h-24 rounded-full flex items-center justify-center text-lg sm:text-2xl md:text-3xl lg:text-4xl shadow-2xl transition-all duration-500 ${
                         activeStop === idx
-                          ? 'bg-gradient-to-br from-[var(--primary)] to-[var(--secondary)] text-white ring-4 ring-[var(--accent)]/50 ring-offset-4 ring-offset-[#0a2343]'
-                          : 'bg-white text-gray-600 border-4 border-gray-300 hover:border-[var(--secondary)]'
+                          ? 'bg-gradient-to-br from-[var(--primary)] to-[var(--secondary)] text-white ring-2 sm:ring-3 md:ring-4 ring-[var(--accent)]/50 ring-offset-2 sm:ring-offset-3 md:ring-offset-4 ring-offset-[#0a2343]'
+                          : 'bg-white text-gray-600 border-2 sm:border-3 md:border-4 border-gray-300 hover:border-[var(--secondary)]'
                       }`}
                     >
                       {stop.icon}
                     </div>
                   </motion.button>
                   
-                  {/* Year label */}
+                  {/* Year label - Responsive text */}
                   <motion.div
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: idx * 0.1 }}
-                    className={`mt-4 font-bold text-lg md:text-xl transition-all duration-300 ${
+                    className={`mt-2 sm:mt-3 md:mt-4 font-bold text-xs sm:text-sm md:text-base lg:text-lg xl:text-xl transition-all duration-300 whitespace-nowrap ${
                       activeStop === idx 
                         ? 'text-[var(--accent)] scale-110' 
                         : 'text-gray-200'
@@ -424,16 +444,16 @@ export default function About() {
                     <motion.div
                       initial={{ scaleY: 0 }}
                       animate={{ scaleY: 1 }}
-                      className="w-1 h-8 bg-gradient-to-b from-[var(--accent)] to-transparent mt-2"
+                      className="w-0.5 sm:w-1 h-4 sm:h-6 md:h-8 bg-gradient-to-b from-[var(--accent)] to-transparent mt-1 sm:mt-2"
                     />
                   )}
                 </div>
               ))}
             </div>
 
-            {/* Animated Train */}
+            {/* Animated Train - Hidden on mobile, visible on tablet+ */}
             <motion.div
-              className="absolute top-1/2 -translate-y-1/2 z-30 pointer-events-none"
+              className="absolute top-1/2 -translate-y-1/2 z-30 pointer-events-none hidden sm:block"
               animate={{
                 left: `${(activeStop / (timelineStops.length - 1)) * 100}%`,
               }}
@@ -451,7 +471,7 @@ export default function About() {
                   y: { duration: 1.5, repeat: Infinity, ease: 'easeInOut' },
                   scaleX: { duration: 0.3, ease: 'easeOut' }
                 }}
-                className="text-6xl md:text-7xl filter drop-shadow-2xl"
+                className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl filter drop-shadow-2xl"
               >
                 🚂
               </motion.div>
@@ -466,13 +486,13 @@ export default function About() {
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: -30, scale: 0.95 }}
               transition={{ duration: 0.4, ease: 'easeOut' }}
-              className="relative bg-white rounded-2xl p-8 md:p-10 shadow-2xl"
+              className="relative bg-white rounded-xl sm:rounded-2xl p-4 sm:p-6 md:p-8 lg:p-10 shadow-2xl"
             >
               {/* Decorative corner accent */}
-              <div className="absolute top-0 left-0 w-32 h-32 bg-gradient-to-br from-[var(--primary)]/10 to-transparent rounded-tl-2xl" />
-              <div className="absolute bottom-0 right-0 w-32 h-32 bg-gradient-to-tl from-[var(--accent)]/10 to-transparent rounded-br-2xl" />
+              <div className="absolute top-0 left-0 w-16 h-16 sm:w-24 sm:h-24 md:w-32 md:h-32 bg-gradient-to-br from-[var(--primary)]/10 to-transparent rounded-tl-xl sm:rounded-tl-2xl" />
+              <div className="absolute bottom-0 right-0 w-16 h-16 sm:w-24 sm:h-24 md:w-32 md:h-32 bg-gradient-to-tl from-[var(--accent)]/10 to-transparent rounded-br-xl sm:rounded-br-2xl" />
               
-              <div className="relative flex flex-col md:flex-row md:items-start md:justify-between gap-6">
+              <div className="relative flex flex-col gap-4 sm:gap-5 md:gap-6">
                 <div className="flex-1">
                   {/* Year badge */}
                   <motion.div
@@ -481,8 +501,8 @@ export default function About() {
                     transition={{ delay: 0.2 }}
                     className="inline-block"
                   >
-                    <span className="inline-flex items-center gap-2 bg-gradient-to-r from-[var(--primary)] to-[var(--secondary)] text-white px-6 py-2 rounded-full text-lg font-bold shadow-lg mb-4">
-                      <span className="text-2xl">{timelineStops[activeStop].icon}</span>
+                    <span className="inline-flex items-center gap-1.5 sm:gap-2 bg-gradient-to-r from-[var(--primary)] to-[var(--secondary)] text-white px-3 py-1.5 sm:px-4 sm:py-2 md:px-6 md:py-2 rounded-full text-sm sm:text-base md:text-lg font-bold shadow-lg mb-3 sm:mb-4">
+                      <span className="text-lg sm:text-xl md:text-2xl">{timelineStops[activeStop].icon}</span>
                       {timelineStops[activeStop].year}
                     </span>
                   </motion.div>
@@ -492,7 +512,7 @@ export default function About() {
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: 0.3 }}
-                    className="text-3xl md:text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-[var(--primary)] to-[var(--secondary)]  mb-4"
+                    className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-[var(--primary)] to-[var(--secondary)] mb-3 sm:mb-4 leading-tight"
                   >
                     {timelineStops[activeStop].title}
                   </motion.h3>
@@ -502,7 +522,7 @@ export default function About() {
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: 0.4 }}
-                    className="text-gray-600 text-lg md:text-xl leading-relaxed"
+                    className="text-gray-600 text-sm sm:text-base md:text-lg lg:text-xl leading-relaxed"
                   >
                     {timelineStops[activeStop].description}
                   </motion.p>
@@ -513,19 +533,31 @@ export default function About() {
                   initial={{ opacity: 0, scale: 0.8 }}
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ delay: 0.5 }}
-                  className="flex md:flex-col gap-3"
+                  className="flex justify-center sm:justify-end gap-3 mt-2"
                 >
                   <button
                     onClick={prevStop}
-                    className="group p-4 rounded-full bg-gradient-to-br from-[var(--primary)] to-[var(--secondary)] text-white hover:from-[#081a32] hover:to-[#5a6a7a] shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-110"
+                    disabled={activeStop === 0}
+                    className={`group p-3 sm:p-4 rounded-full shadow-lg transition-all duration-300 ${
+                      activeStop === 0
+                        ? 'bg-gray-300 text-gray-500 cursor-not-allowed opacity-50'
+                        : 'bg-gradient-to-br from-[var(--primary)] to-[var(--secondary)] text-white hover:from-[#081a32] hover:to-[#5a6a7a] hover:shadow-xl hover:scale-110 active:scale-95'
+                    }`}
+                    aria-label="Previous milestone"
                   >
-                    <ChevronLeftIcon className="w-6 h-6 group-hover:-translate-x-1 transition-transform" />
+                    <ChevronLeftIcon className={`w-5 h-5 sm:w-6 sm:h-6 transition-transform ${activeStop !== 0 && 'group-hover:-translate-x-1'}`} />
                   </button>
                   <button
                     onClick={nextStop}
-                    className="group p-4 rounded-full bg-gradient-to-br from-[var(--accent)] to-[#d49500] text-white hover:from-[#d49500] hover:to-[#b67f00] shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-110"
+                    disabled={activeStop === timelineStops.length - 1}
+                    className={`group p-3 sm:p-4 rounded-full shadow-lg transition-all duration-300 ${
+                      activeStop === timelineStops.length - 1
+                        ? 'bg-gray-300 text-gray-500 cursor-not-allowed opacity-50'
+                        : 'bg-gradient-to-br from-[var(--accent)] to-[#d49500] text-white hover:from-[#d49500] hover:to-[#b67f00] hover:shadow-xl hover:scale-110 active:scale-95'
+                    }`}
+                    aria-label="Next milestone"
                   >
-                    <ChevronRightIcon className="w-6 h-6 group-hover:translate-x-1 transition-transform" />
+                    <ChevronRightIcon className={`w-5 h-5 sm:w-6 sm:h-6 transition-transform ${activeStop !== timelineStops.length - 1 && 'group-hover:translate-x-1'}`} />
                   </button>
                 </motion.div>
               </div>

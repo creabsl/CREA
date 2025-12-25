@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { useSearchParams, useNavigate } from 'react-router-dom'
 import { usePageTitle } from '../hooks/usePageTitle'
 import { useAuth } from '../context/auth'
 import Button from '../components/Button'
@@ -12,7 +12,7 @@ import { getCirculars, getManuals, getCourtCases } from '../services/api'
 import type { Circular, Manual, CourtCase } from '../types'
 
 // Backend API URL for file access
-const API_URL = import.meta.env?.VITE_API_URL || 'https://api.crea.org.in'
+const API_URL = import.meta.env?.VITE_API_URL || 'http://localhost:5001'
 
 type DocumentType = 'circular' | 'manual' | 'court-case'
 
@@ -75,6 +75,15 @@ export default function Documents() {
   const [loading, setLoading] = useState(true)
   const { user } = useAuth()
   const isAdmin = user?.role === 'admin'
+  const navigate = useNavigate()
+
+  const getAdminSubTab = (t: DocumentType) => {
+    switch (t) {
+      case 'circular': return 'circulars'
+      case 'manual': return 'manuals'
+      case 'court-case': return 'court-cases'
+    }
+  }
 
   // Fetch documents from API
   useEffect(() => {
@@ -283,9 +292,9 @@ export default function Documents() {
             </div>
             {isAdmin && (
               <Button 
-                onClick={() => setIsAddModalOpen(true)}
-                className="text-sm"
-              >
+                  onClick={() => navigate(`/admin?tab=documents&subTab=${getAdminSubTab(activeTab)}`)}
+                  className="text-sm"
+                >
                 <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
                 </svg>
@@ -370,7 +379,7 @@ export default function Documents() {
               }
             </p>
             {!searchQuery && isAdmin && (
-              <Button onClick={() => setIsAddModalOpen(true)} className="text-sm">
+              <Button onClick={() => navigate(`/admin?tab=documents&subTab=${getAdminSubTab(activeTab)}`)} className="text-sm">
                 <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
                 </svg>

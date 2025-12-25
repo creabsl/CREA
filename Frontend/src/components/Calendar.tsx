@@ -4,7 +4,7 @@ import { useState } from 'react'
 type Day = { date: Date; isCurrentMonth: boolean }
 type Marker = string | { date: string; title?: string; content?: string; type?: string }
 
-export default function Calendar({ year, month, markers = [] }: { year: number; month: number; markers?: Marker[] }) {
+export default function Calendar({ year, month, markers = [], onMonthChange }: { year: number; month: number; markers?: Marker[]; onMonthChange?: (year: number, month: number) => void }) {
   const [selectedDate, setSelectedDate] = useState<string | null>(null)
   
   const first = new Date(year, month, 1)
@@ -39,6 +39,22 @@ export default function Calendar({ year, month, markers = [] }: { year: number; 
   const monthName = first.toLocaleString(undefined, { month: 'long' })
   const selectedEvents = selectedDate ? map.get(selectedDate) || [] : []
 
+  const handlePrevMonth = () => {
+    if (onMonthChange) {
+      const newMonth = month === 0 ? 11 : month - 1
+      const newYear = month === 0 ? year - 1 : year
+      onMonthChange(newYear, newMonth)
+    }
+  }
+
+  const handleNextMonth = () => {
+    if (onMonthChange) {
+      const newMonth = month === 11 ? 0 : month + 1
+      const newYear = month === 11 ? year + 1 : year
+      onMonthChange(newYear, newMonth)
+    }
+  }
+
   return (
     <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
       {/* Minimalistic Header */}
@@ -50,8 +66,32 @@ export default function Calendar({ year, month, markers = [] }: { year: number; 
             </svg>
             <h3 className="text-base font-bold text-gray-700">{monthName} {year}</h3>
           </div>
-          <div className="text-[10px] text-gray-600 bg-gray-200 px-2.5 py-1 rounded-md font-semibold">
-            {markers.length} events
+          <div className="flex items-center gap-2">
+            {onMonthChange && (
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={handlePrevMonth}
+                  className="p-1.5 hover:bg-gray-200 rounded-md transition-colors"
+                  title="Previous month"
+                >
+                  <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
+                  </svg>
+                </button>
+                <button
+                  onClick={handleNextMonth}
+                  className="p-1.5 hover:bg-gray-200 rounded-md transition-colors"
+                  title="Next month"
+                >
+                  <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
+                  </svg>
+                </button>
+              </div>
+            )}
+            <div className="text-[10px] text-gray-600 bg-gray-200 px-2.5 py-1 rounded-md font-semibold">
+              {markers.length} events
+            </div>
           </div>
         </div>
       </div>

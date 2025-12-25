@@ -3,39 +3,56 @@ const path = require('path');
 const cors = require('cors');
 const dotenv = require('dotenv');
 const connectDB = require('./config/db');
+const { protect } = require('./middleware/authMiddleware');
 
 // Load env vars
 dotenv.config();
 
 const app = express();
 
-// CORS configuration
-const corsOptions = {
-  origin: [
-    'https://crea.creabsl.workers.dev',
-    'http://localhost:5173',
-    'http://localhost:3000',
-    'http://localhost:5001'
-  ],
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
-};
-
 // Middleware
+// Middleware
+const corsOptions = {
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    
+    // Allowed domains
+    const allowedOrigins = [
+      'http://localhost:5173', 
+      'http://localhost:5174',
+      process.env.CLIENT_URL, // We will set this on the server
+      // Add your Cloudflare URL here later, e.g., 'https://crea-final.pages.dev'
+    ];
+    
+    // checks if the origin is in the allowed list or if it's a preview deployment
+    if (allowedOrigins.indexOf(origin) !== -1 || origin.includes('.pages.dev')) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true,
+  optionsSuccessStatus: 200
+};
+app.use(cors(corsOptions));
 app.use(cors(corsOptions));
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
-// Static files for uploaded assets with proper headers for PDF viewing
+// Protect document repository uploads (these must be signed-in only)
+app.use('/uploads/circulars', protect, express.static(path.join(__dirname, 'uploads', 'circulars')));
+app.use('/uploads/manuals', protect, express.static(path.join(__dirname, 'uploads', 'manuals')));
+app.use('/uploads/court-cases', protect, express.static(path.join(__dirname, 'uploads', 'court-cases')));
+
+// Static files for other uploaded assets with proper headers for PDF viewing
 app.use('/uploads', express.static(path.join(__dirname, 'uploads'), {
-  setHeaders: (res, filePath) => {
-    // Set Content-Disposition to inline for PDFs so browsers display them instead of downloading
-    if (filePath.endsWith('.pdf')) {
-      res.setHeader('Content-Disposition', 'inline');
-      res.setHeader('Content-Type', 'application/pdf');
-    }
-  }
+	setHeaders: (res, filePath) => {
+		if (filePath.endsWith('.pdf')) {
+			res.setHeader('Content-Disposition', 'inline');
+			res.setHeader('Content-Type', 'application/pdf');
+		}
+	}
 }));
 
 // Routes
@@ -46,6 +63,7 @@ const membershipRoutes = require('./routes/membershipRoutes');
 const circularRoutes = require('./routes/circularRoutes');
 const manualRoutes = require('./routes/manualRoutes');
 const courtCaseRoutes = require('./routes/courtCaseRoutes');
+const documentRoutes = require('./routes/documentRoutes');
 const suggestionRoutes = require('./routes/suggestionRoutes');
 const forumRoutes = require('./routes/forumRoutes');
 const statsRoutes = require('./routes/statsRoutes');
@@ -67,6 +85,7 @@ app.use('/api/memberships', membershipRoutes);
 app.use('/api/circulars', circularRoutes);
 app.use('/api/manuals', manualRoutes);
 app.use('/api/court-cases', courtCaseRoutes);
+app.use('/api/documents', documentRoutes);
 app.use('/api/suggestions', suggestionRoutes);
 app.use('/api/forum', forumRoutes);
 app.use('/api/stats', statsRoutes);

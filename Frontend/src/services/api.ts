@@ -20,10 +20,11 @@ import type {
   PendingForumPost,
   PendingForumComment,
   BreakingNews,
+  DocumentFeedItem,
 } from "../types";
 
 // Base URL for backend API
-export const API_URL = "https://api.crea.org.in";
+export const API_URL = "https://api.crea.org.in/api";
 
 // Token management
 const TOKEN_KEY = "crea:token";
@@ -1762,4 +1763,70 @@ export async function toggleEventAdStatus(id: string): Promise<EventAd> {
   return await request<EventAd>(`/api/event-ads/${id}/toggle`, {
     method: "PATCH",
   });
+}
+// Document-related functions
+export async function downloadDocument(url: string, fileName: string): Promise<void> {
+  try {
+    const response = await fetch(url);
+    if (!response.ok) throw new Error('Download failed');
+    const blob = await response.blob();
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = fileName || 'download';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(link.href);
+  } catch (error) {
+    console.error('Error downloading document:', error);
+    throw error;
+  }
+}
+
+export async function getDocumentsFeed(): Promise<DocumentFeedItem[]> {
+  const [circulars, manuals, courtCases] = await Promise.all([
+    getCirculars(),
+    getManuals(),
+    getCourtCases(),
+  ]);
+
+  const API_URL = import.meta.env?.VITE_API_URL || 'http://localhost:5001';
+
+  const getFullUrl = (url: string | undefined): string => {
+    if (!url || url === '#') return '';
+    if (url.startsWith('http://') || url.startsWith('https://')) return url;
+    return `${API_URL}${url}`;
+  };
+
+  const circularItems: DocumentFeedItem[] = circulars.map((c) => ({
+    id: c.id,
+    type: 'circular' as const,
+    title: c.subject,
+    label: c.boardNumber,
+    uploadedAt: c.dateOfIssue,
+    downloadUrl: getFullUrl(c.url),
+    fileName: `circular-${c.boardNumber}.pdf`,
+  }));
+
+  const manualItems: DocumentFeedItem[] = manuals.map((m) => ({
+    id: m.id,
+    type: 'manual' as const,
+    title: m.title,
+    label: m.category,
+    uploadedAt: undefined,
+    downloadUrl: getFullUrl(m.url),
+    fileName: `manual-${m.id}.pdf`,
+  }));
+
+  const courtCaseItems: DocumentFeedItem[] = courtCases.map((cc) => ({
+    id: cc.id,
+    type: 'court-case' as const,
+    title: cc.subject,
+    label: cc.caseNumber,
+    uploadedAt: cc.date,
+    externalUrl: undefined,
+    fileName: `court-case-${cc.caseNumber}.pdf`,
+  }));
+
+  return [...circularItems, ...manualItems, ...courtCaseItems];
 }

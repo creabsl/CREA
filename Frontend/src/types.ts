@@ -36,6 +36,7 @@ export type CourtCase = {
   caseNumber: string;
   date: string;
   subject: string;
+  url?: string;
 };
 
 export type ManualCategory =
@@ -48,6 +49,8 @@ export type Manual = {
   title: string;
   url?: string;
   category?: ManualCategory;
+  date?: string;
+  subject?: string;
 };
 
 export type BodyMember = {
@@ -309,4 +312,17 @@ export type BreakingNews = {
   };
   createdAt: string;
   updatedAt: string;
+};
+
+export type DocumentType = 'circular' | 'manual' | 'court-case';
+
+export type DocumentFeedItem = {
+  id: string;
+  type: DocumentType;
+  title: string;
+  label?: string;
+  uploadedAt?: string;
+  downloadUrl?: string;
+  externalUrl?: string;
+  fileName?: string;
 };
