@@ -13,7 +13,8 @@ router.get('/', c.list);
 router.post('/', upload.array('files', 5), async (req, res) => {
   try {
     const { userId, userName, text } = req.body;
-    const fileNames = req.files ? req.files.map(f => f.filename) : [];
+    // Store full URL paths instead of just filenames
+    const fileNames = req.files ? req.files.map(f => `/uploads/suggestions/${f.filename}`) : [];
     
     const suggestion = await Suggestion.create({
       userId,
