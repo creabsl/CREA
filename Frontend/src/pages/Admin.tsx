@@ -74,9 +74,9 @@ import {
 export default function Admin() {
   usePageTitle("CREA • Admin");
   const [searchParams] = useSearchParams();
-  const urlTab = searchParams.get('tab');
-  const urlSubTab = searchParams.get('subTab');
-  
+  const urlTab = searchParams.get("tab");
+  const urlSubTab = searchParams.get("subTab");
+
   const [tab, setTab] = useState<
     | "events"
     | "documents"
@@ -92,9 +92,9 @@ export default function Admin() {
     | "breaking-news"
     | "memberships"
   >((urlTab as any) || "events");
-  const [documentSubTab, setDocumentSubTab] = useState<"circulars" | "manuals" | "court-cases">(
-    (urlSubTab as any) || "circulars"
-  );
+  const [documentSubTab, setDocumentSubTab] = useState<
+    "circulars" | "manuals" | "court-cases"
+  >((urlSubTab as any) || "circulars");
   const [events, setEvents] = useState<EventItem[]>([]);
   const [manuals, setManuals] = useState<Manual[]>([]);
   const [circulars, setCirculars] = useState<Circular[]>([]);
@@ -1710,13 +1710,15 @@ function EventsAdmin({
             </label>
             <textarea
               value={form.description}
-              onChange={(e) => setForm({ ...form, description: e.target.value })}
+              onChange={(e) =>
+                setForm({ ...form, description: e.target.value })
+              }
               rows={6}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent resize-vertical"
               placeholder="Enter event description..."
             />
           </div>
-          
+
           {/* Photo Upload Section */}
           <div className="border-2 border-dashed border-gray-300 rounded-lg p-4">
             <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -1736,20 +1738,30 @@ function EventsAdmin({
                   file:bg-[var(--primary)] file:text-white
                   hover:file:bg-[var(--primary)]/90"
               />
-              {uploadingPhotos && <span className="text-sm text-gray-600">Uploading...</span>}
+              {uploadingPhotos && (
+                <span className="text-sm text-gray-600">Uploading...</span>
+              )}
             </div>
-            
+
             {/* Display uploaded photos */}
             {form.photos && form.photos.length > 0 && (
               <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
                 {form.photos.map((photo, idx) => {
                   let photoSrc = photo;
                   // Handle relative paths - prepend API URL
-                  if (typeof photo === 'string' && !photo.startsWith('http') && !photo.startsWith('data:')) {
-                    const API_URL = import.meta.env?.VITE_API_URL || 'https://api.crea.org.in';
-                    photoSrc = `${API_URL}${photo.startsWith('/') ? photo : '/' + photo}`;
+                  if (
+                    typeof photo === "string" &&
+                    !photo.startsWith("http") &&
+                    !photo.startsWith("data:")
+                  ) {
+                    const API_URL = (
+                      import.meta.env?.VITE_API_URL || "https://api.crea.org.in"
+                    ).replace(/\/+$|\/api$/i, "");
+                    photoSrc = `${API_URL}${
+                      photo.startsWith("/") ? photo : "/" + photo
+                    }`;
                   }
-                  
+
                   return (
                     <div key={idx} className="relative group">
                       <img
@@ -1758,15 +1770,26 @@ function EventsAdmin({
                         className="w-full h-24 object-cover rounded-lg"
                         onError={(e) => {
                           // Fallback for broken images
-                          (e.target as HTMLImageElement).src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"%3E%3Crect x="3" y="3" width="18" height="18" rx="2" ry="2"/%3E%3Ccircle cx="8.5" cy="8.5" r="1.5"/%3E%3Cpath d="M21 15l-5-5L5 21"/%3E%3C/svg%3E';
+                          (e.target as HTMLImageElement).src =
+                            'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"%3E%3Crect x="3" y="3" width="18" height="18" rx="2" ry="2"/%3E%3Ccircle cx="8.5" cy="8.5" r="1.5"/%3E%3Cpath d="M21 15l-5-5L5 21"/%3E%3C/svg%3E';
                         }}
                       />
                       <button
                         onClick={() => removePhoto(idx)}
                         className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
                       >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                        <svg
+                          className="w-4 h-4"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth="2"
+                            d="M6 18L18 6M6 6l12 12"
+                          />
                         </svg>
                       </button>
                     </div>
@@ -2004,8 +2027,18 @@ function EventsAdmin({
                       variant="secondary"
                       onClick={() => handleEditEvent(e)}
                     >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                      <svg
+                        className="w-4 h-4"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth="2"
+                          d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                        />
                       </svg>
                       Edit
                     </Button>
@@ -2375,8 +2408,8 @@ function DocumentsAdmin({
           <button
             key={st}
             onClick={() => {
-              setSubTab(st)
-              onSubTabChange?.(st)
+              setSubTab(st);
+              onSubTabChange?.(st);
             }}
             className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
               subTab === st
@@ -5362,7 +5395,7 @@ function MutualTransfersAdmin({
                   className="mt-1 w-4 h-4 rounded border-gray-300 text-[var(--primary)] focus:ring-[var(--primary)]"
                 />
               )}
-              
+
               {/* Main Content Area */}
               <div className="flex-1">
                 <div className="flex flex-wrap gap-6">
@@ -5370,20 +5403,31 @@ function MutualTransfersAdmin({
                   <div className="flex-1 min-w-[300px]">
                     <div className="flex items-start gap-3 mb-4">
                       <div className="w-12 h-12 bg-gradient-to-br from-[var(--primary)] to-[#1a4d8f] rounded-lg flex items-center justify-center text-white font-bold shadow-md flex-shrink-0">
-                        {(item.currentDesignation || item.post).substring(0, 2).toUpperCase()}
+                        {(item.currentDesignation || item.post)
+                          .substring(0, 2)
+                          .toUpperCase()}
                       </div>
                       <div className="flex-1">
                         <div className="mb-2">
-                          <div className="text-xs text-gray-500 font-medium mb-0.5">Current Position:</div>
-                          <h4 className="text-base font-bold text-gray-700">{item.currentDesignation || item.post}</h4>
+                          <div className="text-xs text-gray-500 font-medium mb-0.5">
+                            Current Position:
+                          </div>
+                          <h4 className="text-base font-bold text-gray-700">
+                            {item.currentDesignation || item.post}
+                          </h4>
                         </div>
                         <div>
-                          <div className="text-xs text-[var(--primary)] font-medium mb-0.5">Seeking Position:</div>
-                          <h4 className="text-lg font-bold text-[var(--primary)]">{item.desiredDesignation || item.post}</h4>
+                          <div className="text-xs text-[var(--primary)] font-medium mb-0.5">
+                            Seeking Position:
+                          </div>
+                          <h4 className="text-lg font-bold text-[var(--primary)]">
+                            {item.desiredDesignation || item.post}
+                          </h4>
                         </div>
                         {(item.currentDivision || item.ownerDivision) && (
                           <span className="inline-block mt-2 px-2.5 py-0.5 bg-[var(--primary)]/10 text-[var(--primary)] text-xs font-semibold rounded-full">
-                            {item.currentDivision || item.ownerDivision} Division
+                            {item.currentDivision || item.ownerDivision}{" "}
+                            Division
                           </span>
                         )}
                       </div>
@@ -5392,18 +5436,53 @@ function MutualTransfersAdmin({
                     {/* Location Transfer */}
                     <div className="flex items-center gap-3 mb-4 flex-wrap">
                       <div className="flex items-center gap-2 px-3 py-2 bg-blue-50 text-[var(--primary)] rounded-lg font-medium text-sm">
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                        <svg
+                          className="w-4 h-4"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth="2"
+                            d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+                          />
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth="2"
+                            d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+                          />
                         </svg>
                         {item.currentLocation}
                       </div>
-                      <svg className="w-6 h-6 text-[var(--accent)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                      <svg
+                        className="w-6 h-6 text-[var(--accent)]"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth="2.5"
+                          d="M14 5l7 7m0 0l-7 7m7-7H3"
+                        />
                       </svg>
                       <div className="flex items-center gap-2 px-3 py-2 bg-green-50 text-green-700 rounded-lg font-medium text-sm">
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+                        <svg
+                          className="w-4 h-4"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth="2"
+                            d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"
+                          />
                         </svg>
                         {item.desiredLocation}
                       </div>
@@ -5411,13 +5490,40 @@ function MutualTransfersAdmin({
 
                     {/* Availability Date */}
                     <div className="flex items-center gap-2 text-sm text-[var(--secondary)] mb-3">
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      <svg
+                        className="w-4 h-4"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth="2"
+                          d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                        />
                       </svg>
                       {item.availabilityDate ? (
-                        <span>Available from: <strong className="text-[var(--primary)]">{new Date(item.availabilityDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</strong></span>
+                        <span>
+                          Available from:{" "}
+                          <strong className="text-[var(--primary)]">
+                            {new Date(item.availabilityDate).toLocaleDateString(
+                              "en-IN",
+                              {
+                                day: "numeric",
+                                month: "short",
+                                year: "numeric",
+                              }
+                            )}
+                          </strong>
+                        </span>
                       ) : (
-                        <span>Availability: <strong className="text-[var(--primary)]">Flexible</strong></span>
+                        <span>
+                          Availability:{" "}
+                          <strong className="text-[var(--primary)]">
+                            Flexible
+                          </strong>
+                        </span>
                       )}
                     </div>
 
@@ -5431,22 +5537,49 @@ function MutualTransfersAdmin({
 
                   {/* Right Section - Contact Info */}
                   <div className="bg-gray-50 rounded-lg p-4 border border-gray-200 min-w-[250px]">
-                    <p className="text-xs font-bold text-[var(--secondary)] uppercase tracking-wide mb-3">Contact Information</p>
-                    
+                    <p className="text-xs font-bold text-[var(--secondary)] uppercase tracking-wide mb-3">
+                      Contact Information
+                    </p>
+
                     <div className="space-y-2.5">
                       <div className="flex items-center gap-2">
-                        <svg className="w-4 h-4 text-[var(--primary)] flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                        <svg
+                          className="w-4 h-4 text-[var(--primary)] flex-shrink-0"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth="2"
+                            d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                          />
                         </svg>
-                        <span className="text-sm font-semibold text-[var(--primary)]">{item.contactName || '—'}</span>
+                        <span className="text-sm font-semibold text-[var(--primary)]">
+                          {item.contactName || "—"}
+                        </span>
                       </div>
 
                       <div className="flex items-start gap-2">
-                        <svg className="w-4 h-4 text-[var(--primary)] flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                        <svg
+                          className="w-4 h-4 text-[var(--primary)] flex-shrink-0 mt-0.5"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth="2"
+                            d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                          />
                         </svg>
                         {item.contactEmail ? (
-                          <a href={`mailto:${item.contactEmail}`} className="text-sm text-blue-600 hover:text-blue-800 hover:underline break-all">
+                          <a
+                            href={`mailto:${item.contactEmail}`}
+                            className="text-sm text-blue-600 hover:text-blue-800 hover:underline break-all"
+                          >
                             {item.contactEmail}
                           </a>
                         ) : (
@@ -5455,10 +5588,22 @@ function MutualTransfersAdmin({
                       </div>
 
                       <div className="flex items-center gap-2">
-                        <svg className="w-4 h-4 text-[var(--primary)] flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                        <svg
+                          className="w-4 h-4 text-[var(--primary)] flex-shrink-0"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth="2"
+                            d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"
+                          />
                         </svg>
-                        <span className="text-sm text-gray-700">{item.contactPhone || '—'}</span>
+                        <span className="text-sm text-gray-700">
+                          {item.contactPhone || "—"}
+                        </span>
                       </div>
                     </div>
 

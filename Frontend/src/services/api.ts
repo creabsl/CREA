@@ -23,8 +23,10 @@ import type {
   DocumentFeedItem,
 } from "../types";
 
-// Base URL for backend API
-export const API_URL = "https://api.crea.org.in";
+// Base URL for backend API (normalize to avoid trailing slash or trailing `/api`)
+export const API_URL = (
+  import.meta.env?.VITE_API_URL || "https://api.crea.org.in"
+).replace(/\/+$|\/api$/i, "");
 
 // Token management
 const TOKEN_KEY = "crea:token";
@@ -1765,20 +1767,23 @@ export async function toggleEventAdStatus(id: string): Promise<EventAd> {
   });
 }
 // Document-related functions
-export async function downloadDocument(url: string, fileName: string): Promise<void> {
+export async function downloadDocument(
+  url: string,
+  fileName: string
+): Promise<void> {
   try {
     const response = await fetch(url);
-    if (!response.ok) throw new Error('Download failed');
+    if (!response.ok) throw new Error("Download failed");
     const blob = await response.blob();
-    const link = document.createElement('a');
+    const link = document.createElement("a");
     link.href = URL.createObjectURL(blob);
-    link.download = fileName || 'download';
+    link.download = fileName || "download";
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(link.href);
   } catch (error) {
-    console.error('Error downloading document:', error);
+    console.error("Error downloading document:", error);
     throw error;
   }
 }
@@ -1790,17 +1795,17 @@ export async function getDocumentsFeed(): Promise<DocumentFeedItem[]> {
     getCourtCases(),
   ]);
 
-  const API_URL = import.meta.env?.VITE_API_URL || 'https://api.crea.org.in';
+  const API_URL = import.meta.env?.VITE_API_URL || "https://api.crea.org.in";
 
   const getFullUrl = (url: string | undefined): string => {
-    if (!url || url === '#') return '';
-    if (url.startsWith('http://') || url.startsWith('https://')) return url;
+    if (!url || url === "#") return "";
+    if (url.startsWith("http://") || url.startsWith("https://")) return url;
     return `${API_URL}${url}`;
   };
 
   const circularItems: DocumentFeedItem[] = circulars.map((c) => ({
     id: c.id,
-    type: 'circular' as const,
+    type: "circular" as const,
     title: c.subject,
     label: c.boardNumber,
     uploadedAt: c.dateOfIssue,
@@ -1810,7 +1815,7 @@ export async function getDocumentsFeed(): Promise<DocumentFeedItem[]> {
 
   const manualItems: DocumentFeedItem[] = manuals.map((m) => ({
     id: m.id,
-    type: 'manual' as const,
+    type: "manual" as const,
     title: m.title,
     label: m.category,
     uploadedAt: undefined,
@@ -1820,7 +1825,7 @@ export async function getDocumentsFeed(): Promise<DocumentFeedItem[]> {
 
   const courtCaseItems: DocumentFeedItem[] = courtCases.map((cc) => ({
     id: cc.id,
-    type: 'court-case' as const,
+    type: "court-case" as const,
     title: cc.subject,
     label: cc.caseNumber,
     uploadedAt: cc.date,
