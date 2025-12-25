@@ -47,10 +47,6 @@ import {
   getSuggestions,
   deleteSuggestion,
   getAllDonations,
-  getAllAdvertisements,
-  createAdvertisement,
-  updateAdvertisement,
-  deleteAdvertisement,
 } from "../services/api";
 import type {
   Circular,
