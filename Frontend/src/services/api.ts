@@ -134,6 +134,18 @@ export async function getTotals(): Promise<{
   return res.totals;
 }
 
+export type DepartmentStat = {
+  department: string;
+  count: number;
+};
+
+export async function getDepartmentStats(division: string): Promise<DepartmentStat[]> {
+  const res = await request<{
+    departmentStats: DepartmentStat[];
+  }>(`/api/stats/department-stats?division=${encodeURIComponent(division)}`);
+  return res.departmentStats;
+}
+
 // Events
 type EventDTO = {
   _id: string;

@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import Calendar from '../components/Calendar'
+import DepartmentModal from '../components/DepartmentModal'
 import { EventIcon, ForumIcon, CircularIcon, CourtCaseIcon } from '../components/Icons'
 import { usePageTitle } from '../hooks/usePageTitle'
 import { getCirculars, getCourtCases, getEvents, getForumTopics, getMemberCounts, getTotals, getActiveAdvertisements, getActiveAchievements, getActiveBreakingNews } from '../services/api'
@@ -195,6 +196,9 @@ export default function Dashboard() {
   const [totals, setTotals] = useState<{ divisions: number; members: number; courtCases: number }>({ divisions: 0, members: 0, courtCases: 0 })
   const [calendarYear, setCalendarYear] = useState(new Date().getFullYear())
   const [calendarMonth, setCalendarMonth] = useState(new Date().getMonth())
+  const [isDepartmentModalOpen, setIsDepartmentModalOpen] = useState(false)
+  const [selectedDivision, setSelectedDivision] = useState<string | null>(null)
+  const triggerRef = useRef<HTMLButtonElement>(null)
   
   const handleMonthChange = (year: number, month: number) => {
     setCalendarYear(year)
@@ -448,20 +452,39 @@ export default function Dashboard() {
         <div className="p-5">
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
             {counts.map((c, index) => (
-              <div
+              <button
                 key={c.division || `division-${index}`}
-                className="bg-gray-50 rounded border border-gray-200 p-3 hover:border-blue-400 hover:bg-blue-50 transition-all"
+                ref={selectedDivision === c.division ? triggerRef : null}
+                onClick={() => {
+                  setSelectedDivision(c.division);
+                  setIsDepartmentModalOpen(true);
+                }}
+                className="bg-gray-50 rounded border border-gray-200 p-3 hover:border-blue-400 hover:bg-blue-50 transition-all cursor-pointer text-left group"
               >
-                <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">
+                <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1 group-hover:text-[var(--primary)]">
                   {c.division || 'N/A'}
                 </div>
                 <div className="text-2xl font-bold text-[var(--primary)]">{c.count}</div>
                 <div className="text-xs text-gray-500 mt-0.5">Members</div>
-              </div>
+                <div className="text-xs text-[var(--primary)] mt-2 opacity-0 group-hover:opacity-100 transition-opacity font-medium">
+                  Click for details →
+                </div>
+              </button>
             ))}
           </div>
         </div>
       </motion.div>
+
+      {/* Department Tooltip */}
+      <DepartmentModal 
+        isOpen={isDepartmentModalOpen}
+        onClose={() => {
+          setIsDepartmentModalOpen(false);
+          setSelectedDivision(null);
+        }}
+        division={selectedDivision || ''}
+        triggerRef={triggerRef}
+      />
 
       {/* Recent Achievements Section */}
       {achievements.length > 0 && (

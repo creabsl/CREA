@@ -63,13 +63,13 @@ const supportLinks = [
 const socialLinks = [
   {
     label: "Facebook",
-    href: "https://www.facebook.com",
+    href: "https://www.facebook.com/share/g/1DZBzQc4FT/",
     Icon: FacebookIcon,
     badgeClass: "bg-[#1877F2]",
   },
   {
     label: "YouTube",
-    href: "https://www.youtube.com",
+    href: "https://www.youtube.com/channel/UCkV0nZzoltfQGsVI0Cq_k1w",
     Icon: YouTubeIcon,
     badgeClass: "bg-[#FF0000]",
   },
