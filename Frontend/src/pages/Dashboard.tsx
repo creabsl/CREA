@@ -795,11 +795,18 @@ export default function Dashboard() {
             <Calendar 
               year={calendarYear} 
               month={calendarMonth} 
-              markers={events.map(e => ({
-                date: e.date,
-                title: e.title,
-                type: e.breaking ? 'breaking' : 'event'
-              }))}
+              markers={events
+                .filter(e => {
+                  // Parse date without timezone conversion to avoid date shifts
+                  const dateStr = e.date.split('T')[0] // Get YYYY-MM-DD part only
+                  const [year, month] = dateStr.split('-').map(Number)
+                  return year === calendarYear && month - 1 === calendarMonth
+                })
+                .map(e => ({
+                  date: e.date,
+                  title: e.title,
+                  type: e.breaking ? 'breaking' : 'event'
+                }))}
               onMonthChange={handleMonthChange}
             />
           </motion.div>

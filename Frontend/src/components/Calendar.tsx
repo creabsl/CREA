@@ -17,7 +17,13 @@ export default function Calendar({ year, month, markers = [], onMonthChange }: {
     days.push({ date: d, isCurrentMonth: d.getMonth() === month })
   }
 
-  const fmt = (d: Date) => d.toISOString().split('T')[0]
+  // Format date in local timezone to avoid UTC conversion issues
+  const fmt = (d: Date) => {
+    const year = d.getFullYear()
+    const month = String(d.getMonth() + 1).padStart(2, '0')
+    const day = String(d.getDate()).padStart(2, '0')
+    return `${year}-${month}-${day}`
+  }
 
   // normalize markers into map: dateStr -> array of {title, content, type}
   const map = new Map<string, { title?: string; content?: string; type?: string }[]>()
@@ -58,50 +64,50 @@ export default function Calendar({ year, month, markers = [], onMonthChange }: {
   return (
     <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
       {/* Minimalistic Header */}
-      <div className="bg-gray-50 px-4 py-3.5 border-b border-gray-200">
+      <div className="bg-gray-50 px-3 sm:px-4 md:px-5 py-3 sm:py-3.5 md:py-4 border-b border-gray-200">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <svg className="w-5 h-5 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className="flex items-center gap-2 sm:gap-2.5">
+            <svg className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
             </svg>
-            <h3 className="text-base font-bold text-gray-700">{monthName} {year}</h3>
+            <h3 className="text-sm sm:text-base md:text-lg font-bold text-gray-700">{monthName} {year}</h3>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 sm:gap-2.5">
             {onMonthChange && (
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-0.5 sm:gap-1">
                 <button
                   onClick={handlePrevMonth}
-                  className="p-1.5 hover:bg-gray-200 rounded-md transition-colors"
+                  className="p-1.5 sm:p-2 hover:bg-gray-200 rounded-md transition-colors"
                   title="Previous month"
                 >
-                  <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4 md:w-5 md:h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
                   </svg>
                 </button>
                 <button
                   onClick={handleNextMonth}
-                  className="p-1.5 hover:bg-gray-200 rounded-md transition-colors"
+                  className="p-1.5 sm:p-2 hover:bg-gray-200 rounded-md transition-colors"
                   title="Next month"
                 >
-                  <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4 md:w-5 md:h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
                   </svg>
                 </button>
               </div>
             )}
-            <div className="text-[10px] text-gray-600 bg-gray-200 px-2.5 py-1 rounded-md font-semibold">
-              {markers.length} events
+            <div className="text-[9px] sm:text-[10px] md:text-xs text-gray-600 bg-gray-200 px-2 sm:px-2.5 md:px-3 py-1 sm:py-1 md:py-1.5 rounded-md font-semibold whitespace-nowrap">
+              {markers.length} {markers.length === 1 ? 'event' : 'events'}
             </div>
           </div>
         </div>
       </div>
 
       {/* Compact Calendar Grid */}
-      <div className="p-3">
-        <div className="grid grid-cols-7 gap-1">
+      <div className="p-2 sm:p-3 md:p-4">
+        <div className="grid grid-cols-7 gap-0.5 sm:gap-1 md:gap-1.5">
           {/* Weekday Headers */}
           {['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].map((w) => (
-            <div key={w} className="text-center py-2 text-[10px] font-bold text-gray-500 uppercase tracking-wide">
+            <div key={w} className="text-center py-1 sm:py-2 md:py-2.5 text-[9px] sm:text-[10px] md:text-xs font-bold text-gray-500 uppercase tracking-wide">
               {w}
             </div>
           ))}
@@ -120,7 +126,7 @@ export default function Calendar({ year, month, markers = [], onMonthChange }: {
                 whileHover={hasEvents || d.isCurrentMonth ? { scale: 1.08 } : {}}
                 whileTap={hasEvents ? { scale: 0.95 } : {}}
                 className={`
-                  aspect-square flex flex-col items-center justify-center p-1.5 rounded-lg transition-all cursor-pointer relative
+                  aspect-square flex flex-col items-center justify-center p-1.5 sm:p-2 md:p-2.5 rounded-lg transition-all cursor-pointer relative
                   ${d.isCurrentMonth 
                     ? hasEvents
                       ? 'bg-[var(--primary)] text-white hover:bg-[var(--secondary)] font-semibold shadow-sm hover:shadow-md'
@@ -132,11 +138,11 @@ export default function Calendar({ year, month, markers = [], onMonthChange }: {
                   ${selectedDate === key ? 'ring-2 ring-[var(--accent)] ring-offset-1' : ''}
                 `}
               >
-                <span className="text-xs leading-none">{d.date.getDate()}</span>
+                <span className="text-[10px] sm:text-xs md:text-sm leading-none">{d.date.getDate()}</span>
                 {hasEvents && d.isCurrentMonth && (
-                  <div className="absolute bottom-1 left-1/2 -translate-x-1/2 flex gap-0.5">
+                  <div className="absolute bottom-0.5 sm:bottom-1 md:bottom-1.5 left-1/2 -translate-x-1/2 flex gap-0.5">
                     {items.slice(0, 3).map((_, i) => (
-                      <div key={i} className="w-1 h-1 rounded-full bg-white/80"></div>
+                      <div key={i} className="w-0.5 h-0.5 sm:w-1 sm:h-1 md:w-1.5 md:h-1.5 rounded-full bg-white/80"></div>
                     ))}
                   </div>
                 )}
@@ -154,46 +160,46 @@ export default function Calendar({ year, month, markers = [], onMonthChange }: {
           exit={{ opacity: 0, height: 0 }}
           className="border-t border-gray-200 bg-gradient-to-b from-blue-50/30 to-white"
         >
-          <div className="p-4">
-            <div className="flex items-center justify-between mb-3">
-              <h4 className="text-sm font-bold text-[var(--primary)] flex items-center gap-2">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className="p-3 sm:p-4 md:p-5">
+            <div className="flex items-center justify-between mb-2 sm:mb-3 md:mb-4">
+              <h4 className="text-xs sm:text-sm md:text-base font-bold text-[var(--primary)] flex items-center gap-1 sm:gap-2">
+                <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                 </svg>
                 {new Date(selectedDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
               </h4>
               <button 
                 onClick={() => setSelectedDate(null)}
-                className="text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full p-1 transition-all"
+                className="text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full p-1 sm:p-1.5 transition-all"
               >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>
             </div>
-            <div className="space-y-2 max-h-48 overflow-y-auto">
+            <div className="space-y-2 sm:space-y-2.5 md:space-y-3 max-h-48 sm:max-h-64 md:max-h-80 overflow-y-auto">
               {selectedEvents.map((event, i) => (
                 <motion.div 
                   key={i} 
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: i * 0.1 }}
-                  className="bg-white rounded-lg p-3 border border-gray-200 hover:border-[var(--primary)]/30 hover:shadow-sm transition-all"
+                  className="bg-white rounded-lg p-2.5 sm:p-3 md:p-4 border border-gray-200 hover:border-[var(--primary)]/30 hover:shadow-sm transition-all"
                 >
-                  <div className="font-semibold text-sm text-gray-900 mb-1 flex items-start gap-2">
-                    <svg className="w-4 h-4 text-[var(--accent)] flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <div className="font-semibold text-xs sm:text-sm md:text-base text-gray-900 mb-1 sm:mb-1.5 flex items-start gap-1.5 sm:gap-2">
+                    <svg className="w-4 h-4 sm:w-4.5 sm:h-4.5 md:w-5 md:h-5 text-[var(--accent)] flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
                     </svg>
-                    <span>{event.title || 'Event'}</span>
+                    <span className="leading-tight">{event.title || 'Event'}</span>
                   </div>
                   {event.content && (
-                    <div className="text-xs text-gray-600 ml-6 mb-2">
+                    <div className="text-xs sm:text-sm text-gray-600 ml-5 sm:ml-6 md:ml-7 mb-2">
                       {event.content}
                     </div>
                   )}
                   {event.type && (
-                    <div className="flex items-center gap-1 text-xs text-[var(--primary)] ml-6 bg-[var(--primary)]/5 px-2 py-1 rounded w-fit">
-                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div className="flex items-center gap-1 text-[10px] sm:text-xs text-[var(--primary)] ml-5 sm:ml-6 md:ml-7 bg-[var(--primary)]/5 px-2 py-1 rounded w-fit">
+                      <svg className="w-3 h-3 sm:w-3.5 sm:h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                       </svg>
@@ -208,15 +214,15 @@ export default function Calendar({ year, month, markers = [], onMonthChange }: {
       )}
       
       {/* Simple Footer */}
-      <div className="px-4 py-2.5 bg-gray-50 border-t border-gray-200 flex items-center justify-between text-xs">
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-1.5">
-            <div className="w-3 h-3 rounded bg-[var(--primary)]"></div>
-            <span className="text-gray-600">Has Events</span>
+      <div className="px-3 sm:px-4 md:px-5 py-2.5 sm:py-3 md:py-3.5 bg-gray-50 border-t border-gray-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 text-[10px] sm:text-xs md:text-sm">
+        <div className="flex items-center gap-3 sm:gap-4 md:gap-5">
+          <div className="flex items-center gap-1.5 sm:gap-2">
+            <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 md:w-3.5 md:h-3.5 rounded bg-[var(--primary)]"></div>
+            <span className="text-gray-600 font-medium">Has Events</span>
           </div>
-          <div className="flex items-center gap-1.5">
-            <div className="w-3 h-3 rounded bg-[var(--accent)]"></div>
-            <span className="text-gray-600">Today</span>
+          <div className="flex items-center gap-1.5 sm:gap-2">
+            <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 md:w-3.5 md:h-3.5 rounded bg-[var(--accent)]"></div>
+            <span className="text-gray-600 font-medium">Today</span>
           </div>
         </div>
         <span className="text-gray-500 italic">Click dates to view details</span>
