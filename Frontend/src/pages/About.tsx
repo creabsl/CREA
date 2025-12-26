@@ -664,7 +664,7 @@ export default function About() {
             <div className="mt-6">
               <Button 
                 className="w-full"
-                onClick={() => navigate('/membership')}
+                onClick={() => navigate('/apply-membership')}
               >
                 Apply for Membership
               </Button>

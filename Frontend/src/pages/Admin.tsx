@@ -1508,6 +1508,8 @@ function EventsAdmin({
   onChange: (d: EventItem[]) => void;
 }) {
   const formRef = useRef<HTMLDivElement>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [form, setForm] = useState<Omit<EventItem, "id">>({
     title: "",
     date: "",
@@ -1643,16 +1645,50 @@ function EventsAdmin({
   };
 
   const handleSaveEvent = async () => {
+    // Validation
+    if (!form.title.trim()) {
+      setErrorMessage("Event title is required");
+      setTimeout(() => setErrorMessage(null), 5000);
+      return;
+    }
+    if (!form.date) {
+      setErrorMessage("Event date is required");
+      setTimeout(() => setErrorMessage(null), 5000);
+      return;
+    }
+    if (!form.location.trim()) {
+      setErrorMessage("Event location is required");
+      setTimeout(() => setErrorMessage(null), 5000);
+      return;
+    }
+    if (form.photos && form.photos.length > 0) {
+      for (const photo of form.photos) {
+        if (photo.size > 5 * 1024 * 1024) {
+          setErrorMessage("Each photo must be less than 5MB");
+          setTimeout(() => setErrorMessage(null), 5000);
+          return;
+        }
+        if (!['image/jpeg', 'image/jpg', 'image/png', 'image/webp'].includes(photo.type)) {
+          setErrorMessage("Only image files (JPG, PNG, WebP) are allowed for photos");
+          setTimeout(() => setErrorMessage(null), 5000);
+          return;
+        }
+      }
+    }
+
     if (editingEventId) {
       // Update existing event
       const updated = await updateEvent(editingEventId, form);
       onChange(data.map((d) => (d.id === editingEventId ? updated : d)));
       setEditingEventId(null);
+      setSuccessMessage("Event updated successfully!");
     } else {
       // Create new event
       const created = await createEvent(form);
       onChange([...data, created]);
+      setSuccessMessage("Event created successfully!");
     }
+    setTimeout(() => setSuccessMessage(null), 3000);
     setForm({
       title: "",
       date: "",
@@ -1665,6 +1701,80 @@ function EventsAdmin({
 
   return (
     <div className="space-y-5">
+      {/* Success Message */}
+      {successMessage && (
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -20 }}
+          className="bg-green-50 border-2 border-green-200 rounded-lg p-4 flex items-center gap-3 shadow-sm"
+        >
+          <div className="flex-shrink-0">
+            <svg
+              className="w-6 h-6 text-green-600"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
+            </svg>
+          </div>
+          <div className="flex-1">
+            <p className="text-sm font-semibold text-green-800">{successMessage}</p>
+          </div>
+          <button
+            onClick={() => setSuccessMessage(null)}
+            className="flex-shrink-0 text-green-600 hover:text-green-800 transition-colors"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </motion.div>
+      )}
+
+      {/* Error Message */}
+      {errorMessage && (
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -20 }}
+          className="bg-red-50 border-2 border-red-200 rounded-lg p-4 flex items-center gap-3 shadow-sm"
+        >
+          <div className="flex-shrink-0">
+            <svg
+              className="w-6 h-6 text-red-600"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
+            </svg>
+          </div>
+          <div className="flex-1">
+            <p className="text-sm font-semibold text-red-800">{errorMessage}</p>
+          </div>
+          <button
+            onClick={() => setErrorMessage(null)}
+            className="flex-shrink-0 text-red-600 hover:text-red-800 transition-colors"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </motion.div>
+      )}
+
       <motion.div
         ref={formRef}
         className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm"
@@ -1691,22 +1801,34 @@ function EventsAdmin({
         </h3>
         <div className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Input
-              label="Title"
-              value={form.title}
-              onChange={(e) => setForm({ ...form, title: e.target.value })}
-            />
-            <Input
-              label="Date"
-              type="date"
-              value={form.date}
-              onChange={(e) => setForm({ ...form, date: e.target.value })}
-            />
-            <Input
-              label="Location"
-              value={form.location}
-              onChange={(e) => setForm({ ...form, location: e.target.value })}
-            />
+            <div>
+              <Input
+                label="Title"
+                value={form.title}
+                onChange={(e) => setForm({ ...form, title: e.target.value })}
+                required
+              />
+              <p className="text-xs text-gray-500 mt-1">* Required field</p>
+            </div>
+            <div>
+              <Input
+                label="Date"
+                type="date"
+                value={form.date}
+                onChange={(e) => setForm({ ...form, date: e.target.value })}
+                required
+              />
+              <p className="text-xs text-gray-500 mt-1">* Required field</p>
+            </div>
+            <div>
+              <Input
+                label="Location"
+                value={form.location}
+                onChange={(e) => setForm({ ...form, location: e.target.value })}
+                required
+              />
+              <p className="text-xs text-gray-500 mt-1">* Required field</p>
+            </div>
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -1726,7 +1848,7 @@ function EventsAdmin({
           {/* Photo Upload Section */}
           <div className="border-2 border-dashed border-gray-300 rounded-lg p-4">
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Event Photos
+              Event Photos (Optional)
             </label>
             <div className="flex items-center gap-4">
               <input
@@ -1746,6 +1868,9 @@ function EventsAdmin({
                 <span className="text-sm text-gray-600">Uploading...</span>
               )}
             </div>
+            <p className="text-xs text-gray-500 mt-2">
+              * Max 5MB per photo • JPG, PNG, WebP only • Multiple files allowed
+            </p>
 
             {/* Display uploaded photos */}
             {form.photos && form.photos.length > 0 && (
@@ -2108,6 +2233,19 @@ function DocumentsAdmin({
 }) {
   const [subTab, setSubTab] = useState<DocumentSubTab>(initialSubTab);
 
+  // Form refs for scrolling
+  const circularFormRef = useRef<HTMLDivElement>(null);
+  const manualFormRef = useRef<HTMLDivElement>(null);
+  const courtCaseFormRef = useRef<HTMLDivElement>(null);
+
+  // Success message state
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  // Upload progress state
+  const [uploadProgress, setUploadProgress] = useState<number | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+
   // Select mode state
   const [selectModeCirculars, setSelectModeCirculars] = useState(false);
   const [selectedCirculars, setSelectedCirculars] = useState<Set<string>>(
@@ -2166,12 +2304,16 @@ function DocumentsAdmin({
   const [manualCategory, setManualCategory] = useState<
     "technical" | "social" | "organizational" | "general"
   >("general");
+  const [manualDate, setManualDate] = useState("");
+  const [manualSubject, setManualSubject] = useState("");
   const [editingManual, setEditingManual] = useState<Manual | null>(null);
 
   // Court case state
   const [caseCaseNumber, setCaseCaseNumber] = useState("");
   const [caseDate, setCaseDate] = useState("");
   const [caseSubject, setCaseSubject] = useState("");
+  const [caseUrl, setCaseUrl] = useState("");
+  const [caseFile, setCaseFile] = useState<File | null>(null);
   const [editingCourtCase, setEditingCourtCase] = useState<CourtCase | null>(
     null
   );
@@ -2190,6 +2332,8 @@ function DocumentsAdmin({
     setManualUrl("");
     setManualFile(null);
     setManualCategory("general");
+    setManualDate("");
+    setManualSubject("");
     setEditingManual(null);
   };
 
@@ -2197,6 +2341,8 @@ function DocumentsAdmin({
     setCaseCaseNumber("");
     setCaseDate("");
     setCaseSubject("");
+    setCaseUrl("");
+    setCaseFile(null);
     setEditingCourtCase(null);
   };
 
@@ -2207,6 +2353,9 @@ function DocumentsAdmin({
     setCircularUrl(c.url || "");
     setCircularFile(null);
     setEditingCircular(c);
+    setTimeout(() => {
+      circularFormRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 100);
   };
 
   const handleEditManual = (m: Manual) => {
@@ -2214,85 +2363,268 @@ function DocumentsAdmin({
     setManualUrl(m.url || "");
     setManualFile(null);
     setManualCategory(m.category || "general");
+    setManualDate(m.date || "");
+    setManualSubject(m.subject || "");
     setEditingManual(m);
+    setTimeout(() => {
+      manualFormRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 100);
   };
 
   const handleEditCourtCase = (cc: CourtCase) => {
     setCaseCaseNumber(cc.caseNumber);
     setCaseDate(cc.date);
     setCaseSubject(cc.subject);
+    setCaseUrl(cc.url || "");
+    setCaseFile(null);
     setEditingCourtCase(cc);
+    setTimeout(() => {
+      courtCaseFormRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 100);
   };
 
   const handleSaveCircular = async () => {
-    if (editingCircular) {
-      const upd = await updateCircular(editingCircular.id, {
-        boardNumber: circularBoardNumber,
-        subject: circularSubject,
-        dateOfIssue: circularDateOfIssue,
-        url: circularUrl || undefined,
-        file: circularFile || undefined,
-      });
-      onCircularsChange(
-        circulars.map((d) => (d.id === editingCircular.id ? upd : d))
-      );
-      resetCircularForm();
-    } else {
-      const c = await createCircular({
-        boardNumber: circularBoardNumber,
-        subject: circularSubject,
-        dateOfIssue: circularDateOfIssue,
-        url: circularUrl || undefined,
-        file: circularFile || undefined,
-      });
-      onCircularsChange([...circulars, c]);
-      resetCircularForm();
+    // Validation
+    if (!circularBoardNumber.trim()) {
+      setErrorMessage("Board Number is required");
+      setTimeout(() => setErrorMessage(null), 5000);
+      return;
+    }
+    if (!circularSubject.trim()) {
+      setErrorMessage("Subject is required");
+      setTimeout(() => setErrorMessage(null), 5000);
+      return;
+    }
+    if (!circularDateOfIssue) {
+      setErrorMessage("Date of Issue is required");
+      setTimeout(() => setErrorMessage(null), 5000);
+      return;
+    }
+    if (!circularUrl && !circularFile) {
+      setErrorMessage("Either URL or File upload is required");
+      setTimeout(() => setErrorMessage(null), 5000);
+      return;
+    }
+    if (circularFile && circularFile.size > 10 * 1024 * 1024) {
+      setErrorMessage("File size must be less than 10MB");
+      setTimeout(() => setErrorMessage(null), 5000);
+      return;
+    }
+    if (circularFile && !['application/pdf', 'image/jpeg', 'image/jpg', 'image/png'].includes(circularFile.type)) {
+      setErrorMessage("Only PDF and image files (JPG, PNG) are allowed");
+      setTimeout(() => setErrorMessage(null), 5000);
+      return;
+    }
+
+    try {
+      setIsUploading(true);
+      setUploadProgress(0);
+      
+      // Simulate upload progress
+      const progressInterval = setInterval(() => {
+        setUploadProgress(prev => {
+          if (prev === null) return null;
+          if (prev >= 90) return prev; // Stop at 90% until complete
+          return prev + 10;
+        });
+      }, 200);
+
+      try {
+        if (editingCircular) {
+          const upd = await updateCircular(editingCircular.id, {
+            boardNumber: circularBoardNumber,
+            subject: circularSubject,
+            dateOfIssue: circularDateOfIssue,
+            url: circularUrl || undefined,
+            file: circularFile || undefined,
+          });
+          onCircularsChange(
+            circulars.map((d) => (d.id === editingCircular.id ? upd : d))
+          );
+          resetCircularForm();
+          setSuccessMessage("Circular updated successfully!");
+          setTimeout(() => setSuccessMessage(null), 3000);
+        } else {
+          const c = await createCircular({
+            boardNumber: circularBoardNumber,
+            subject: circularSubject,
+            dateOfIssue: circularDateOfIssue,
+            url: circularUrl || undefined,
+            file: circularFile || undefined,
+          });
+          onCircularsChange([...circulars, c]);
+          resetCircularForm();
+          setSuccessMessage("Circular created successfully!");
+          setTimeout(() => setSuccessMessage(null), 3000);
+        }
+        setUploadProgress(100);
+      } finally {
+        clearInterval(progressInterval);
+      }
+    } finally {
+      setTimeout(() => {
+        setIsUploading(false);
+        setUploadProgress(null);
+      }, 500);
     }
   };
 
   const handleSaveManual = async () => {
-    if (editingManual) {
-      const upd = await updateManual(editingManual.id, {
-        title: manualTitle,
-        url: manualUrl || undefined,
-        file: manualFile || undefined,
-        category: manualCategory,
-      });
-      onManualsChange(
-        manuals.map((d) => (d.id === editingManual.id ? upd : d))
-      );
-      resetManualForm();
-    } else {
-      const m = await createManual({
-        title: manualTitle,
-        url: manualUrl || undefined,
-        file: manualFile || undefined,
-        category: manualCategory,
-      });
-      onManualsChange([...manuals, m]);
-      resetManualForm();
+    // Validation
+    if (!manualTitle.trim()) {
+      setErrorMessage("Title is required");
+      setTimeout(() => setErrorMessage(null), 5000);
+      return;
+    }
+    if (!manualUrl && !manualFile) {
+      setErrorMessage("Either URL or File upload is required");
+      setTimeout(() => setErrorMessage(null), 5000);
+      return;
+    }
+    if (manualFile && manualFile.size > 10 * 1024 * 1024) {
+      setErrorMessage("File size must be less than 10MB");
+      setTimeout(() => setErrorMessage(null), 5000);
+      return;
+    }
+    if (manualFile && !['application/pdf', 'image/jpeg', 'image/jpg', 'image/png'].includes(manualFile.type)) {
+      setErrorMessage("Only PDF and image files (JPG, PNG) are allowed");
+      setTimeout(() => setErrorMessage(null), 5000);
+      return;
+    }
+
+    try {
+      setIsUploading(true);
+      setUploadProgress(0);
+      
+      // Simulate upload progress
+      const progressInterval = setInterval(() => {
+        setUploadProgress(prev => {
+          if (prev === null) return null;
+          if (prev >= 90) return prev; // Stop at 90% until complete
+          return prev + 10;
+        });
+      }, 200);
+
+      try {
+        if (editingManual) {
+          const upd = await updateManual(editingManual.id, {
+            title: manualTitle,
+            url: manualUrl || undefined,
+            file: manualFile || undefined,
+            category: manualCategory,
+            date: manualDate || undefined,
+            subject: manualSubject || undefined,
+          });
+          onManualsChange(
+            manuals.map((d) => (d.id === editingManual.id ? upd : d))
+          );
+          resetManualForm();
+          setSuccessMessage("Manual updated successfully!");
+          setTimeout(() => setSuccessMessage(null), 3000);
+        } else {
+          const m = await createManual({
+            title: manualTitle,
+            url: manualUrl || undefined,
+            file: manualFile || undefined,
+            category: manualCategory,
+            date: manualDate || undefined,
+            subject: manualSubject || undefined,
+          });
+          onManualsChange([...manuals, m]);
+          resetManualForm();
+          setSuccessMessage("Manual created successfully!");
+          setTimeout(() => setSuccessMessage(null), 3000);
+        }
+        setUploadProgress(100);
+      } finally {
+        clearInterval(progressInterval);
+      }
+    } finally {
+      setTimeout(() => {
+        setIsUploading(false);
+        setUploadProgress(null);
+      }, 500);
     }
   };
 
   const handleSaveCourtCase = async () => {
-    if (editingCourtCase) {
-      const upd = await updateCourtCase(editingCourtCase.id, {
-        caseNumber: caseCaseNumber,
-        date: caseDate,
-        subject: caseSubject,
-      });
-      onCourtCasesChange(
-        courtCases.map((d) => (d.id === editingCourtCase.id ? upd : d))
-      );
-      resetCourtCaseForm();
-    } else {
-      const cc = await createCourtCase({
-        caseNumber: caseCaseNumber,
-        date: caseDate,
-        subject: caseSubject,
-      });
-      onCourtCasesChange([cc, ...courtCases]);
-      resetCourtCaseForm();
+    // Validation
+    if (!caseCaseNumber.trim()) {
+      setErrorMessage("Case Number is required");
+      setTimeout(() => setErrorMessage(null), 5000);
+      return;
+    }
+    if (!caseDate) {
+      setErrorMessage("Date is required");
+      setTimeout(() => setErrorMessage(null), 5000);
+      return;
+    }
+    if (!caseSubject.trim()) {
+      setErrorMessage("Subject is required");
+      setTimeout(() => setErrorMessage(null), 5000);
+      return;
+    }
+    if (caseFile && caseFile.size > 10 * 1024 * 1024) {
+      setErrorMessage("File size must be less than 10MB");
+      setTimeout(() => setErrorMessage(null), 5000);
+      return;
+    }
+    if (caseFile && !['application/pdf', 'image/jpeg', 'image/jpg', 'image/png'].includes(caseFile.type)) {
+      setErrorMessage("Only PDF and image files (JPG, PNG) are allowed");
+      setTimeout(() => setErrorMessage(null), 5000);
+      return;
+    }
+
+    try {
+      setIsUploading(true);
+      setUploadProgress(0);
+      
+      // Simulate upload progress
+      const progressInterval = setInterval(() => {
+        setUploadProgress(prev => {
+          if (prev === null) return null;
+          if (prev >= 90) return prev; // Stop at 90% until complete
+          return prev + 10;
+        });
+      }, 200);
+
+      try {
+        if (editingCourtCase) {
+          const upd = await updateCourtCase(editingCourtCase.id, {
+            caseNumber: caseCaseNumber,
+            date: caseDate,
+            subject: caseSubject,
+            url: caseUrl || undefined,
+            file: caseFile || undefined,
+          });
+          onCourtCasesChange(
+            courtCases.map((d) => (d.id === editingCourtCase.id ? upd : d))
+          );
+          resetCourtCaseForm();
+          setSuccessMessage("Court case updated successfully!");
+          setTimeout(() => setSuccessMessage(null), 3000);
+        } else {
+          const cc = await createCourtCase({
+            caseNumber: caseCaseNumber,
+            date: caseDate,
+            subject: caseSubject,
+            url: caseUrl || undefined,
+            file: caseFile || undefined,
+          });
+          onCourtCasesChange([cc, ...courtCases]);
+          resetCourtCaseForm();
+          setSuccessMessage("Court case created successfully!");
+          setTimeout(() => setSuccessMessage(null), 3000);
+        }
+        setUploadProgress(100);
+      } finally {
+        clearInterval(progressInterval);
+      }
+    } finally {
+      setTimeout(() => {
+        setIsUploading(false);
+        setUploadProgress(null);
+      }, 500);
     }
   };
 
@@ -2441,10 +2773,130 @@ function DocumentsAdmin({
         ))}
       </div>
 
+      {/* Error Message */}
+      {errorMessage && (
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -20 }}
+          className="bg-red-50 border-2 border-red-200 rounded-lg p-4 flex items-center gap-3 shadow-sm"
+        >
+          <div className="flex-shrink-0">
+            <svg
+              className="w-6 h-6 text-red-600"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
+            </svg>
+          </div>
+          <div className="flex-1">
+            <p className="text-sm font-semibold text-red-800">{errorMessage}</p>
+          </div>
+          <button
+            onClick={() => setErrorMessage(null)}
+            className="flex-shrink-0 text-red-600 hover:text-red-800 transition-colors"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </motion.div>
+      )}
+
+      {/* Upload Progress Bar */}
+      {isUploading && uploadProgress !== null && (
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -20 }}
+          className="bg-blue-50 border-2 border-blue-200 rounded-lg p-4 shadow-sm"
+        >
+          <div className="flex items-center gap-3 mb-2">
+            <div className="flex-shrink-0">
+              <svg
+                className="w-5 h-5 text-blue-600 animate-spin"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <circle
+                  className="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                />
+                <path
+                  className="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                />
+              </svg>
+            </div>
+            <div className="flex-1">
+              <p className="text-sm font-semibold text-blue-800">
+                Uploading document... {uploadProgress === 0 ? '0' : uploadProgress}%
+              </p>
+            </div>
+          </div>
+          <div className="w-full bg-blue-200 rounded-full h-2.5">
+            <div
+              className="bg-blue-600 h-2.5 rounded-full transition-all duration-300"
+              style={{width: `${uploadProgress}%`}}
+            />
+          </div>
+        </motion.div>
+      )}
+
+      {/* Success Message */}
+      {successMessage && (
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -20 }}
+          className="bg-green-50 border-2 border-green-200 rounded-lg p-4 flex items-center gap-3 shadow-sm"
+        >
+          <div className="flex-shrink-0">
+            <svg
+              className="w-6 h-6 text-green-600"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
+            </svg>
+          </div>
+          <div className="flex-1">
+            <p className="text-sm font-semibold text-green-800">{successMessage}</p>
+          </div>
+          <button
+            onClick={() => setSuccessMessage(null)}
+            className="flex-shrink-0 text-green-600 hover:text-green-800 transition-colors"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </motion.div>
+      )}
+
       {/* Circulars Sub-Tab */}
       {subTab === "circulars" && (
         <div className="space-y-5">
           <motion.div
+            ref={circularFormRef}
             className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm"
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
@@ -2469,29 +2921,44 @@ function DocumentsAdmin({
             </h3>
             <div className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <Input
-                  label="Board Number"
-                  value={circularBoardNumber}
-                  onChange={(e) => setCircularBoardNumber(e.target.value)}
-                />
-                <Input
-                  label="Date of Issue"
-                  type="date"
-                  value={circularDateOfIssue}
-                  onChange={(e) => setCircularDateOfIssue(e.target.value)}
-                />
+                <div>
+                  <Input
+                    label="Board Number"
+                    value={circularBoardNumber}
+                    onChange={(e) => setCircularBoardNumber(e.target.value)}
+                    required
+                  />
+                  <p className="text-xs text-gray-500 mt-1">* Required field</p>
+                </div>
+                <div>
+                  <Input
+                    label="Date of Issue"
+                    type="date"
+                    value={circularDateOfIssue}
+                    onChange={(e) => setCircularDateOfIssue(e.target.value)}
+                    required
+                  />
+                  <p className="text-xs text-gray-500 mt-1">* Required field</p>
+                </div>
               </div>
-              <Input
-                label="Subject"
-                value={circularSubject}
-                onChange={(e) => setCircularSubject(e.target.value)}
-              />
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
                 <Input
-                  label="URL (optional)"
-                  value={circularUrl}
-                  onChange={(e) => setCircularUrl(e.target.value)}
+                  label="Subject"
+                  value={circularSubject}
+                  onChange={(e) => setCircularSubject(e.target.value)}
+                  required
                 />
+                <p className="text-xs text-gray-500 mt-1">* Required field</p>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Input
+                    label="URL (optional)"
+                    value={circularUrl}
+                    onChange={(e) => setCircularUrl(e.target.value)}
+                  />
+                  <p className="text-xs text-gray-500 mt-1">Provide URL or upload a file below</p>
+                </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     File (PDF or Image)
@@ -2504,17 +2971,17 @@ function DocumentsAdmin({
                       setCircularFile(e.target.files?.[0] || null)
                     }
                   />
-                  <div className="text-xs text-gray-500 mt-1">
-                    Provide either a URL or upload a file.
-                  </div>
+                  <p className="text-xs text-gray-500 mt-1">
+                    * Max 10MB • PDF or JPG/PNG only • Required if no URL
+                  </p>
                 </div>
               </div>
               <div className="flex gap-2">
-                <Button onClick={handleSaveCircular}>
-                  {editingCircular ? "Update Circular" : "Add Circular"}
+                <Button onClick={handleSaveCircular} disabled={isUploading}>
+                  {isUploading ? "Uploading..." : editingCircular ? "Update Circular" : "Add Circular"}
                 </Button>
                 {editingCircular && (
-                  <Button variant="ghost" onClick={resetCircularForm}>
+                  <Button variant="ghost" onClick={resetCircularForm} disabled={isUploading}>
                     Cancel
                   </Button>
                 )}
@@ -2701,6 +3168,7 @@ function DocumentsAdmin({
       {subTab === "manuals" && (
         <div className="space-y-5">
           <motion.div
+            ref={manualFormRef}
             className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm"
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
@@ -2724,11 +3192,32 @@ function DocumentsAdmin({
               {editingManual ? "Edit Manual" : "Add New Manual"}
             </h3>
             <div className="space-y-4">
-              <Input
-                label="Title"
-                value={manualTitle}
-                onChange={(e) => setManualTitle(e.target.value)}
-              />
+              <div>
+                <Input
+                  label="Title"
+                  value={manualTitle}
+                  onChange={(e) => setManualTitle(e.target.value)}
+                  required
+                />
+                <p className="text-xs text-gray-500 mt-1">* Required field</p>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Input
+                    label="Date (Optional)"
+                    type="date"
+                    value={manualDate}
+                    onChange={(e) => setManualDate(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <Input
+                    label="Subject (Optional)"
+                    value={manualSubject}
+                    onChange={(e) => setManualSubject(e.target.value)}
+                  />
+                </div>
+              </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Category
@@ -2753,11 +3242,14 @@ function DocumentsAdmin({
                 </select>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <Input
-                  label="URL (optional)"
-                  value={manualUrl}
-                  onChange={(e) => setManualUrl(e.target.value)}
-                />
+                <div>
+                  <Input
+                    label="URL (optional)"
+                    value={manualUrl}
+                    onChange={(e) => setManualUrl(e.target.value)}
+                  />
+                  <p className="text-xs text-gray-500 mt-1">Provide URL or upload a file below</p>
+                </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     File (PDF or Image)
@@ -2765,20 +3257,22 @@ function DocumentsAdmin({
                   <input
                     type="file"
                     accept="application/pdf,image/*"
-                    className="block w-full text-sm text-gray-600 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
-                    onChange={(e) => setManualFile(e.target.files?.[0] || null)}
+                    className="block w-full text-sm text-gray-600 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100"
+                    onChange={(e) =>
+                      setManualFile(e.target.files?.[0] || null)
+                    }
                   />
-                  <div className="text-xs text-gray-500 mt-1">
-                    Provide either a URL or upload a file.
-                  </div>
+                  <p className="text-xs text-gray-500 mt-1">
+                    * Max 10MB • PDF or JPG/PNG only • Required if no URL
+                  </p>
                 </div>
               </div>
               <div className="flex gap-2">
-                <Button onClick={handleSaveManual}>
-                  {editingManual ? "Update Manual" : "Add Manual"}
+                <Button onClick={handleSaveManual} disabled={isUploading}>
+                  {isUploading ? "Uploading..." : editingManual ? "Update Manual" : "Add Manual"}
                 </Button>
                 {editingManual && (
-                  <Button variant="ghost" onClick={resetManualForm}>
+                  <Button variant="ghost" onClick={resetManualForm} disabled={isUploading}>
                     Cancel
                   </Button>
                 )}
@@ -2970,6 +3464,7 @@ function DocumentsAdmin({
       {subTab === "court-cases" && (
         <div className="space-y-5">
           <motion.div
+            ref={courtCaseFormRef}
             className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm"
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
@@ -2993,30 +3488,66 @@ function DocumentsAdmin({
               {editingCourtCase ? "Edit Court Case" : "Add New Court Case"}
             </h3>
             <div className="space-y-4">
-              <Input
-                label="Case Number"
-                value={caseCaseNumber}
-                onChange={(e) => setCaseCaseNumber(e.target.value)}
-              />
+              <div>
+                <Input
+                  label="Case Number"
+                  value={caseCaseNumber}
+                  onChange={(e) => setCaseCaseNumber(e.target.value)}
+                  required
+                />
+                <p className="text-xs text-gray-500 mt-1">* Required field</p>
+              </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <Input
-                  label="Date"
-                  type="date"
-                  value={caseDate}
-                  onChange={(e) => setCaseDate(e.target.value)}
-                />
-                <Input
-                  label="Subject"
-                  value={caseSubject}
-                  onChange={(e) => setCaseSubject(e.target.value)}
-                />
+                <div>
+                  <Input
+                    label="Date"
+                    type="date"
+                    value={caseDate}
+                    onChange={(e) => setCaseDate(e.target.value)}
+                    required
+                  />
+                  <p className="text-xs text-gray-500 mt-1">* Required field</p>
+                </div>
+                <div>
+                  <Input
+                    label="Subject"
+                    value={caseSubject}
+                    onChange={(e) => setCaseSubject(e.target.value)}
+                    required
+                  />
+                  <p className="text-xs text-gray-500 mt-1">* Required field</p>
+                </div>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Input
+                    label="URL (optional)"
+                    value={caseUrl}
+                    onChange={(e) => setCaseUrl(e.target.value)}
+                  />
+                  <p className="text-xs text-gray-500 mt-1">Provide URL or upload a file below</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    File (PDF or Image)
+                  </label>
+                  <input
+                    type="file"
+                    accept="application/pdf,image/*"
+                    className="block w-full text-sm text-gray-600 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-red-50 file:text-red-700 hover:file:bg-red-100"
+                    onChange={(e) => setCaseFile(e.target.files?.[0] || null)}
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    * Max 10MB • PDF or JPG/PNG only
+                  </p>
+                </div>
               </div>
               <div className="flex gap-2">
-                <Button onClick={handleSaveCourtCase}>
-                  {editingCourtCase ? "Update Case" : "Add Case"}
+                <Button onClick={handleSaveCourtCase} disabled={isUploading}>
+                  {isUploading ? "Uploading..." : editingCourtCase ? "Update Case" : "Add Case"}
                 </Button>
                 {editingCourtCase && (
-                  <Button variant="ghost" onClick={resetCourtCaseForm}>
+                  <Button variant="ghost" onClick={resetCourtCaseForm} disabled={isUploading}>
                     Cancel
                   </Button>
                 )}
@@ -4472,6 +5003,7 @@ function AssociationBodyAdmin() {
   const [selectMode, setSelectMode] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [deleting, setDeleting] = useState(false);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [form, setForm] = useState<Omit<BodyMember, "id">>({
     name: "",
     designation: "",
@@ -4518,6 +5050,8 @@ function AssociationBodyAdmin() {
       setPhotoFile(null);
       setPhotoPreview("");
       setOpenCreate(false);
+      setSuccessMessage("Body member created successfully!");
+      setTimeout(() => setSuccessMessage(null), 3000);
     } catch (error) {
       console.error("Create body member error:", error);
       alert("Failed to create body member");
@@ -4546,6 +5080,8 @@ function AssociationBodyAdmin() {
       setForm({ name: "", designation: "", photoUrl: "", division: "Mumbai" });
       setPhotoFile(null);
       setPhotoPreview("");
+      setSuccessMessage("Body member updated successfully!");
+      setTimeout(() => setSuccessMessage(null), 3000);
     } catch (error) {
       console.error("Update body member error:", error);
       alert("Failed to update body member");
@@ -4565,6 +5101,8 @@ function AssociationBodyAdmin() {
         // Refresh the list from server to ensure consistency
         const updatedList = await getBodyMembers(selectedDivision || undefined);
         setBodyMembers(updatedList);
+        setSuccessMessage("Body member deleted successfully!");
+        setTimeout(() => setSuccessMessage(null), 3000);
       } catch (error) {
         console.error("Delete body member error:", error);
         alert("Failed to delete body member");
@@ -4602,6 +5140,8 @@ function AssociationBodyAdmin() {
       setSelected(new Set());
       const updatedList = await getBodyMembers(selectedDivision || undefined);
       setBodyMembers(updatedList);
+      setSuccessMessage(`${selected.size} member(s) deleted successfully!`);
+      setTimeout(() => setSuccessMessage(null), 3000);
     } catch (error) {
       console.error("Bulk delete error:", error);
       alert("Failed to delete some members");
@@ -4684,6 +5224,43 @@ function AssociationBodyAdmin() {
         <div className="absolute -right-16 -top-16 w-48 h-48 bg-white/10 rounded-full blur-3xl"></div>
         <div className="absolute -left-16 -bottom-16 w-48 h-48 bg-white/10 rounded-full blur-3xl"></div>
       </motion.div>
+
+      {/* Success Message */}
+      {successMessage && (
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -20 }}
+          className="bg-green-50 border-2 border-green-200 rounded-lg p-4 flex items-center gap-3 shadow-sm"
+        >
+          <div className="flex-shrink-0">
+            <svg
+              className="w-6 h-6 text-green-600"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
+            </svg>
+          </div>
+          <div className="flex-1">
+            <p className="text-sm font-semibold text-green-800">{successMessage}</p>
+          </div>
+          <button
+            onClick={() => setSuccessMessage(null)}
+            className="flex-shrink-0 text-green-600 hover:text-green-800 transition-colors"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </motion.div>
+      )}
 
       {/* Filter Card */}
       <motion.div

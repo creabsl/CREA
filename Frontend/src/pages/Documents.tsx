@@ -178,7 +178,7 @@ export default function Documents() {
               description: `Case Number: ${cc.caseNumber}`,
               date: cc.date,
               type: "court-case",
-              fileUrl: "#",
+              fileUrl: getFullUrl(cc.url),
               caseNumber: cc.caseNumber,
             })
           ),
