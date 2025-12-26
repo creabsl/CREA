@@ -67,3 +67,12 @@ a { color: var(--primary); text-underline-offset: 4px; }
 
 /* Icon utility: consistent sizing and currentColor inheritance */
 .icon { display: inline-block; vertical-align: middle; color: currentColor; }
+
+/* Scrollbar hide utility for cleaner mobile UI */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}

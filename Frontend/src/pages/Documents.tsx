@@ -239,10 +239,10 @@ export default function Documents() {
               onClick={() =>
                 window.open(row.fileUrl, "_blank", "noopener,noreferrer")
               }
-              className="text-[var(--primary)] hover:text-[var(--accent)] flex items-center gap-2 transition-colors cursor-pointer"
+              className="text-[var(--primary)] hover:text-[var(--accent)] flex items-center gap-1.5 sm:gap-2 transition-colors cursor-pointer text-xs sm:text-sm font-medium"
             >
               <svg
-                className="w-5 h-5"
+                className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -254,9 +254,10 @@ export default function Documents() {
                   d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
                 />
               </svg>
-              <span>View Document</span>
+              <span className="hidden sm:inline">View Document</span>
+              <span className="sm:hidden">View</span>
               <svg
-                className="w-3 h-3 opacity-50"
+                className="w-2.5 h-2.5 sm:w-3 sm:h-3 opacity-50 flex-shrink-0"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -270,7 +271,7 @@ export default function Documents() {
               </svg>
             </button>
           ) : (
-            <span className="text-gray-400">No file</span>
+            <span className="text-gray-400 text-xs sm:text-sm">No file</span>
           ),
       },
     ];
@@ -384,14 +385,14 @@ export default function Documents() {
   };
 
   return (
-    <div className="space-y-6">
-      {/* Minimalistic Header */}
+    <div className="space-y-4 sm:space-y-6">
+      {/* Responsive Header */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-        <div className="px-6 py-4 bg-blue-50 border-b border-blue-100">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
+        <div className="px-4 sm:px-6 py-3 sm:py-4 bg-blue-50 border-b border-blue-100">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
+            <div className="flex items-center gap-2 sm:gap-3">
               <svg
-                className="w-6 h-6 text-[var(--primary)]"
+                className="w-5 h-5 sm:w-6 sm:h-6 text-[var(--primary)] flex-shrink-0"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -403,11 +404,11 @@ export default function Documents() {
                   d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
                 />
               </svg>
-              <div>
-                <h1 className="text-xl font-semibold text-[var(--primary)]">
+              <div className="min-w-0">
+                <h1 className="text-lg sm:text-xl font-semibold text-[var(--primary)] truncate">
                   Document Repository
                 </h1>
-                <p className="text-xs text-gray-600">
+                <p className="text-[10px] sm:text-xs text-gray-600 truncate">
                   Circulars, Manuals & Legal Records
                 </p>
               </div>
@@ -419,10 +420,10 @@ export default function Documents() {
                     `/admin?tab=documents&subTab=${getAdminSubTab(activeTab)}`
                   )
                 }
-                className="text-sm"
+                className="text-xs sm:text-sm whitespace-nowrap w-full sm:w-auto"
               >
                 <svg
-                  className="w-4 h-4 mr-1.5"
+                  className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1.5"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -434,45 +435,49 @@ export default function Documents() {
                     d="M12 4v16m8-8H4"
                   />
                 </svg>
-                {getAddButtonText(activeTab)}
+                <span className="hidden sm:inline">{getAddButtonText(activeTab)}</span>
+                <span className="sm:hidden">Add {activeTab === 'circular' ? 'Circular' : activeTab === 'manual' ? 'Manual' : 'Case'}</span>
               </Button>
             )}
           </div>
         </div>
 
-        {/* Compact Tab Navigation */}
-        <div className="flex border-b border-gray-200 bg-gray-50 px-6">
-          {TABS.map((tab) => (
-            <button
-              key={tab.value}
-              onClick={() => setActiveTab(tab.value)}
-              className={`flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
-                activeTab === tab.value
-                  ? "border-[var(--primary)] text-[var(--primary)]"
-                  : "border-transparent text-gray-600 hover:text-gray-900 hover:border-gray-300"
-              }`}
-            >
-              {tab.icon}
-              {tab.label}
-              <span
-                className={`ml-1 px-1.5 py-0.5 text-xs rounded-full ${
+        {/* Responsive Tab Navigation */}
+        <div className="overflow-x-auto scrollbar-hide border-b border-gray-200 bg-gray-50">
+          <div className="flex px-3 sm:px-6 min-w-max">
+            {TABS.map((tab) => (
+              <button
+                key={tab.value}
+                onClick={() => setActiveTab(tab.value)}
+                className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2.5 sm:py-3 text-xs sm:text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
                   activeTab === tab.value
-                    ? "bg-blue-100 text-[var(--primary)]"
-                    : "bg-gray-200 text-gray-600"
+                    ? "border-[var(--primary)] text-[var(--primary)]"
+                    : "border-transparent text-gray-600 hover:text-gray-900 hover:border-gray-300"
                 }`}
               >
-                {documents.filter((d) => d.type === tab.value).length}
-              </span>
-            </button>
-          ))}
+                {tab.icon}
+                <span className="hidden sm:inline">{tab.label}</span>
+                <span className="sm:hidden">{tab.label.replace('Circulars', 'Docs').replace('Court Cases', 'Cases')}</span>
+                <span
+                  className={`ml-0.5 sm:ml-1 px-1.5 py-0.5 text-[10px] sm:text-xs rounded-full ${
+                    activeTab === tab.value
+                      ? "bg-blue-100 text-[var(--primary)]"
+                      : "bg-gray-200 text-gray-600"
+                  }`}
+                >
+                  {documents.filter((d) => d.type === tab.value).length}
+                </span>
+              </button>
+            ))}
+          </div>
         </div>
 
-        {/* Search Bar and Add Button */}
-        <div className="p-4">
+        {/* Responsive Search Bar */}
+        <div className="p-3 sm:p-4">
           <div className="relative">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <div className="absolute inset-y-0 left-0 pl-2.5 sm:pl-3 flex items-center pointer-events-none">
               <svg
-                className="h-4 w-4 text-gray-400"
+                className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-gray-400"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -496,7 +501,7 @@ export default function Documents() {
               }...`}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="block w-full pl-10 pr-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-[var(--primary)] focus:border-[var(--primary)]"
+              className="block w-full pl-8 sm:pl-10 pr-3 py-2 sm:py-2.5 text-xs sm:text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-[var(--primary)] focus:border-[var(--primary)]"
             />
           </div>
         </div>

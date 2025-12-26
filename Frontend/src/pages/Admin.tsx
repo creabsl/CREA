@@ -123,10 +123,10 @@ export default function Admin() {
   }, []);
 
   return (
-    <div className="space-y-6">
-      {/* Hero Header Section */}
+    <div className="space-y-4 sm:space-y-6">
+      {/* Responsive Hero Header Section */}
       <motion.div
-        className="relative rounded-xl bg-gradient-to-br from-[#0d2c54] via-[#19417d] to-[#0a2343] text-white p-8 overflow-hidden shadow-xl"
+        className="relative rounded-xl bg-gradient-to-br from-[#0d2c54] via-[#19417d] to-[#0a2343] text-white p-5 sm:p-6 md:p-8 overflow-hidden shadow-xl"
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
@@ -148,10 +148,10 @@ export default function Admin() {
         </div>
 
         <div className="relative z-10">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="w-12 h-12 bg-gradient-to-br from-[var(--accent)] to-yellow-500 rounded-xl flex items-center justify-center shadow-lg">
+          <div className="flex items-center gap-2 sm:gap-3 mb-2 sm:mb-3">
+            <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-[var(--accent)] to-yellow-500 rounded-lg sm:rounded-xl flex items-center justify-center shadow-lg flex-shrink-0">
               <svg
-                className="w-7 h-7 text-white"
+                className="w-5 h-5 sm:w-7 sm:h-7 text-white"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -170,29 +170,29 @@ export default function Admin() {
                 />
               </svg>
             </div>
-            <div>
+            <div className="min-w-0">
               <motion.div
                 initial={{ opacity: 0, scale: 0.8 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ delay: 0.2 }}
                 className="inline-block mb-1"
               >
-                <span className="bg-[var(--accent)]/20 text-[var(--accent)] px-3 py-1 rounded-full text-xs font-bold border border-[var(--accent)]/30 backdrop-blur-sm uppercase tracking-wider">
+                <span className="bg-[var(--accent)]/20 text-[var(--accent)] px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-bold border border-[var(--accent)]/30 backdrop-blur-sm uppercase tracking-wider">
                   ⚡ Management Center
                 </span>
               </motion.div>
-              <h1 className="text-3xl font-bold !text-white">Admin Panel</h1>
+              <h1 className="text-xl sm:text-2xl md:text-3xl font-bold !text-white">Admin Panel</h1>
             </div>
           </div>
-          <p className="text-white/90 text-sm max-w-3xl">
+          <p className="text-white/90 text-xs sm:text-sm max-w-3xl leading-relaxed">
             Manage all aspects of the CREA platform including events, manuals,
             circulars, court cases, forum topics, member data, and suggestions.
           </p>
         </div>
       </motion.div>
 
-      {/* Tab Navigation */}
-      <div className="flex gap-2 flex-wrap">
+      {/* Responsive Tab Navigation */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:flex lg:flex-wrap gap-2">
         {(
           [
             "events",
@@ -201,7 +201,7 @@ export default function Admin() {
             "forum",
             "suggestions",
             "members",
-            "settings",
+            "membership",
             "transfers",
             "association-body",
             "achievements",
@@ -211,18 +211,16 @@ export default function Admin() {
         ).map((k) => (
           <motion.button
             key={k}
-            onClick={() => setTab(k)}
-            className={`px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${
-              tab === k
+            onClick={() => setTab(k === "membership" ? "settings" : k)}
+            className={`px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200 whitespace-nowrap ${
+              (k === "membership" ? tab === "settings" : tab === k)
                 ? "bg-gradient-to-r from-[var(--primary)] to-[#19417d] text-white shadow-lg shadow-[var(--primary)]/30"
                 : "bg-white text-gray-700 border border-gray-200 hover:border-[var(--primary)] hover:text-[var(--primary)] hover:shadow-md"
             }`}
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
           >
-            {k === "settings"
-              ? "Membership"
-              : k === "transfers"
+            {k === "transfers"
               ? "Mutual Transfers"
               : k === "breaking-news"
               ? "Breaking News"
@@ -237,7 +235,7 @@ export default function Admin() {
         <motion.button
           key={"about"}
           onClick={() => setTab("about")}
-          className={`px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${
+          className={`px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200 whitespace-nowrap ${
             tab === "about"
               ? "bg-gradient-to-r from-[var(--primary)] to-[#19417d] text-white shadow-lg shadow-[var(--primary)]/30"
               : "bg-white text-gray-700 border border-gray-200 hover:border-[var(--primary)] hover:text-[var(--primary)] hover:shadow-md"
@@ -523,14 +521,14 @@ function AboutAdmin() {
 
   return (
     <motion.div
-      className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm"
+      className="rounded-xl border border-gray-200 bg-white p-3 sm:p-5 shadow-sm"
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
     >
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
-          <span className="w-8 h-8 bg-amber-100 rounded-lg flex items-center justify-center">
-            <span className="text-amber-600">🚂</span>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+        <h3 className="text-base sm:text-lg font-semibold text-gray-800 flex items-center gap-2">
+          <span className="w-7 h-7 sm:w-8 sm:h-8 bg-amber-100 rounded-lg flex items-center justify-center">
+            <span className="text-amber-600 text-sm sm:text-base">🚂</span>
           </span>
           About Page Management
         </h3>
@@ -541,16 +539,17 @@ function AboutAdmin() {
             setDescription("");
             setIcon("🎉");
           }}
+          className="text-xs sm:text-sm px-3 py-2 w-full sm:w-auto"
         >
           Reset Form
         </Button>
       </div>
 
-      <div className="grid md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
         <div>
           <div className="space-y-3">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
                 Milestone Title
               </label>
               <Input
@@ -559,9 +558,9 @@ function AboutAdmin() {
                 placeholder="e.g. Formation of CREA"
               />
             </div>
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-3 gap-2 sm:gap-3">
               <div className="col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
                   Year
                 </label>
                 <Input
@@ -574,8 +573,8 @@ function AboutAdmin() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Icon (emoji)
+                <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
+                  Icon
                 </label>
                 <Input
                   value={icon}
@@ -585,35 +584,36 @@ function AboutAdmin() {
               </div>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
                 One-line Description
               </label>
               <textarea
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                className="w-full rounded-md border border-gray-300 p-2 focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
+                className="w-full rounded-md border border-gray-300 p-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
                 rows={3}
                 placeholder="Brief description"
               />
             </div>
             <div className="flex gap-2">
-              <Button onClick={addOne}>Add Milestone</Button>
+              <Button onClick={addOne} className="text-xs sm:text-sm px-3 sm:px-4 py-2 w-full sm:w-auto">Add Milestone</Button>
             </div>
           </div>
         </div>
         <div>
-          <div className="rounded-lg border border-gray-200 p-3">
-            <div className="flex items-center justify-between">
-              <h4 className="font-semibold text-gray-800">
+          <div className="rounded-lg border border-gray-200 p-2 sm:p-3">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-0">
+              <h4 className="text-sm sm:text-base font-semibold text-gray-800">
                 Existing Milestones ({combinedMilestones.length})
               </h4>
-              <div className="flex items-center gap-2">
-                <Button variant="secondary" onClick={() => saveMilestones([])}>
+              <div className="flex items-center gap-2 flex-wrap">
+                <Button variant="secondary" onClick={() => saveMilestones([])} className="text-xs sm:text-sm px-2 sm:px-3 py-1.5 sm:py-2 flex-1 sm:flex-none">
                   Clear Added
                 </Button>
                 <Button
                   variant="secondary"
                   onClick={() => saveRemovedMilestones([])}
+                  className="text-xs sm:text-sm px-2 sm:px-3 py-1.5 sm:py-2 flex-1 sm:flex-none"
                 >
                   Restore Defaults
                 </Button>
@@ -626,19 +626,19 @@ function AboutAdmin() {
                 return (
                   <li
                     key={`${key}-${idx}`}
-                    className="py-2 flex items-center justify-between"
+                    className="py-2 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2"
                   >
-                    <div>
-                      <div className="text-sm font-medium text-gray-800">
+                    <div className="flex-1 min-w-0">
+                      <div className="text-xs sm:text-sm font-medium text-gray-800 truncate">
                         {m.title}{" "}
                         <span className="text-gray-500">• {m.year}</span>
                       </div>
-                      <div className="text-xs text-gray-600">
+                      <div className="text-xs text-gray-600 line-clamp-2">
                         {m.description}
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-xl">{m.icon}</span>
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      <span className="text-lg sm:text-xl">{m.icon}</span>
                       {isDefault ? (
                         <>
                           <Button
@@ -650,6 +650,7 @@ function AboutAdmin() {
                               setIcon(m.icon);
                               setEditingDefaultMilestoneKey(key);
                             }}
+                            className="text-xs px-2 py-1"
                           >
                             Edit
                           </Button>
@@ -660,6 +661,7 @@ function AboutAdmin() {
                               keys.add(key);
                               saveRemovedMilestones(Array.from(keys));
                             }}
+                            className="text-xs px-2 py-1"
                           >
                             Remove
                           </Button>
@@ -668,6 +670,7 @@ function AboutAdmin() {
                         <Button
                           variant="secondary"
                           onClick={() => removeOne(key)}
+                          className="text-xs px-2 py-1"
                         >
                           Remove
                         </Button>
@@ -697,28 +700,28 @@ function AboutAdmin() {
         </div>
       </div>
 
-      <div className="mt-8">
-        <div className="flex items-center justify-between mb-3">
-          <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
-            <span className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
-              <span className="text-blue-600">📷</span>
+      <div className="mt-6 sm:mt-8">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-0 mb-3">
+          <h3 className="text-base sm:text-lg font-semibold text-gray-800 flex items-center gap-2">
+            <span className="w-7 h-7 sm:w-8 sm:h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+              <span className="text-blue-600 text-sm sm:text-base">📷</span>
             </span>
             Past Events Gallery
           </h3>
-          <div className="flex items-center gap-2">
-            <Button variant="secondary" onClick={() => saveGallery([])}>
+          <div className="flex items-center gap-2 flex-wrap">
+            <Button variant="secondary" onClick={() => saveGallery([])} className="text-xs sm:text-sm px-2 sm:px-3 py-1.5 sm:py-2 flex-1 sm:flex-none">
               Clear Added
             </Button>
-            <Button variant="secondary" onClick={() => saveRemovedGallery([])}>
+            <Button variant="secondary" onClick={() => saveRemovedGallery([])} className="text-xs sm:text-sm px-2 sm:px-3 py-1.5 sm:py-2 flex-1 sm:flex-none">
               Restore Defaults
             </Button>
           </div>
         </div>
-        <div className="grid md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
           <div>
             <div className="space-y-3">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
                   Event Title
                 </label>
                 <Input
@@ -728,13 +731,13 @@ function AboutAdmin() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
                   Upload Image
                 </label>
-                <div className="flex items-center gap-3">
-                  <label className="inline-flex items-center gap-2 px-3 py-2 rounded-md bg-[var(--primary)] text-white text-sm cursor-pointer hover:opacity-90">
+                <div className="flex items-center gap-2 sm:gap-3">
+                  <label className="inline-flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-md bg-[var(--primary)] text-white text-xs sm:text-sm cursor-pointer hover:opacity-90">
                     <svg
-                      className="w-4 h-4"
+                      className="w-3.5 h-3.5 sm:w-4 sm:h-4"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -791,13 +794,13 @@ function AboutAdmin() {
                 </div>
               </div>
               <div className="flex gap-2">
-                <Button onClick={addGalleryItem}>Add Photo</Button>
+                <Button onClick={addGalleryItem} className="text-xs sm:text-sm px-3 sm:px-4 py-2 w-full sm:w-auto">Add Photo</Button>
               </div>
             </div>
           </div>
           <div>
-            <div className="rounded-lg border border-gray-200 p-3">
-              <h4 className="font-semibold text-gray-800">
+            <div className="rounded-lg border border-gray-200 p-2 sm:p-3">
+              <h4 className="text-sm sm:text-base font-semibold text-gray-800">
                 Existing Photos ({combinedGallery.length})
               </h4>
               <ul className="divide-y divide-gray-100 mt-3">
@@ -806,16 +809,16 @@ function AboutAdmin() {
                   return (
                     <li
                       key={item.id}
-                      className="py-2 flex items-center justify-between"
+                      className="py-2 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2"
                     >
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
                         <img
                           src={item.thumbnail}
                           alt={item.title}
-                          className="w-14 h-14 object-cover rounded"
+                          className="w-12 h-12 sm:w-14 sm:h-14 object-cover rounded flex-shrink-0"
                         />
-                        <div>
-                          <div className="text-sm font-medium text-gray-800">
+                        <div className="min-w-0">
+                          <div className="text-xs sm:text-sm font-medium text-gray-800 truncate">
                             {item.title}
                           </div>
                           <div className="text-xs text-gray-600">
@@ -823,6 +826,7 @@ function AboutAdmin() {
                           </div>
                         </div>
                       </div>
+                      <div className="flex items-center gap-2 flex-shrink-0">
                       {isDefault ? (
                         <>
                           <Button
@@ -832,6 +836,7 @@ function AboutAdmin() {
                               setEventImage("");
                               setEditingDefaultGalleryId(item.id);
                             }}
+                            className="text-xs px-2 py-1 flex-1 sm:flex-none"
                           >
                             Edit
                           </Button>
@@ -842,6 +847,7 @@ function AboutAdmin() {
                               ids.add(item.id);
                               saveRemovedGallery(Array.from(ids));
                             }}
+                            className="text-xs px-2 py-1 flex-1 sm:flex-none"
                           >
                             Remove
                           </Button>
@@ -850,10 +856,12 @@ function AboutAdmin() {
                         <Button
                           variant="secondary"
                           onClick={() => removeGalleryItem(item.id)}
+                          className="text-xs px-2 py-1 w-full sm:w-auto"
                         >
                           Remove
                         </Button>
                       )}
+                      </div>
                     </li>
                   );
                 })}
@@ -5866,9 +5874,9 @@ function MutualTransfersAdmin({
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold">Mutual Transfers</h2>
-        <div className="flex items-center gap-3">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 px-4 sm:px-0">
+        <h2 className="text-xl sm:text-2xl font-bold text-[var(--primary)]">Mutual Transfers</h2>
+        <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
           {selectMode ? (
             <>
               {data.length > 0 && (
@@ -5887,6 +5895,7 @@ function MutualTransfersAdmin({
                   variant="danger"
                   onClick={deleteSelected}
                   disabled={deleting}
+                  className="text-xs sm:text-sm px-3 sm:px-4 py-2"
                 >
                   {deleting
                     ? "Deleting..."
@@ -5899,32 +5908,33 @@ function MutualTransfersAdmin({
                   setSelectMode(false);
                   setSelected(new Set());
                 }}
+                className="text-xs sm:text-sm px-3 sm:px-4 py-2"
               >
                 Cancel
               </Button>
             </>
           ) : (
             data.length > 0 && (
-              <Button variant="secondary" onClick={() => setSelectMode(true)}>
+              <Button variant="secondary" onClick={() => setSelectMode(true)} className="text-xs sm:text-sm px-3 sm:px-4 py-2">
                 Select
               </Button>
             )
           )}
-          <Button onClick={() => setOpenCreate(true)} variant="primary">
+          <Button onClick={() => setOpenCreate(true)} variant="primary" className="text-xs sm:text-sm px-3 sm:px-4 py-2">
             Add Transfer
           </Button>
         </div>
       </div>
 
-      <div className="grid gap-4">
+      <div className="grid gap-4 px-4 sm:px-0">
         {data.map((item) => (
           <div
             key={item.id}
-            className={`border rounded-lg p-4 transition-colors hover:shadow-md ${
+            className={`border rounded-lg p-3 sm:p-4 transition-colors hover:shadow-md ${
               selected.has(item.id) ? "bg-blue-50 border-blue-300" : "bg-white"
             }`}
           >
-            <div className="flex justify-between items-start gap-4">
+            <div className="flex flex-col lg:flex-row justify-between items-start gap-3 sm:gap-4">
               {selectMode && (
                 <input
                   type="checkbox"
@@ -5935,22 +5945,22 @@ function MutualTransfersAdmin({
               )}
 
               {/* Main Content Area */}
-              <div className="flex-1">
-                <div className="flex flex-wrap gap-6">
+              <div className="flex-1 min-w-0">
+                <div className="flex flex-col lg:flex-row gap-4 lg:gap-6">
                   {/* Left Section - Main Info */}
-                  <div className="flex-1 min-w-[300px]">
-                    <div className="flex items-start gap-3 mb-4">
-                      <div className="w-12 h-12 bg-gradient-to-br from-[var(--primary)] to-[#1a4d8f] rounded-lg flex items-center justify-center text-white font-bold shadow-md flex-shrink-0">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-start gap-2 sm:gap-3 mb-3 sm:mb-4">
+                      <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-[var(--primary)] to-[#1a4d8f] rounded-lg flex items-center justify-center text-white font-bold text-base sm:text-lg shadow-md flex-shrink-0">
                         {(item.currentDesignation || item.post)
                           .substring(0, 2)
                           .toUpperCase()}
                       </div>
-                      <div className="flex-1">
+                      <div className="flex-1 min-w-0">
                         <div className="mb-2">
                           <div className="text-xs text-gray-500 font-medium mb-0.5">
                             Current Position:
                           </div>
-                          <h4 className="text-base font-bold text-gray-700">
+                          <h4 className="text-sm sm:text-base font-bold text-gray-700 truncate">
                             {item.currentDesignation || item.post}
                           </h4>
                         </div>
@@ -5958,7 +5968,7 @@ function MutualTransfersAdmin({
                           <div className="text-xs text-[var(--primary)] font-medium mb-0.5">
                             Seeking Position:
                           </div>
-                          <h4 className="text-lg font-bold text-[var(--primary)]">
+                          <h4 className="text-base sm:text-lg font-bold text-[var(--primary)] truncate">
                             {item.desiredDesignation || item.post}
                           </h4>
                         </div>
@@ -5972,10 +5982,10 @@ function MutualTransfersAdmin({
                     </div>
 
                     {/* Location Transfer */}
-                    <div className="flex items-center gap-3 mb-4 flex-wrap">
-                      <div className="flex items-center gap-2 px-3 py-2 bg-blue-50 text-[var(--primary)] rounded-lg font-medium text-sm">
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
+                      <div className="flex items-center gap-2 px-2.5 sm:px-3 py-1.5 sm:py-2 bg-blue-50 text-[var(--primary)] rounded-lg font-medium text-xs sm:text-sm">
                         <svg
-                          className="w-4 h-4"
+                          className="w-4 h-4 flex-shrink-0"
                           fill="none"
                           stroke="currentColor"
                           viewBox="0 0 24 24"
@@ -5993,10 +6003,10 @@ function MutualTransfersAdmin({
                             d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
                           />
                         </svg>
-                        {item.currentLocation}
+                        <span className="truncate">{item.currentLocation}</span>
                       </div>
                       <svg
-                        className="w-6 h-6 text-[var(--accent)]"
+                        className="w-5 h-5 sm:w-6 sm:h-6 text-[var(--accent)] flex-shrink-0 self-center transform rotate-90 sm:rotate-0"
                         fill="none"
                         stroke="currentColor"
                         viewBox="0 0 24 24"
@@ -6008,9 +6018,9 @@ function MutualTransfersAdmin({
                           d="M14 5l7 7m0 0l-7 7m7-7H3"
                         />
                       </svg>
-                      <div className="flex items-center gap-2 px-3 py-2 bg-green-50 text-green-700 rounded-lg font-medium text-sm">
+                      <div className="flex items-center gap-2 px-2.5 sm:px-3 py-1.5 sm:py-2 bg-green-50 text-green-700 rounded-lg font-medium text-xs sm:text-sm">
                         <svg
-                          className="w-4 h-4"
+                          className="w-4 h-4 flex-shrink-0"
                           fill="none"
                           stroke="currentColor"
                           viewBox="0 0 24 24"
@@ -6022,14 +6032,14 @@ function MutualTransfersAdmin({
                             d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"
                           />
                         </svg>
-                        {item.desiredLocation}
+                        <span className="truncate">{item.desiredLocation}</span>
                       </div>
                     </div>
 
                     {/* Availability Date */}
-                    <div className="flex items-center gap-2 text-sm text-[var(--secondary)] mb-3">
+                    <div className="flex items-center gap-2 text-xs sm:text-sm text-[var(--secondary)] mb-3">
                       <svg
-                        className="w-4 h-4"
+                        className="w-4 h-4 flex-shrink-0"
                         fill="none"
                         stroke="currentColor"
                         viewBox="0 0 24 24"
@@ -6042,7 +6052,7 @@ function MutualTransfersAdmin({
                         />
                       </svg>
                       {item.availabilityDate ? (
-                        <span>
+                        <span className="break-words">
                           Available from:{" "}
                           <strong className="text-[var(--primary)]">
                             {new Date(item.availabilityDate).toLocaleDateString(
@@ -6067,14 +6077,14 @@ function MutualTransfersAdmin({
 
                     {/* Notes */}
                     {item.notes && (
-                      <div className="bg-gray-50 border-l-4 border-[var(--accent)] p-3 rounded">
-                        <p className="text-sm text-gray-700">{item.notes}</p>
+                      <div className="bg-gray-50 border-l-4 border-[var(--accent)] p-2.5 sm:p-3 rounded">
+                        <p className="text-xs sm:text-sm text-gray-700 break-words">{item.notes}</p>
                       </div>
                     )}
                   </div>
 
                   {/* Right Section - Contact Info */}
-                  <div className="bg-gray-50 rounded-lg p-4 border border-gray-200 min-w-[250px]">
+                  <div className="bg-gray-50 rounded-lg p-3 sm:p-4 border border-gray-200 w-full lg:w-auto lg:min-w-[250px]">
                     <p className="text-xs font-bold text-[var(--secondary)] uppercase tracking-wide mb-3">
                       Contact Information
                     </p>
@@ -6094,7 +6104,7 @@ function MutualTransfersAdmin({
                             d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
                           />
                         </svg>
-                        <span className="text-sm font-semibold text-[var(--primary)]">
+                        <span className="text-xs sm:text-sm font-semibold text-[var(--primary)] truncate">
                           {item.contactName || "—"}
                         </span>
                       </div>
@@ -6116,12 +6126,12 @@ function MutualTransfersAdmin({
                         {item.contactEmail ? (
                           <a
                             href={`mailto:${item.contactEmail}`}
-                            className="text-sm text-blue-600 hover:text-blue-800 hover:underline break-all"
+                            className="text-xs sm:text-sm text-blue-600 hover:text-blue-800 hover:underline break-all"
                           >
                             {item.contactEmail}
                           </a>
                         ) : (
-                          <span className="text-sm text-gray-700">—</span>
+                          <span className="text-xs sm:text-sm text-gray-700">—</span>
                         )}
                       </div>
 
@@ -6139,7 +6149,7 @@ function MutualTransfersAdmin({
                             d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"
                           />
                         </svg>
-                        <span className="text-sm text-gray-700">
+                        <span className="text-xs sm:text-sm text-gray-700 truncate">
                           {item.contactPhone || "—"}
                         </span>
                       </div>
@@ -6163,11 +6173,11 @@ function MutualTransfersAdmin({
               </div>
 
               {/* Action Buttons */}
-              <div className="flex flex-col gap-2 flex-shrink-0">
-                <Button onClick={() => handleEdit(item)} variant="secondary">
+              <div className="flex flex-row lg:flex-col gap-2 flex-shrink-0 w-full lg:w-auto">
+                <Button onClick={() => handleEdit(item)} variant="secondary" className="flex-1 lg:flex-none text-xs sm:text-sm px-3 sm:px-4 py-2">
                   Edit
                 </Button>
-                <Button onClick={() => handleDelete(item.id)} variant="danger">
+                <Button onClick={() => handleDelete(item.id)} variant="danger" className="flex-1 lg:flex-none text-xs sm:text-sm px-3 sm:px-4 py-2">
                   Delete
                 </Button>
               </div>
@@ -6177,13 +6187,13 @@ function MutualTransfersAdmin({
       </div>
 
       {openCreate && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <motion.div
             initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
-            className="bg-white rounded-lg p-6 w-full max-w-md space-y-4"
+            className="bg-white rounded-lg p-4 sm:p-6 w-full max-w-md space-y-4 max-h-[90vh] overflow-y-auto"
           >
-            <h3 className="text-xl font-bold">
+            <h3 className="text-lg sm:text-xl font-bold">
               {editingId ? "Edit" : "Add"} Transfer
             </h3>
             <Input
@@ -6217,7 +6227,7 @@ function MutualTransfersAdmin({
               value={form.notes}
               onChange={(e) => setForm({ ...form, notes: e.target.value })}
             />
-            <div className="flex gap-2">
+            <div className="flex flex-col sm:flex-row gap-2">
               <Button
                 onClick={editingId ? handleUpdate : handleCreate}
                 variant="primary"

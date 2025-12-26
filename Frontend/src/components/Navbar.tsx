@@ -467,17 +467,25 @@ export default function Navbar() {
                 <div className="px-5 py-4">
                   {/* User info section */}
                   {user && (
-                    <div className="mb-4 pb-4 border-b border-gray-200">
-                      <div className="flex items-center gap-3">
-                        <span className="inline-flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-[var(--primary)] to-blue-600 text-white font-bold text-xl shadow-lg ring-2 ring-white">
-                          {user.name?.[0]?.toUpperCase() || "U"}
-                        </span>
-                        <div className="flex-1 min-w-0">
-                          <div className="text-base font-bold text-gray-900 truncate">
-                            {user.name}
+                    <div className="mb-6">
+                      <div className="bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 rounded-2xl p-4 shadow-sm border border-blue-100">
+                        <div className="flex items-center gap-3">
+                          <div className="relative">
+                            <span className="inline-flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-[var(--primary)] via-blue-600 to-indigo-600 text-white font-bold text-xl shadow-lg ring-4 ring-white">
+                              {user.name?.[0]?.toUpperCase() || "U"}
+                            </span>
+                            <span className="absolute bottom-0 right-0 block h-4 w-4 rounded-full bg-green-500 ring-2 ring-white"></span>
                           </div>
-                          <div className="text-xs text-gray-500 truncate">
-                            {user.email}
+                          <div className="flex-1 min-w-0">
+                            <div className="text-base font-bold text-gray-900 truncate">
+                              {user.name}
+                            </div>
+                            <div className="text-xs text-gray-600 truncate flex items-center gap-1 mt-0.5">
+                              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                              </svg>
+                              {user.email}
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -485,21 +493,21 @@ export default function Navbar() {
                   )}
 
                   {/* Navigation links */}
-                  <nav className="space-y-1.5">
+                  <nav className="space-y-2">
                     {/* Main navigation */}
                     <NavLink
                       to="/"
                       className={({ isActive }) =>
-                        `flex items-center px-4 py-3 rounded-lg text-sm font-medium transition-all no-underline ${
+                        `group flex items-center px-4 py-3.5 rounded-xl text-[15px] font-bold transition-all no-underline ${
                           isActive
-                            ? "bg-[var(--primary)] text-white shadow-md"
-                            : "text-gray-700 hover:bg-gray-100 active:bg-gray-200"
+                            ? "bg-gradient-to-r from-[var(--primary)] to-blue-600 !text-white shadow-lg shadow-blue-500/30 scale-[1.02] [text-shadow:_0_1px_3px_rgb(0_0_0_/_30%)]"
+                            : "text-gray-800 hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 hover:text-[var(--primary)] active:scale-95"
                         }`
                       }
                       end
                       onClick={() => setOpen(false)}
                     >
-                      <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="w-5 h-5 mr-3 transition-transform group-hover:scale-110" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
                       </svg>
                       Home
@@ -507,15 +515,15 @@ export default function Navbar() {
                     <NavLink
                       to="/about"
                       className={({ isActive }) =>
-                        `flex items-center px-4 py-3 rounded-lg text-sm font-medium transition-all no-underline ${
+                        `group flex items-center px-4 py-3.5 rounded-xl text-[15px] font-bold transition-all no-underline ${
                           isActive
-                            ? "bg-[var(--primary)] text-white shadow-md"
-                            : "text-gray-700 hover:bg-gray-100 active:bg-gray-200"
+                            ? "bg-gradient-to-r from-[var(--primary)] to-blue-600 !text-white shadow-lg shadow-blue-500/30 scale-[1.02] [text-shadow:_0_1px_3px_rgb(0_0_0_/_30%)]"
+                            : "text-gray-800 hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 hover:text-[var(--primary)] active:scale-95"
                         }`
                       }
                       onClick={() => setOpen(false)}
                     >
-                      <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="w-5 h-5 mr-3 transition-transform group-hover:scale-110" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
                       About
@@ -523,15 +531,15 @@ export default function Navbar() {
                     <NavLink
                       to="/events"
                       className={({ isActive }) =>
-                        `flex items-center px-4 py-3 rounded-lg text-sm font-medium transition-all no-underline ${
+                        `group flex items-center px-4 py-3.5 rounded-xl text-[15px] font-bold transition-all no-underline ${
                           isActive
-                            ? "bg-[var(--primary)] text-white shadow-md"
-                            : "text-gray-700 hover:bg-gray-100 active:bg-gray-200"
+                            ? "bg-gradient-to-r from-[var(--primary)] to-blue-600 !text-white shadow-lg shadow-blue-500/30 scale-[1.02] [text-shadow:_0_1px_3px_rgb(0_0_0_/_30%)]"
+                            : "text-gray-800 hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 hover:text-[var(--primary)] active:scale-95"
                         }`
                       }
                       onClick={() => setOpen(false)}
                     >
-                      <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="w-5 h-5 mr-3 transition-transform group-hover:scale-110" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                       </svg>
                       Events
@@ -539,15 +547,15 @@ export default function Navbar() {
                     <NavLink
                       to="/documents"
                       className={({ isActive }) =>
-                        `flex items-center px-4 py-3 rounded-lg text-sm font-medium transition-all no-underline ${
+                        `group flex items-center px-4 py-3.5 rounded-xl text-[15px] font-bold transition-all no-underline ${
                           isActive
-                            ? "bg-[var(--primary)] text-white shadow-md"
-                            : "text-gray-700 hover:bg-gray-100 active:bg-gray-200"
+                            ? "bg-gradient-to-r from-[var(--primary)] to-blue-600 !text-white shadow-lg shadow-blue-500/30 scale-[1.02] [text-shadow:_0_1px_3px_rgb(0_0_0_/_30%)]"
+                            : "text-gray-800 hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 hover:text-[var(--primary)] active:scale-95"
                         }`
                       }
                       onClick={() => setOpen(false)}
                     >
-                      <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="w-5 h-5 mr-3 transition-transform group-hover:scale-110" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                       </svg>
                       Documents
@@ -555,38 +563,42 @@ export default function Navbar() {
                     <NavLink
                       to="/apply-membership"
                       className={({ isActive }) =>
-                        `flex items-center px-4 py-3 rounded-lg text-sm font-medium transition-all no-underline ${
+                        `group flex items-center px-4 py-3.5 rounded-xl text-[15px] font-bold transition-all no-underline ${
                           isActive
-                            ? "bg-[var(--primary)] text-white shadow-md"
-                            : "text-gray-700 hover:bg-gray-100 active:bg-gray-200"
+                            ? "bg-gradient-to-r from-[var(--primary)] to-blue-600 !text-white shadow-lg shadow-blue-500/30 scale-[1.02] [text-shadow:_0_1px_3px_rgb(0_0_0_/_30%)]"
+                            : "text-gray-800 hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 hover:text-[var(--primary)] active:scale-95"
                         }`
                       }
                       onClick={() => setOpen(false)}
                     >
-                      <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="w-5 h-5 mr-3 transition-transform group-hover:scale-110" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                       </svg>
                       Membership
                     </NavLink>
 
                     {/* Community section */}
-                    <div className="pt-4 pb-2">
-                      <div className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 px-2">
-                        Community
+                    <div className="pt-5 pb-2">
+                      <div className="flex items-center gap-2 px-2 mb-3">
+                        <div className="flex-1 h-px bg-gradient-to-r from-gray-300 via-gray-200 to-transparent"></div>
+                        <div className="text-xs font-extrabold text-gray-500 uppercase tracking-widest">
+                          Community
+                        </div>
+                        <div className="flex-1 h-px bg-gradient-to-l from-gray-300 via-gray-200 to-transparent"></div>
                       </div>
-                      <div className="space-y-1.5">
+                      <div className="space-y-2">
                         <NavLink
                           to="/forum"
                           className={({ isActive }) =>
-                            `flex items-center px-4 py-3 rounded-lg text-sm font-medium transition-all no-underline ${
+                            `group flex items-center px-4 py-3.5 rounded-xl text-[15px] font-bold transition-all no-underline ${
                               isActive
-                                ? "bg-[var(--primary)] text-white shadow-md"
-                                : "text-gray-700 hover:bg-gray-100 active:bg-gray-200"
+                                ? "bg-gradient-to-r from-[var(--primary)] to-blue-600 !text-white shadow-lg shadow-blue-500/30 scale-[1.02] [text-shadow:_0_1px_3px_rgb(0_0_0_/_30%)]"
+                                : "text-gray-800 hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 hover:text-[var(--primary)] active:scale-95"
                             }`
                           }
                           onClick={() => setOpen(false)}
                         >
-                          <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <svg className="w-5 h-5 mr-3 transition-transform group-hover:scale-110" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                           </svg>
                           Forum
@@ -594,15 +606,15 @@ export default function Navbar() {
                         <NavLink
                           to="/mutual-transfers"
                           className={({ isActive }) =>
-                            `flex items-center px-4 py-3 rounded-lg text-sm font-medium transition-all no-underline ${
+                            `group flex items-center px-4 py-3.5 rounded-xl text-[15px] font-bold transition-all no-underline ${
                               isActive
-                                ? "bg-[var(--primary)] text-white shadow-md"
-                                : "text-gray-700 hover:bg-gray-100 active:bg-gray-200"
+                                ? "bg-gradient-to-r from-[var(--primary)] to-blue-600 !text-white shadow-lg shadow-blue-500/30 scale-[1.02] [text-shadow:_0_1px_3px_rgb(0_0_0_/_30%)]"
+                                : "text-gray-800 hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 hover:text-[var(--primary)] active:scale-95"
                             }`
                           }
                           onClick={() => setOpen(false)}
                         >
-                          <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <svg className="w-5 h-5 mr-3 transition-transform group-hover:scale-110" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
                           </svg>
                           Mutual Transfers
@@ -610,15 +622,15 @@ export default function Navbar() {
                         <NavLink
                           to="/suggestions"
                           className={({ isActive }) =>
-                            `flex items-center px-4 py-3 rounded-lg text-sm font-medium transition-all no-underline ${
+                            `group flex items-center px-4 py-3.5 rounded-xl text-[15px] font-bold transition-all no-underline ${
                               isActive
-                                ? "bg-[var(--primary)] text-white shadow-md"
-                                : "text-gray-700 hover:bg-gray-100 active:bg-gray-200"
+                                ? "bg-gradient-to-r from-[var(--primary)] to-blue-600 !text-white shadow-lg shadow-blue-500/30 scale-[1.02] [text-shadow:_0_1px_3px_rgb(0_0_0_/_30%)]"
+                                : "text-gray-800 hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 hover:text-[var(--primary)] active:scale-95"
                             }`
                           }
                           onClick={() => setOpen(false)}
                         >
-                          <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <svg className="w-5 h-5 mr-3 transition-transform group-hover:scale-110" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
                           </svg>
                           Suggestions
@@ -626,15 +638,15 @@ export default function Navbar() {
                         <NavLink
                           to="/external-links"
                           className={({ isActive }) =>
-                            `flex items-center px-4 py-3 rounded-lg text-sm font-medium transition-all no-underline ${
+                            `group flex items-center px-4 py-3.5 rounded-xl text-[15px] font-bold transition-all no-underline ${
                               isActive
-                                ? "bg-[var(--primary)] text-white shadow-md"
-                                : "text-gray-700 hover:bg-gray-100 active:bg-gray-200"
+                                ? "bg-gradient-to-r from-[var(--primary)] to-blue-600 !text-white shadow-lg shadow-blue-500/30 scale-[1.02] [text-shadow:_0_1px_3px_rgb(0_0_0_/_30%)]"
+                                : "text-gray-800 hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 hover:text-[var(--primary)] active:scale-95"
                             }`
                           }
                           onClick={() => setOpen(false)}
                         >
-                          <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <svg className="w-5 h-5 mr-3 transition-transform group-hover:scale-110" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
                           </svg>
                           External Links
@@ -642,15 +654,15 @@ export default function Navbar() {
                         <NavLink
                           to="/body-details"
                           className={({ isActive }) =>
-                            `flex items-center px-4 py-3 rounded-lg text-sm font-medium transition-all no-underline ${
+                            `group flex items-center px-4 py-3.5 rounded-xl text-[15px] font-bold transition-all no-underline ${
                               isActive
-                                ? "bg-[var(--primary)] text-white shadow-md"
-                                : "text-gray-700 hover:bg-gray-100 active:bg-gray-200"
+                                ? "bg-gradient-to-r from-[var(--primary)] to-blue-600 !text-white shadow-lg shadow-blue-500/30 scale-[1.02] [text-shadow:_0_1px_3px_rgb(0_0_0_/_30%)]"
+                                : "text-gray-800 hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 hover:text-[var(--primary)] active:scale-95"
                             }`
                           }
                           onClick={() => setOpen(false)}
                         >
-                          <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <svg className="w-5 h-5 mr-3 transition-transform group-hover:scale-110" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
                           </svg>
                           Association Body
@@ -658,15 +670,15 @@ export default function Navbar() {
                         <NavLink
                           to="/donations"
                           className={({ isActive }) =>
-                            `flex items-center px-4 py-3 rounded-lg text-sm font-medium transition-all no-underline ${
+                            `group flex items-center px-4 py-3.5 rounded-xl text-[15px] font-bold transition-all no-underline ${
                               isActive
-                                ? "bg-[var(--primary)] text-white shadow-md"
-                                : "text-gray-700 hover:bg-gray-100 active:bg-gray-200"
+                                ? "bg-gradient-to-r from-[var(--primary)] to-blue-600 !text-white shadow-lg shadow-blue-500/30 scale-[1.02] [text-shadow:_0_1px_3px_rgb(0_0_0_/_30%)]"
+                                : "text-gray-800 hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 hover:text-[var(--primary)] active:scale-95"
                             }`
                           }
                           onClick={() => setOpen(false)}
                         >
-                          <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <svg className="w-5 h-5 mr-3 transition-transform group-hover:scale-110" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                           </svg>
                           Donations
@@ -676,24 +688,28 @@ export default function Navbar() {
 
                     {/* Account section */}
                     {user && (
-                      <div className="pt-4 pb-2 border-t border-gray-200 mt-4">
-                        <div className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 px-2">
-                          Account
+                      <div className="pt-5 pb-2">
+                        <div className="flex items-center gap-2 px-2 mb-3">
+                          <div className="flex-1 h-px bg-gradient-to-r from-gray-300 via-gray-200 to-transparent"></div>
+                          <div className="text-xs font-extrabold text-gray-500 uppercase tracking-widest">
+                            Account
+                          </div>
+                          <div className="flex-1 h-px bg-gradient-to-l from-gray-300 via-gray-200 to-transparent"></div>
                         </div>
-                        <div className="space-y-1.5">
+                        <div className="space-y-2">
                           {user.role === "admin" && (
                             <NavLink
                               to="/admin"
                               className={({ isActive }) =>
-                                `flex items-center px-4 py-3 rounded-lg text-sm font-medium transition-all no-underline ${
+                                `group flex items-center px-4 py-3.5 rounded-xl text-[15px] font-bold transition-all no-underline ${
                                   isActive
-                                    ? "bg-[var(--primary)] text-white shadow-md"
-                                    : "text-gray-700 hover:bg-gray-100 active:bg-gray-200"
+                                    ? "bg-gradient-to-r from-[var(--primary)] to-blue-600 !text-white shadow-lg shadow-blue-500/30 scale-[1.02] [text-shadow:_0_1px_3px_rgb(0_0_0_/_30%)]"
+                                    : "text-gray-800 hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 hover:text-[var(--primary)] active:scale-95"
                                 }`
                               }
                               onClick={() => setOpen(false)}
                             >
-                              <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <svg className="w-5 h-5 mr-3 transition-transform group-hover:scale-110" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                               </svg>
@@ -704,22 +720,22 @@ export default function Navbar() {
                             <NavLink
                               to="/forum-moderation"
                               className={({ isActive }) =>
-                                `flex items-center justify-between px-4 py-3 rounded-lg text-sm font-medium transition-all no-underline ${
+                                `group flex items-center justify-between px-4 py-3.5 rounded-xl text-[15px] font-bold transition-all no-underline ${
                                   isActive
-                                    ? "bg-[var(--primary)] text-white shadow-md"
-                                    : "text-gray-700 hover:bg-gray-100 active:bg-gray-200"
+                                    ? "bg-gradient-to-r from-[var(--primary)] to-blue-600 !text-white shadow-lg shadow-blue-500/30 scale-[1.02] [text-shadow:_0_1px_3px_rgb(0_0_0_/_30%)]"
+                                    : "text-gray-800 hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 hover:text-[var(--primary)] active:scale-95"
                                 }`
                               }
                               onClick={() => setOpen(false)}
                             >
                               <span className="flex items-center">
-                                <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg className="w-5 h-5 mr-3 transition-transform group-hover:scale-110" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
                                 </svg>
                                 Forum Moderation
                               </span>
                               {pendingCount > 0 && (
-                                <span className="inline-flex items-center justify-center px-2 py-1 text-xs font-bold text-white bg-red-600 rounded-full ml-2">
+                                <span className="inline-flex items-center justify-center min-w-[24px] h-6 px-2 text-xs font-bold text-white bg-red-500 rounded-full shadow-md">
                                   {pendingCount}
                                 </span>
                               )}
@@ -728,15 +744,15 @@ export default function Navbar() {
                           <NavLink
                             to="/profile"
                             className={({ isActive }) =>
-                              `flex items-center px-4 py-3 rounded-lg text-sm font-medium transition-all no-underline ${
+                              `group flex items-center px-4 py-3.5 rounded-xl text-[15px] font-bold transition-all no-underline ${
                                 isActive
-                                  ? "bg-[var(--primary)] text-white shadow-md"
-                                  : "text-gray-700 hover:bg-gray-100 active:bg-gray-200"
+                                  ? "bg-gradient-to-r from-[var(--primary)] to-blue-600 !text-white shadow-lg shadow-blue-500/30 scale-[1.02] [text-shadow:_0_1px_3px_rgb(0_0_0_/_30%)]"
+                                  : "text-gray-800 hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 hover:text-[var(--primary)] active:scale-95"
                               }`
                             }
                             onClick={() => setOpen(false)}
                           >
-                            <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg className="w-5 h-5 mr-3 transition-transform group-hover:scale-110" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                             </svg>
                             My Profile
@@ -749,16 +765,16 @@ export default function Navbar() {
               </div>
 
               {/* Footer with action buttons */}
-              <div className="border-t border-gray-200 p-5 bg-gray-50">
+              <div className="border-t border-gray-200 p-5 bg-gradient-to-br from-gray-50 to-white">
                 {user ? (
                   <button
                     onClick={() => {
                       logout();
                       setOpen(false);
                     }}
-                    className="w-full flex items-center justify-center gap-2 px-4 py-3 text-sm font-bold text-white bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 rounded-lg shadow-md transition-all active:scale-95"
+                    className="group w-full flex items-center justify-center gap-2 px-4 py-3.5 text-sm font-bold text-white bg-gradient-to-r from-red-600 via-red-600 to-red-700 hover:from-red-700 hover:via-red-700 hover:to-red-800 rounded-xl shadow-lg shadow-red-500/30 transition-all active:scale-95 hover:shadow-xl"
                   >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-5 h-5 transition-transform group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                     </svg>
                     Logout
@@ -766,10 +782,10 @@ export default function Navbar() {
                 ) : (
                   <Link
                     to="/login"
-                    className="w-full flex items-center justify-center gap-2 px-4 py-3 text-sm font-bold text-white bg-gradient-to-r from-[var(--accent)] to-yellow-500 hover:from-yellow-500 hover:to-[var(--accent)] rounded-lg shadow-md transition-all active:scale-95 no-underline"
+                    className="group w-full flex items-center justify-center gap-2 px-4 py-3.5 text-sm font-bold text-white bg-gradient-to-r from-[var(--accent)] via-yellow-500 to-yellow-600 hover:from-yellow-500 hover:via-[var(--accent)] hover:to-yellow-600 rounded-xl shadow-lg shadow-yellow-500/30 transition-all active:scale-95 hover:shadow-xl no-underline"
                     onClick={() => setOpen(false)}
                   >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-5 h-5 transition-transform group-hover:-translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
                     </svg>
                     Login / Register

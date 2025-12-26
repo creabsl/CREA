@@ -49,7 +49,8 @@ export default function DataTable<T extends Record<string, unknown>>({ data, col
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between gap-4 px-2">
+      {/* Hide DataTable search on mobile when parent has search */}
+      <div className="flex items-center justify-between gap-4 px-2 sm:px-4 hidden">
         <input
           placeholder="Search..."
           value={query}
@@ -58,7 +59,9 @@ export default function DataTable<T extends Record<string, unknown>>({ data, col
         />
         <div className="hidden sm:block text-sm text-gray-500 whitespace-nowrap">{filtered.length} result(s)</div>
       </div>
-      <div className="overflow-x-auto">
+
+      {/* Desktop Table View */}
+      <div className="hidden md:block overflow-x-auto">
         <table className="min-w-full">
           <thead>
             <tr className="border-b border-gray-200">
@@ -78,7 +81,7 @@ export default function DataTable<T extends Record<string, unknown>>({ data, col
           </thead>
           <tbody className="bg-white">
             <AnimatePresence mode="popLayout">
-      {current.map((row, idx) => (
+              {current.map((row, idx) => (
                 <motion.tr 
                   key={idx} 
                   className="border-b border-gray-100 hover:bg-brand-50/40 transition-colors"
@@ -86,9 +89,9 @@ export default function DataTable<T extends Record<string, unknown>>({ data, col
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -20 }}
                   transition={{ 
-        duration: DURATION.standard,
-        delay: Math.min(idx * 0.03, 0.18),
-        ...SPRING.entrance,
+                    duration: DURATION.standard,
+                    delay: Math.min(idx * 0.03, 0.18),
+                    ...SPRING.entrance,
                   }}
                   layout
                 >
@@ -110,11 +113,58 @@ export default function DataTable<T extends Record<string, unknown>>({ data, col
           </tbody>
         </table>
       </div>
+
+      {/* Mobile Card View */}
+      <div className="md:hidden space-y-3 px-3 sm:px-4">
+        <AnimatePresence mode="popLayout">
+          {current.map((row, idx) => (
+            <motion.div
+              key={idx}
+              className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ 
+                duration: DURATION.standard,
+                delay: Math.min(idx * 0.03, 0.18),
+                ...SPRING.entrance,
+              }}
+              layout
+            >
+              <div className="space-y-3">
+                {columns.map((c, cidx) => (
+                  <div key={String(c.key)} className={cidx === 0 ? "" : "pt-3 border-t border-gray-100"}>
+                    <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
+                      {c.header}
+                    </div>
+                    <div className="text-sm text-gray-700">
+                      {c.render ? c.render(row) : String(row[c.key] ?? '')}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </motion.div>
+          ))}
+        </AnimatePresence>
+        {current.length === 0 && (
+          <div className="bg-white border border-gray-200 rounded-lg p-8 text-center">
+            <p className="text-sm text-gray-500">No records found.</p>
+          </div>
+        )}
+      </div>
+
+      {/* Results count for mobile */}
+      <div className="md:hidden px-3 sm:px-4">
+        <div className="text-xs text-gray-500 text-center">
+          Showing {current.length} of {filtered.length} result(s)
+        </div>
+      </div>
+
       {totalPages>1 && (
-        <div className="flex items-center justify-end gap-3 text-sm pt-4">
-          <button className="rounded-lg border border-gray-200 px-4 py-2 hover:bg-brand-50 disabled:opacity-50 transition-colors" disabled={page===1} onClick={()=>setPage(p=>Math.max(1,p-1))}>Prev</button>
-          <span className="text-gray-600">Page {page} of {totalPages}</span>
-          <button className="rounded-lg border border-gray-200 px-4 py-2 hover:bg-brand-50 disabled:opacity-50 transition-colors" disabled={page===totalPages} onClick={()=>setPage(p=>Math.min(totalPages,p+1))}>Next</button>
+        <div className="flex items-center justify-center sm:justify-end gap-2 sm:gap-3 text-xs sm:text-sm px-3 sm:px-4 pt-4">
+          <button className="rounded-lg border border-gray-200 px-3 sm:px-4 py-2 hover:bg-brand-50 disabled:opacity-50 transition-colors" disabled={page===1} onClick={()=>setPage(p=>Math.max(1,p-1))}>Prev</button>
+          <span className="text-gray-600 px-2">Page {page} of {totalPages}</span>
+          <button className="rounded-lg border border-gray-200 px-3 sm:px-4 py-2 hover:bg-brand-50 disabled:opacity-50 transition-colors" disabled={page===totalPages} onClick={()=>setPage(p=>Math.min(totalPages,p+1))}>Next</button>
         </div>
       )}
     </div>
