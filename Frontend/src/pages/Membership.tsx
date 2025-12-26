@@ -806,7 +806,7 @@ export default function Membership() {
                         required
                       >
                         <option value="">Select Designation</option>
-                        {["JE", "SSE"].map((designation) => (
+                        {["Junior Engineer", "Senior Section Engineer"].map((designation) => (
                           <option key={designation} value={designation}>
                             {designation}
                           </option>
@@ -826,7 +826,7 @@ export default function Membership() {
                         required
                       >
                         <option value="">Select Division</option>
-                        {["Bhusawal", "NGP", "PA", "SUR", "MB", "HQ Unit"].map(
+                        {["Bhusawal", "Mumbai", "Pune", "Nagpur", "Solapur", "HQ Unit"].map(
                           (division) => (
                             <option key={division} value={division}>
                               {division}
@@ -848,7 +848,7 @@ export default function Membership() {
                         required
                       >
                         <option value="">Select Department</option>
-                        {["Electrical", "Mechanical", "Engineering", "S&T"].map(
+                        {["Electrical", "Mechanical", "Engineering", "Signal and Telecommunication"].map(
                           (department) => (
                             <option key={department} value={department}>
                               {department}
@@ -1191,93 +1191,43 @@ export default function Membership() {
                 transition={{ duration: 0.3 }}
                 className="bg-white rounded-lg shadow-sm border border-gray-200"
               >
-                <div className="px-5 py-3 bg-orange-50 border-b border-orange-100">
+                <div className="px-5 py-3 bg-gradient-to-r from-orange-50 to-amber-50 border-b border-orange-100">
                   <h3 className="text-base font-semibold text-[var(--accent)] flex items-center gap-2">
                     <span className="text-lg">💳</span>
-                    Payment
+                    Payment Summary
                   </h3>
                 </div>
                 <div className="p-5">
                   <div className="space-y-4">
-                    <div className="rounded border border-gray-200 bg-gray-50 p-4">
-                      <h4 className="text-sm font-semibold text-gray-900 mb-3">
-                        Payment Method
-                      </h4>
-                      <div className="grid gap-2.5 sm:grid-cols-2">
-                        {(["upi", "qr", "card", "netbanking"] as const).map(
-                          (method) => (
-                            <label
-                              key={method}
-                              className="relative flex cursor-pointer rounded border bg-white p-3 shadow-sm hover:border-[var(--primary)] transition-colors focus:outline-none"
-                            >
-                              <input
-                                id={`payment-${method}`}
-                                type="radio"
-                                name="payment"
-                                value={method}
-                                className="sr-only"
-                                checked={form.paymentMethod === method}
-                                onChange={() =>
-                                  onBasicInfoChange("paymentMethod", method)
-                                }
-                              />
-                              <div className="flex flex-1">
-                                <div className="flex flex-col">
-                                  <span className="block text-xs font-semibold text-gray-900 capitalize">
-                                    {method}
-                                  </span>
-                                  <span className="mt-0.5 flex items-center text-xs text-gray-500">
-                                    {method === "upi" && "Pay using UPI apps"}
-                                    {method === "qr" && "Scan QR code to pay"}
-                                    {method === "card" && "Credit/Debit card"}
-                                    {method === "netbanking" &&
-                                      "Internet banking"}
-                                  </span>
-                                </div>
-                              </div>
-                              <div
-                                className={`absolute -inset-px rounded border-2 pointer-events-none ${
-                                  form.paymentMethod === method
-                                    ? "border-[var(--primary)]"
-                                    : "border-transparent"
-                                }`}
-                                aria-hidden="true"
-                              />
-                            </label>
-                          )
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="rounded border border-gray-200 bg-white p-4">
-                      <h3 className="text-sm font-semibold text-gray-900 mb-3">
+                    <div className="rounded-xl border border-gray-200 bg-white p-6">
+                      <h3 className="text-sm font-semibold text-gray-900 mb-4">
                         Payment Summary
                       </h3>
-                      <div className="space-y-2">
-                        <div className="flex justify-between text-sm">
-                          <span className="text-gray-600">Membership Type</span>
-                          <span className="font-medium text-gray-900 capitalize">
+                      <div className="space-y-3">
+                        <div className="flex justify-between items-center py-2">
+                          <span className="text-sm text-gray-600">Membership Type</span>
+                          <span className="font-semibold text-gray-900 capitalize bg-white px-3 py-1 rounded-lg">
                             {form.type}
                           </span>
                         </div>
-                        <div className="flex justify-between text-sm">
-                          <span className="text-gray-600">Duration</span>
-                          <span className="font-medium text-gray-900">
-                            {form.type === "lifetime" ? "Lifetime" : "1 year"}
+                        <div className="flex justify-between items-center py-2">
+                          <span className="text-sm text-gray-600">Duration</span>
+                          <span className="font-semibold text-gray-900 bg-white px-3 py-1 rounded-lg">
+                            {form.type === "lifetime" ? "Lifetime" : "1 Year"}
                           </span>
                         </div>
-                        <div className="flex justify-between text-sm">
-                          <span className="text-gray-600">Amount</span>
-                          <span className="font-medium text-gray-900">
+                        <div className="flex justify-between items-center py-2">
+                          <span className="text-sm text-gray-600">Amount</span>
+                          <span className="font-semibold text-gray-900 bg-white px-3 py-1 rounded-lg">
                             ₹{form.paymentAmount}
                           </span>
                         </div>
-                        <div className="pt-2 border-t border-gray-200">
-                          <div className="flex justify-between">
-                            <span className="text-sm font-semibold text-gray-900">
+                        <div className="pt-3 mt-3 border-t-2 border-orange-200">
+                          <div className="flex justify-between items-center">
+                            <span className="text-base font-bold text-gray-900">
                               Total Amount
                             </span>
-                            <span className="text-sm font-semibold text-[var(--primary)]">
+                            <span className="text-2xl font-bold bg-gradient-to-r from-[var(--accent)] to-yellow-600 bg-clip-text text-transparent">
                               ₹{form.paymentAmount}
                             </span>
                           </div>
@@ -1285,11 +1235,20 @@ export default function Membership() {
                       </div>
                     </div>
 
-                    <div className="flex justify-between pt-4 border-t border-gray-100">
+                    <div className="rounded-lg border border-orange-100 bg-blue-50 p-4 flex items-start gap-3">
+                      <svg className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <p className="text-xs sm:text-sm text-blue-700">
+                        <span className="font-semibold">Secure Payment:</span> You'll be redirected to Razorpay's secure payment gateway. Multiple payment methods available including UPI, Cards, Net Banking, and Wallets.
+                      </p>
+                    </div>
+
+                    <div className="flex justify-between gap-3 pt-2 border-t-2 border-orange-100 mt-4">
                       <Button
                         variant="ghost"
                         onClick={() => setStep(3)}
-                        className="text-sm px-4 py-2"
+                        className="text-sm px-5 py-2.5 font-medium"
                       >
                         ← Back
                       </Button>
@@ -1297,10 +1256,10 @@ export default function Membership() {
                         onClick={submit}
                         disabled={submitting}
                         loading={submitting}
-                        className="text-sm px-6 py-2"
+                        className="text-sm px-6 py-2.5 font-semibold bg-gradient-to-r from-[var(--accent)] to-yellow-600 hover:shadow-lg"
                       >
                         {submitting
-                          ? "Processing..."
+                          ? "Processing Payment..."
                           : `Pay ₹${form.paymentAmount}`}
                       </Button>
                     </div>
