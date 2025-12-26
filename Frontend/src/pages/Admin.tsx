@@ -25,6 +25,8 @@ import {
   updateManual,
   adminListUsers,
   adminUpdateUser,
+  adminDeleteUser,
+  adminDeleteUsers,
   notifyStatsChanged,
   getSettings,
   updateMultipleSettings,
@@ -181,7 +183,9 @@ export default function Admin() {
                   ⚡ Management Center
                 </span>
               </motion.div>
-              <h1 className="text-xl sm:text-2xl md:text-3xl font-bold !text-white">Admin Panel</h1>
+              <h1 className="text-xl sm:text-2xl md:text-3xl font-bold !text-white">
+                Admin Panel
+              </h1>
             </div>
           </div>
           <p className="text-white/90 text-xs sm:text-sm max-w-3xl leading-relaxed">
@@ -596,7 +600,12 @@ function AboutAdmin() {
               />
             </div>
             <div className="flex gap-2">
-              <Button onClick={addOne} className="text-xs sm:text-sm px-3 sm:px-4 py-2 w-full sm:w-auto">Add Milestone</Button>
+              <Button
+                onClick={addOne}
+                className="text-xs sm:text-sm px-3 sm:px-4 py-2 w-full sm:w-auto"
+              >
+                Add Milestone
+              </Button>
             </div>
           </div>
         </div>
@@ -607,7 +616,11 @@ function AboutAdmin() {
                 Existing Milestones ({combinedMilestones.length})
               </h4>
               <div className="flex items-center gap-2 flex-wrap">
-                <Button variant="secondary" onClick={() => saveMilestones([])} className="text-xs sm:text-sm px-2 sm:px-3 py-1.5 sm:py-2 flex-1 sm:flex-none">
+                <Button
+                  variant="secondary"
+                  onClick={() => saveMilestones([])}
+                  className="text-xs sm:text-sm px-2 sm:px-3 py-1.5 sm:py-2 flex-1 sm:flex-none"
+                >
                   Clear Added
                 </Button>
                 <Button
@@ -709,10 +722,18 @@ function AboutAdmin() {
             Past Events Gallery
           </h3>
           <div className="flex items-center gap-2 flex-wrap">
-            <Button variant="secondary" onClick={() => saveGallery([])} className="text-xs sm:text-sm px-2 sm:px-3 py-1.5 sm:py-2 flex-1 sm:flex-none">
+            <Button
+              variant="secondary"
+              onClick={() => saveGallery([])}
+              className="text-xs sm:text-sm px-2 sm:px-3 py-1.5 sm:py-2 flex-1 sm:flex-none"
+            >
               Clear Added
             </Button>
-            <Button variant="secondary" onClick={() => saveRemovedGallery([])} className="text-xs sm:text-sm px-2 sm:px-3 py-1.5 sm:py-2 flex-1 sm:flex-none">
+            <Button
+              variant="secondary"
+              onClick={() => saveRemovedGallery([])}
+              className="text-xs sm:text-sm px-2 sm:px-3 py-1.5 sm:py-2 flex-1 sm:flex-none"
+            >
               Restore Defaults
             </Button>
           </div>
@@ -794,7 +815,12 @@ function AboutAdmin() {
                 </div>
               </div>
               <div className="flex gap-2">
-                <Button onClick={addGalleryItem} className="text-xs sm:text-sm px-3 sm:px-4 py-2 w-full sm:w-auto">Add Photo</Button>
+                <Button
+                  onClick={addGalleryItem}
+                  className="text-xs sm:text-sm px-3 sm:px-4 py-2 w-full sm:w-auto"
+                >
+                  Add Photo
+                </Button>
               </div>
             </div>
           </div>
@@ -827,40 +853,40 @@ function AboutAdmin() {
                         </div>
                       </div>
                       <div className="flex items-center gap-2 flex-shrink-0">
-                      {isDefault ? (
-                        <>
+                        {isDefault ? (
+                          <>
+                            <Button
+                              variant="secondary"
+                              onClick={() => {
+                                setEventTitle(item.title);
+                                setEventImage("");
+                                setEditingDefaultGalleryId(item.id);
+                              }}
+                              className="text-xs px-2 py-1 flex-1 sm:flex-none"
+                            >
+                              Edit
+                            </Button>
+                            <Button
+                              variant="danger"
+                              onClick={() => {
+                                const ids = new Set(removedDefaultGallery);
+                                ids.add(item.id);
+                                saveRemovedGallery(Array.from(ids));
+                              }}
+                              className="text-xs px-2 py-1 flex-1 sm:flex-none"
+                            >
+                              Remove
+                            </Button>
+                          </>
+                        ) : (
                           <Button
                             variant="secondary"
-                            onClick={() => {
-                              setEventTitle(item.title);
-                              setEventImage("");
-                              setEditingDefaultGalleryId(item.id);
-                            }}
-                            className="text-xs px-2 py-1 flex-1 sm:flex-none"
-                          >
-                            Edit
-                          </Button>
-                          <Button
-                            variant="danger"
-                            onClick={() => {
-                              const ids = new Set(removedDefaultGallery);
-                              ids.add(item.id);
-                              saveRemovedGallery(Array.from(ids));
-                            }}
-                            className="text-xs px-2 py-1 flex-1 sm:flex-none"
+                            onClick={() => removeGalleryItem(item.id)}
+                            className="text-xs px-2 py-1 w-full sm:w-auto"
                           >
                             Remove
                           </Button>
-                        </>
-                      ) : (
-                        <Button
-                          variant="secondary"
-                          onClick={() => removeGalleryItem(item.id)}
-                          className="text-xs px-2 py-1 w-full sm:w-auto"
-                        >
-                          Remove
-                        </Button>
-                      )}
+                        )}
                       </div>
                     </li>
                   );
@@ -912,6 +938,9 @@ function MembersAdmin({
   );
   const [saving, setSaving] = useState(false);
   const [showBulkUpload, setShowBulkUpload] = useState(false);
+  const [selectMode, setSelectMode] = useState(false);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [deleting, setDeleting] = useState(false);
 
   const setEdit = (id: string, patch: Partial<MemberUser>) =>
     setEditing((prev) => ({ ...prev, [id]: { ...prev[id], ...patch } }));
@@ -944,6 +973,55 @@ function MembersAdmin({
       confirm("Are you sure you want to discard all changes?")
     ) {
       setEditing({});
+    }
+  };
+
+  const toggleSelect = (id: string) => {
+    const newSelected = new Set(selected);
+    if (newSelected.has(id)) {
+      newSelected.delete(id);
+    } else {
+      newSelected.add(id);
+    }
+    setSelected(newSelected);
+  };
+
+  const toggleSelectAll = () => {
+    if (selected.size === data.length) {
+      setSelected(new Set());
+    } else {
+      setSelected(new Set(data.map((u) => u.id)));
+    }
+  };
+
+  const deleteSelected = async () => {
+    if (selected.size === 0) return;
+
+    const confirmed = window.confirm(
+      `Are you sure you want to delete ${selected.size} user(s)? This action cannot be undone.`
+    );
+
+    if (!confirmed) return;
+
+    try {
+      setDeleting(true);
+      const idsToDelete = Array.from(selected);
+
+      if (idsToDelete.length === 1) {
+        await adminDeleteUser(idsToDelete[0]);
+      } else {
+        await adminDeleteUsers(idsToDelete);
+      }
+
+      await onReload(division);
+      setSelected(new Set());
+      setSelectMode(false);
+      notifyStatsChanged();
+    } catch (error) {
+      console.error("Error deleting users:", error);
+      alert(error instanceof Error ? error.message : "Failed to delete users");
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -1160,29 +1238,80 @@ function MembersAdmin({
         transition={{ delay: 0.1 }}
       >
         <div className="bg-gradient-to-r from-gray-50 to-gray-100 px-6 py-4 border-b border-gray-200">
-          <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
-            <span className="w-8 h-8 bg-indigo-100 rounded-lg flex items-center justify-center">
-              <svg
-                className="w-4 h-4 text-indigo-600"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"
-                />
-              </svg>
-            </span>
-            User Management ({data.length} users)
-          </h3>
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
+              <span className="w-8 h-8 bg-indigo-100 rounded-lg flex items-center justify-center">
+                <svg
+                  className="w-4 h-4 text-indigo-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"
+                  />
+                </svg>
+              </span>
+              User Management ({data.length} users)
+            </h3>
+            <div className="flex items-center gap-3">
+              {selectMode ? (
+                <>
+                  {data.length > 0 && (
+                    <label className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer hover:text-gray-900">
+                      <input
+                        type="checkbox"
+                        checked={
+                          selected.size === data.length && data.length > 0
+                        }
+                        onChange={toggleSelectAll}
+                        className="w-4 h-4 rounded border-gray-300 text-[var(--primary)] focus:ring-[var(--primary)]"
+                      />
+                      Select All
+                    </label>
+                  )}
+                  {selected.size > 0 && (
+                    <Button
+                      variant="danger"
+                      onClick={deleteSelected}
+                      disabled={deleting}
+                    >
+                      {deleting
+                        ? "Deleting..."
+                        : `Delete ${selected.size} Selected`}
+                    </Button>
+                  )}
+                  <Button
+                    variant="secondary"
+                    onClick={() => {
+                      setSelectMode(false);
+                      setSelected(new Set());
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                </>
+              ) : (
+                data.length > 0 && (
+                  <Button
+                    variant="secondary"
+                    onClick={() => setSelectMode(true)}
+                  >
+                    Select
+                  </Button>
+                )
+              )}
+            </div>
+          </div>
         </div>
         <div className="overflow-x-auto">
           <table className="min-w-full text-sm">
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
+                {selectMode && <th className="px-4 py-3 w-12"></th>}
                 <th className="px-4 py-3 text-left font-semibold text-gray-700">
                   Name
                 </th>
@@ -1219,13 +1348,28 @@ function MembersAdmin({
               {data.map((u) => {
                 const e = editing[u.id] || {};
                 const hasRowChanges = !!editing[u.id];
+                const isSelected = selected.has(u.id);
                 return (
                   <tr
                     key={u.id}
-                    className={`hover:bg-gray-50 transition-colors ${
-                      hasRowChanges ? "bg-yellow-50/50" : ""
+                    className={`transition-colors ${
+                      isSelected && selectMode
+                        ? "bg-blue-50"
+                        : hasRowChanges
+                        ? "bg-yellow-50/50"
+                        : "hover:bg-gray-50"
                     }`}
                   >
+                    {selectMode && (
+                      <td className="px-4 py-3 whitespace-nowrap">
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          onChange={() => toggleSelect(u.id)}
+                          className="w-4 h-4 rounded border-gray-300 text-[var(--primary)] focus:ring-[var(--primary)]"
+                        />
+                      </td>
+                    )}
                     <td className="px-4 py-3">
                       <input
                         className="w-40 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/20"
@@ -1444,7 +1588,7 @@ function MembersAdmin({
                 <tr>
                   <td
                     className="px-4 py-8 text-center text-gray-500"
-                    colSpan={9}
+                    colSpan={selectMode ? 11 : 10}
                   >
                     No members found for selected filter.
                   </td>
@@ -1719,14 +1863,26 @@ function EventsAdmin({
             </svg>
           </div>
           <div className="flex-1">
-            <p className="text-sm font-semibold text-green-800">{successMessage}</p>
+            <p className="text-sm font-semibold text-green-800">
+              {successMessage}
+            </p>
           </div>
           <button
             onClick={() => setSuccessMessage(null)}
             className="flex-shrink-0 text-green-600 hover:text-green-800 transition-colors"
           >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+            <svg
+              className="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                d="M6 18L18 6M6 6l12 12"
+              />
             </svg>
           </button>
         </motion.div>
@@ -1762,8 +1918,18 @@ function EventsAdmin({
             onClick={() => setErrorMessage(null)}
             className="flex-shrink-0 text-red-600 hover:text-red-800 transition-colors"
           >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+            <svg
+              className="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                d="M6 18L18 6M6 6l12 12"
+              />
             </svg>
           </button>
         </motion.div>
@@ -2346,7 +2512,10 @@ function DocumentsAdmin({
     setCircularFile(null);
     setEditingCircular(c);
     setTimeout(() => {
-      circularFormRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      circularFormRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
     }, 100);
   };
 
@@ -2359,7 +2528,10 @@ function DocumentsAdmin({
     setManualSubject(m.subject || "");
     setEditingManual(m);
     setTimeout(() => {
-      manualFormRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      manualFormRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
     }, 100);
   };
 
@@ -2370,7 +2542,10 @@ function DocumentsAdmin({
     setCaseUrl(cc.url || "");
     setEditingCourtCase(cc);
     setTimeout(() => {
-      courtCaseFormRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      courtCaseFormRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
     }, 100);
   };
 
@@ -2401,7 +2576,12 @@ function DocumentsAdmin({
       setTimeout(() => setErrorMessage(null), 5000);
       return;
     }
-    if (circularFile && !['application/pdf', 'image/jpeg', 'image/jpg', 'image/png'].includes(circularFile.type)) {
+    if (
+      circularFile &&
+      !["application/pdf", "image/jpeg", "image/jpg", "image/png"].includes(
+        circularFile.type
+      )
+    ) {
       setErrorMessage("Only PDF and image files (JPG, PNG) are allowed");
       setTimeout(() => setErrorMessage(null), 5000);
       return;
@@ -2410,10 +2590,10 @@ function DocumentsAdmin({
     try {
       setIsUploading(true);
       setUploadProgress(0);
-      
+
       // Simulate upload progress
       const progressInterval = setInterval(() => {
-        setUploadProgress(prev => {
+        setUploadProgress((prev) => {
           if (prev === null) return null;
           if (prev >= 90) return prev; // Stop at 90% until complete
           return prev + 10;
@@ -2477,7 +2657,12 @@ function DocumentsAdmin({
       setTimeout(() => setErrorMessage(null), 5000);
       return;
     }
-    if (manualFile && !['application/pdf', 'image/jpeg', 'image/jpg', 'image/png'].includes(manualFile.type)) {
+    if (
+      manualFile &&
+      !["application/pdf", "image/jpeg", "image/jpg", "image/png"].includes(
+        manualFile.type
+      )
+    ) {
       setErrorMessage("Only PDF and image files (JPG, PNG) are allowed");
       setTimeout(() => setErrorMessage(null), 5000);
       return;
@@ -2486,10 +2671,10 @@ function DocumentsAdmin({
     try {
       setIsUploading(true);
       setUploadProgress(0);
-      
+
       // Simulate upload progress
       const progressInterval = setInterval(() => {
-        setUploadProgress(prev => {
+        setUploadProgress((prev) => {
           if (prev === null) return null;
           if (prev >= 90) return prev; // Stop at 90% until complete
           return prev + 10;
@@ -2559,10 +2744,10 @@ function DocumentsAdmin({
     try {
       setIsUploading(true);
       setUploadProgress(0);
-      
+
       // Simulate upload progress
       const progressInterval = setInterval(() => {
-        setUploadProgress(prev => {
+        setUploadProgress((prev) => {
           if (prev === null) return null;
           if (prev >= 90) return prev; // Stop at 90% until complete
           return prev + 10;
@@ -2782,8 +2967,18 @@ function DocumentsAdmin({
             onClick={() => setErrorMessage(null)}
             className="flex-shrink-0 text-red-600 hover:text-red-800 transition-colors"
           >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+            <svg
+              className="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                d="M6 18L18 6M6 6l12 12"
+              />
             </svg>
           </button>
         </motion.div>
@@ -2821,14 +3016,15 @@ function DocumentsAdmin({
             </div>
             <div className="flex-1">
               <p className="text-sm font-semibold text-blue-800">
-                Uploading document... {uploadProgress === 0 ? '0' : uploadProgress}%
+                Uploading document...{" "}
+                {uploadProgress === 0 ? "0" : uploadProgress}%
               </p>
             </div>
           </div>
           <div className="w-full bg-blue-200 rounded-full h-2.5">
             <div
               className="bg-blue-600 h-2.5 rounded-full transition-all duration-300"
-              style={{width: `${uploadProgress}%`}}
+              style={{ width: `${uploadProgress}%` }}
             />
           </div>
         </motion.div>
@@ -2858,14 +3054,26 @@ function DocumentsAdmin({
             </svg>
           </div>
           <div className="flex-1">
-            <p className="text-sm font-semibold text-green-800">{successMessage}</p>
+            <p className="text-sm font-semibold text-green-800">
+              {successMessage}
+            </p>
           </div>
           <button
             onClick={() => setSuccessMessage(null)}
             className="flex-shrink-0 text-green-600 hover:text-green-800 transition-colors"
           >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+            <svg
+              className="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                d="M6 18L18 6M6 6l12 12"
+              />
             </svg>
           </button>
         </motion.div>
@@ -2936,7 +3144,9 @@ function DocumentsAdmin({
                     value={circularUrl}
                     onChange={(e) => setCircularUrl(e.target.value)}
                   />
-                  <p className="text-xs text-gray-500 mt-1">Provide URL or upload a file below</p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Provide URL or upload a file below
+                  </p>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -2957,10 +3167,18 @@ function DocumentsAdmin({
               </div>
               <div className="flex gap-2">
                 <Button onClick={handleSaveCircular} disabled={isUploading}>
-                  {isUploading ? "Uploading..." : editingCircular ? "Update Circular" : "Add Circular"}
+                  {isUploading
+                    ? "Uploading..."
+                    : editingCircular
+                    ? "Update Circular"
+                    : "Add Circular"}
                 </Button>
                 {editingCircular && (
-                  <Button variant="ghost" onClick={resetCircularForm} disabled={isUploading}>
+                  <Button
+                    variant="ghost"
+                    onClick={resetCircularForm}
+                    disabled={isUploading}
+                  >
                     Cancel
                   </Button>
                 )}
@@ -3227,7 +3445,9 @@ function DocumentsAdmin({
                     value={manualUrl}
                     onChange={(e) => setManualUrl(e.target.value)}
                   />
-                  <p className="text-xs text-gray-500 mt-1">Provide URL or upload a file below</p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Provide URL or upload a file below
+                  </p>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -3237,9 +3457,7 @@ function DocumentsAdmin({
                     type="file"
                     accept="application/pdf,image/*"
                     className="block w-full text-sm text-gray-600 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100"
-                    onChange={(e) =>
-                      setManualFile(e.target.files?.[0] || null)
-                    }
+                    onChange={(e) => setManualFile(e.target.files?.[0] || null)}
                   />
                   <p className="text-xs text-gray-500 mt-1">
                     * Max 10MB • PDF or JPG/PNG only • Required if no URL
@@ -3248,10 +3466,18 @@ function DocumentsAdmin({
               </div>
               <div className="flex gap-2">
                 <Button onClick={handleSaveManual} disabled={isUploading}>
-                  {isUploading ? "Uploading..." : editingManual ? "Update Manual" : "Add Manual"}
+                  {isUploading
+                    ? "Uploading..."
+                    : editingManual
+                    ? "Update Manual"
+                    : "Add Manual"}
                 </Button>
                 {editingManual && (
-                  <Button variant="ghost" onClick={resetManualForm} disabled={isUploading}>
+                  <Button
+                    variant="ghost"
+                    onClick={resetManualForm}
+                    disabled={isUploading}
+                  >
                     Cancel
                   </Button>
                 )}
@@ -3504,15 +3730,25 @@ function DocumentsAdmin({
                     value={caseUrl}
                     onChange={(e) => setCaseUrl(e.target.value)}
                   />
-                  <p className="text-xs text-gray-500 mt-1">Link to case document or details</p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Link to case document or details
+                  </p>
                 </div>
               </div>
               <div className="flex gap-2">
                 <Button onClick={handleSaveCourtCase} disabled={isUploading}>
-                  {isUploading ? "Uploading..." : editingCourtCase ? "Update Case" : "Add Case"}
+                  {isUploading
+                    ? "Uploading..."
+                    : editingCourtCase
+                    ? "Update Case"
+                    : "Add Case"}
                 </Button>
                 {editingCourtCase && (
-                  <Button variant="ghost" onClick={resetCourtCaseForm} disabled={isUploading}>
+                  <Button
+                    variant="ghost"
+                    onClick={resetCourtCaseForm}
+                    disabled={isUploading}
+                  >
                     Cancel
                   </Button>
                 )}
@@ -5214,14 +5450,26 @@ function AssociationBodyAdmin() {
             </svg>
           </div>
           <div className="flex-1">
-            <p className="text-sm font-semibold text-green-800">{successMessage}</p>
+            <p className="text-sm font-semibold text-green-800">
+              {successMessage}
+            </p>
           </div>
           <button
             onClick={() => setSuccessMessage(null)}
             className="flex-shrink-0 text-green-600 hover:text-green-800 transition-colors"
           >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+            <svg
+              className="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                d="M6 18L18 6M6 6l12 12"
+              />
             </svg>
           </button>
         </motion.div>
@@ -5875,7 +6123,9 @@ function MutualTransfersAdmin({
   return (
     <div className="space-y-4">
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 px-4 sm:px-0">
-        <h2 className="text-xl sm:text-2xl font-bold text-[var(--primary)]">Mutual Transfers</h2>
+        <h2 className="text-xl sm:text-2xl font-bold text-[var(--primary)]">
+          Mutual Transfers
+        </h2>
         <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
           {selectMode ? (
             <>
@@ -5915,12 +6165,20 @@ function MutualTransfersAdmin({
             </>
           ) : (
             data.length > 0 && (
-              <Button variant="secondary" onClick={() => setSelectMode(true)} className="text-xs sm:text-sm px-3 sm:px-4 py-2">
+              <Button
+                variant="secondary"
+                onClick={() => setSelectMode(true)}
+                className="text-xs sm:text-sm px-3 sm:px-4 py-2"
+              >
                 Select
               </Button>
             )
           )}
-          <Button onClick={() => setOpenCreate(true)} variant="primary" className="text-xs sm:text-sm px-3 sm:px-4 py-2">
+          <Button
+            onClick={() => setOpenCreate(true)}
+            variant="primary"
+            className="text-xs sm:text-sm px-3 sm:px-4 py-2"
+          >
             Add Transfer
           </Button>
         </div>
@@ -6078,7 +6336,9 @@ function MutualTransfersAdmin({
                     {/* Notes */}
                     {item.notes && (
                       <div className="bg-gray-50 border-l-4 border-[var(--accent)] p-2.5 sm:p-3 rounded">
-                        <p className="text-xs sm:text-sm text-gray-700 break-words">{item.notes}</p>
+                        <p className="text-xs sm:text-sm text-gray-700 break-words">
+                          {item.notes}
+                        </p>
                       </div>
                     )}
                   </div>
@@ -6131,7 +6391,9 @@ function MutualTransfersAdmin({
                             {item.contactEmail}
                           </a>
                         ) : (
-                          <span className="text-xs sm:text-sm text-gray-700">—</span>
+                          <span className="text-xs sm:text-sm text-gray-700">
+                            —
+                          </span>
                         )}
                       </div>
 
@@ -6174,10 +6436,18 @@ function MutualTransfersAdmin({
 
               {/* Action Buttons */}
               <div className="flex flex-row lg:flex-col gap-2 flex-shrink-0 w-full lg:w-auto">
-                <Button onClick={() => handleEdit(item)} variant="secondary" className="flex-1 lg:flex-none text-xs sm:text-sm px-3 sm:px-4 py-2">
+                <Button
+                  onClick={() => handleEdit(item)}
+                  variant="secondary"
+                  className="flex-1 lg:flex-none text-xs sm:text-sm px-3 sm:px-4 py-2"
+                >
                   Edit
                 </Button>
-                <Button onClick={() => handleDelete(item.id)} variant="danger" className="flex-1 lg:flex-none text-xs sm:text-sm px-3 sm:px-4 py-2">
+                <Button
+                  onClick={() => handleDelete(item.id)}
+                  variant="danger"
+                  className="flex-1 lg:flex-none text-xs sm:text-sm px-3 sm:px-4 py-2"
+                >
                   Delete
                 </Button>
               </div>

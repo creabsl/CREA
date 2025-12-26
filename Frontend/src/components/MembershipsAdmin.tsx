@@ -2,7 +2,11 @@ import { useState, useEffect, useMemo } from "react";
 import { motion } from "framer-motion";
 import Button from "./Button";
 import Spinner from "./Spinner";
-import { getAllMemberships } from "../services/api";
+import {
+  getAllMemberships,
+  deleteMembership,
+  deleteMemberships,
+} from "../services/api";
 import type { Membership } from "../types";
 
 export default function MembershipsAdmin() {
@@ -12,6 +16,9 @@ export default function MembershipsAdmin() {
   const [filterStatus, setFilterStatus] = useState<string>("all");
   const [filterType, setFilterType] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState<string>("");
+  const [selectMode, setSelectMode] = useState(false);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     fetchMemberships();
@@ -30,6 +37,56 @@ export default function MembershipsAdmin() {
       );
     } finally {
       setLoading(false);
+    }
+  };
+
+  const toggleSelect = (id: string) => {
+    const newSelected = new Set(selected);
+    if (newSelected.has(id)) {
+      newSelected.delete(id);
+    } else {
+      newSelected.add(id);
+    }
+    setSelected(newSelected);
+  };
+
+  const toggleSelectAll = () => {
+    if (selected.size === filteredMemberships.length) {
+      setSelected(new Set());
+    } else {
+      setSelected(new Set(filteredMemberships.map((m) => m.id || m._id!)));
+    }
+  };
+
+  const deleteSelected = async () => {
+    if (selected.size === 0) return;
+
+    const confirmed = window.confirm(
+      `Are you sure you want to delete ${selected.size} membership(s)? This action cannot be undone.`
+    );
+
+    if (!confirmed) return;
+
+    try {
+      setDeleting(true);
+      const idsToDelete = Array.from(selected);
+
+      if (idsToDelete.length === 1) {
+        await deleteMembership(idsToDelete[0]);
+      } else {
+        await deleteMemberships(idsToDelete);
+      }
+
+      await fetchMemberships();
+      setSelected(new Set());
+      setSelectMode(false);
+    } catch (error) {
+      console.error("Error deleting memberships:", error);
+      alert(
+        error instanceof Error ? error.message : "Failed to delete memberships"
+      );
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -77,6 +134,7 @@ export default function MembershipsAdmin() {
       "Payment Amount",
       "Payment Status",
       "Payment Method",
+      "Transaction ID",
       "Payment Date",
       "Valid From",
       "Valid Until",
@@ -110,6 +168,7 @@ export default function MembershipsAdmin() {
       m.paymentAmount,
       m.paymentStatus,
       m.paymentMethod,
+      m.paymentReference || "",
       m.paymentDate ? new Date(m.paymentDate).toLocaleDateString() : "",
       m.validFrom ? new Date(m.validFrom).toLocaleDateString() : "",
       m.validUntil ? new Date(m.validUntil).toLocaleDateString() : "",
@@ -453,8 +512,57 @@ export default function MembershipsAdmin() {
       </div>
 
       {/* Results Count */}
-      <div className="text-sm text-gray-600">
-        Showing {filteredMemberships.length} of {memberships.length} memberships
+      <div className="flex items-center justify-between">
+        <div className="text-sm text-gray-600">
+          Showing {filteredMemberships.length} of {memberships.length}{" "}
+          memberships
+        </div>
+        <div className="flex items-center gap-3">
+          {selectMode ? (
+            <>
+              {filteredMemberships.length > 0 && (
+                <label className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer hover:text-gray-900">
+                  <input
+                    type="checkbox"
+                    checked={
+                      selected.size === filteredMemberships.length &&
+                      filteredMemberships.length > 0
+                    }
+                    onChange={toggleSelectAll}
+                    className="w-4 h-4 rounded border-gray-300 text-[var(--primary)] focus:ring-[var(--primary)]"
+                  />
+                  Select All
+                </label>
+              )}
+              {selected.size > 0 && (
+                <Button
+                  variant="danger"
+                  onClick={deleteSelected}
+                  disabled={deleting}
+                >
+                  {deleting
+                    ? "Deleting..."
+                    : `Delete ${selected.size} Selected`}
+                </Button>
+              )}
+              <Button
+                variant="secondary"
+                onClick={() => {
+                  setSelectMode(false);
+                  setSelected(new Set());
+                }}
+              >
+                Cancel
+              </Button>
+            </>
+          ) : (
+            filteredMemberships.length > 0 && (
+              <Button variant="secondary" onClick={() => setSelectMode(true)}>
+                Select
+              </Button>
+            )
+          )}
+        </div>
       </div>
 
       {/* Memberships Table */}
@@ -463,6 +571,7 @@ export default function MembershipsAdmin() {
           <table className="w-full">
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
+                {selectMode && <th className="px-6 py-3 w-12"></th>}
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Membership ID
                 </th>
@@ -506,6 +615,9 @@ export default function MembershipsAdmin() {
                   Payment Method
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Transaction ID
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Valid From
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -517,7 +629,7 @@ export default function MembershipsAdmin() {
               {filteredMemberships.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={16}
+                    colSpan={selectMode ? 18 : 17}
                     className="px-6 py-12 text-center text-gray-500"
                   >
                     No memberships found
@@ -529,8 +641,27 @@ export default function MembershipsAdmin() {
                     key={
                       membership.id || membership._id || membership.membershipId
                     }
-                    className="hover:bg-gray-50 transition-colors"
+                    className={`transition-colors ${
+                      selectMode &&
+                      selected.has(membership.id || membership._id!)
+                        ? "bg-blue-50"
+                        : "hover:bg-gray-50"
+                    }`}
                   >
+                    {selectMode && (
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <input
+                          type="checkbox"
+                          checked={selected.has(
+                            membership.id || membership._id!
+                          )}
+                          onChange={() =>
+                            toggleSelect(membership.id || membership._id!)
+                          }
+                          className="w-4 h-4 rounded border-gray-300 text-[var(--primary)] focus:ring-[var(--primary)]"
+                        />
+                      </td>
+                    )}
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-[var(--primary)]">
                       {membership.membershipId || "N/A"}
                     </td>
@@ -622,6 +753,15 @@ export default function MembershipsAdmin() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 capitalize">
                       {membership.paymentMethod}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-700">
+                      {membership.paymentReference ? (
+                        <span className="text-xs bg-gray-100 px-2 py-1 rounded">
+                          {membership.paymentReference}
+                        </span>
+                      ) : (
+                        <span className="text-gray-400">N/A</span>
+                      )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
                       {membership.validFrom

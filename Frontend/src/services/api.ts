@@ -1009,6 +1009,19 @@ export async function getAllMemberships(): Promise<Membership[]> {
   return request<Membership[]>("/api/memberships");
 }
 
+export async function deleteMembership(id: string): Promise<void> {
+  return request<void>(`/api/memberships/${id}`, {
+    method: "DELETE",
+  });
+}
+
+export async function deleteMemberships(ids: string[]): Promise<void> {
+  return request<void>("/api/memberships/bulk-delete", {
+    method: "POST",
+    body: JSON.stringify({ ids }),
+  });
+}
+
 // Auth
 export type User = {
   id: string;
@@ -1355,6 +1368,19 @@ export async function adminUpdateUser(
     body: JSON.stringify(body),
   });
   return toMemberUser(u);
+}
+
+export async function adminDeleteUser(id: string): Promise<void> {
+  return request<void>(`/api/users/${id}`, {
+    method: "DELETE",
+  });
+}
+
+export async function adminDeleteUsers(ids: string[]): Promise<void> {
+  return request<void>("/api/users/bulk-delete", {
+    method: "POST",
+    body: JSON.stringify({ ids }),
+  });
 }
 
 // External Links
