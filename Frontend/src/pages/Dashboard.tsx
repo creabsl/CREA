@@ -198,7 +198,7 @@ export default function Dashboard() {
   const [calendarMonth, setCalendarMonth] = useState(new Date().getMonth())
   const [isDepartmentModalOpen, setIsDepartmentModalOpen] = useState(false)
   const [selectedDivision, setSelectedDivision] = useState<string | null>(null)
-  const triggerRef = useRef<HTMLElement>(null)
+  const triggerRef = useRef<HTMLButtonElement>(null)
   
   const handleMonthChange = (year: number, month: number) => {
     setCalendarYear(year)
@@ -454,7 +454,11 @@ export default function Dashboard() {
             {counts.map((c, index) => (
               <button
                 key={c.division || `division-${index}`}
-                ref={selectedDivision === c.division ? triggerRef : null}
+                ref={(el) => {
+                  if (selectedDivision === c.division && el) {
+                    triggerRef.current = el;
+                  }
+                }}
                 onClick={() => {
                   setSelectedDivision(c.division);
                   setIsDepartmentModalOpen(true);

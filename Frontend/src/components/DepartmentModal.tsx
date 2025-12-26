@@ -11,7 +11,7 @@ interface DepartmentTooltipProps {
   isOpen: boolean;
   onClose: () => void;
   division: string;
-  triggerRef: React.MutableRefObject<HTMLElement | null>;
+  triggerRef: React.RefObject<HTMLButtonElement>;
 }
 
 export default function DepartmentModal({ isOpen, onClose, division, triggerRef }: DepartmentTooltipProps) {
