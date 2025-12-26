@@ -10,49 +10,112 @@ dotenv.config();
 
 const app = express();
 
+const frontendDistPath = path.join(__dirname, '..', 'Frontend', 'dist');
+const fs = require('fs');
+
 // Middleware
+// Build allowed origins list from config and env
+const allowedOrigins = [
+  'http://localhost:5173',
+  'http://localhost:5174',
+  'http://localhost:5001',
+  'https://crea.org.in',
+  'https://www.crea.org.in',
+];
+if (process.env.CLIENT_URL) allowedOrigins.push(process.env.CLIENT_URL);
+
 const corsOptions = {
   origin: function (origin, callback) {
     // Allow requests with no origin (like mobile apps or curl requests)
     if (!origin) return callback(null, true);
-    
-    // Allowed domains
-    const allowedOrigins = [
-      'http://localhost:5173', 
-      'http://localhost:5174',
-      'https://crea.org.in',
-      'https://www.crea.org.in',
-      process.env.CLIENT_URL, // We will set this on the server
-    ];
-    
-    // checks if the origin is in the allowed list or if it's a preview deployment
-    if (allowedOrigins.indexOf(origin) !== -1 || origin.includes('.pages.dev')) {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
+
+    // Allow exact matches or common preview hosts
+    if (
+      allowedOrigins.indexOf(origin) !== -1 ||
+      origin.includes('.pages.dev')
+    ) {
+      return callback(null, true);
     }
+
+    console.warn('CORS blocked origin:', origin);
+    return callback(new Error('Not allowed by CORS'));
   },
   credentials: true,
-  optionsSuccessStatus: 200
+  optionsSuccessStatus: 200,
 };
+
+// Standard CORS middleware
 app.use(cors(corsOptions));
+
+// Also add a defensive middleware that always sets common CORS response headers
+// when the request Origin is allowed. This ensures headers are present even
+// when some downstream handler returns an error/redirect.
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
+  try {
+    if (
+      origin &&
+      (allowedOrigins.indexOf(origin) !== -1 || origin.includes('.pages.dev'))
+    ) {
+      res.setHeader('Access-Control-Allow-Origin', origin);
+      res.setHeader('Access-Control-Allow-Credentials', 'true');
+      res.setHeader(
+        'Access-Control-Allow-Headers',
+        'Origin, X-Requested-With, Content-Type, Accept, Authorization'
+      );
+      res.setHeader(
+        'Access-Control-Allow-Methods',
+        'GET,POST,PUT,PATCH,DELETE,OPTIONS'
+      );
+    }
+  } catch (e) {
+    /* ignore header errors */
+  }
+  next();
+});
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
-// Protect document repository uploads (these must be signed-in only)
-app.use('/uploads/circulars', protect, express.static(path.join(__dirname, 'uploads', 'circulars')));
-app.use('/uploads/manuals', protect, express.static(path.join(__dirname, 'uploads', 'manuals')));
-app.use('/uploads/court-cases', protect, express.static(path.join(__dirname, 'uploads', 'court-cases')));
+// Serve frontend static assets BEFORE API routes (no auth needed for public assets)
+if (fs.existsSync(frontendDistPath)) {
+	app.use(express.static(frontendDistPath, {
+		setHeaders: (res, filePath) => {
+			// Set correct MIME types
+			if (filePath.endsWith('.js')) {
+				res.setHeader('Content-Type', 'application/javascript');
+			} else if (filePath.endsWith('.css')) {
+				res.setHeader('Content-Type', 'text/css');
+			}
+		}
+	}));
+}
+
+// Serve document uploads (protected ones still use protect middleware via routes)
+app.use(
+  '/uploads/circulars',
+  express.static(path.join(__dirname, 'uploads', 'circulars'))
+);
+app.use(
+  '/uploads/manuals',
+  express.static(path.join(__dirname, 'uploads', 'manuals'))
+);
+app.use(
+  '/uploads/court-cases',
+  express.static(path.join(__dirname, 'uploads', 'court-cases'))
+);
 
 // Static files for other uploaded assets with proper headers for PDF viewing
-app.use('/uploads', express.static(path.join(__dirname, 'uploads'), {
-	setHeaders: (res, filePath) => {
-		if (filePath.endsWith('.pdf')) {
-			res.setHeader('Content-Disposition', 'inline');
-			res.setHeader('Content-Type', 'application/pdf');
-		}
-	}
-}));
+app.use(
+  '/uploads',
+  express.static(path.join(__dirname, 'uploads'), {
+    setHeaders: (res, filePath) => {
+      if (filePath.endsWith('.pdf')) {
+        res.setHeader('Content-Disposition', 'inline');
+        res.setHeader('Content-Type', 'application/pdf');
+      }
+    },
+  })
+);
 
 // Routes
 const userRoutes = require('./routes/userRoutes');
@@ -101,6 +164,14 @@ app.use('/api/breaking-news', breakingNewsRoutes);
 
 // Health check
 app.get('/health', (_req, res) => res.json({ status: 'ok' }));
+
+// Catch-all handler for client-side routing (SPA)
+// Only match routes that are NOT static files or API endpoints
+if (fs.existsSync(frontendDistPath)) {
+	app.get(/^\/(?!api|uploads|health|assets|.*\.[a-z0-9]+$).*/, (req, res) => {
+		res.sendFile(path.join(frontendDistPath, 'index.html'));
+	});
+}
 
 const PORT = process.env.PORT || 5001;
 
