@@ -1,0 +1,5 @@
+# Create or edit .gitignore
+nano .gitignorebackend/uploads/
+backend/server.js.backup2
+node_modules/
+.env
