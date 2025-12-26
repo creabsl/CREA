@@ -206,16 +206,16 @@ export async function deleteEvent(id: string): Promise<{ success: boolean }> {
 // Circulars
 type CircularDTO = {
   _id: string;
-  boardNumber: string;
+  title: string;
   subject: string;
   dateOfIssue: string;
-  url: string;
+  url?: string;
 };
 export async function getCirculars(): Promise<Circular[]> {
   const list = await request<CircularDTO[]>("/api/circulars");
   return list.map((c) => ({
     id: c._id,
-    boardNumber: c.boardNumber,
+    boardNumber: c.title,
     subject: c.subject,
     dateOfIssue: toDateStr(c.dateOfIssue),
     url: c.url,
@@ -241,7 +241,7 @@ export async function createCircular(
   });
   return {
     id: c._id,
-    boardNumber: c.boardNumber,
+    boardNumber: c.title,
     subject: c.subject,
     dateOfIssue: toDateStr(c.dateOfIssue),
     url: c.url,
@@ -268,7 +268,7 @@ export async function updateCircular(
   });
   return {
     id: c._id,
-    boardNumber: c.boardNumber,
+    boardNumber: c.title,
     subject: c.subject,
     dateOfIssue: toDateStr(c.dateOfIssue),
     url: c.url,
@@ -282,10 +282,24 @@ export async function deleteCircular(
 }
 
 // Manuals
-type ManualDTO = { _id: string; title: string; url: string };
+type ManualDTO = {
+  _id: string;
+  title: string;
+  url?: string;
+  category?: string;
+  date?: string;
+  subject?: string;
+};
 export async function getManuals(): Promise<Manual[]> {
   const list = await request<ManualDTO[]>("/api/manuals");
-  return list.map((m) => ({ id: m._id, title: m.title, url: m.url }));
+  return list.map((m) => ({
+    id: m._id,
+    title: m.title,
+    url: m.url,
+    category: m.category as Manual["category"],
+    date: m.date,
+    subject: m.subject,
+  }));
 }
 export async function createManual(
   input: Omit<Manual, "id"> & { file?: File }
@@ -294,13 +308,24 @@ export async function createManual(
   if (input.file) {
     const fd = new FormData();
     fd.append("title", input.title);
+    if (input.category) fd.append("category", input.category);
+    if (input.date) fd.append("date", input.date);
+    if (input.subject) fd.append("subject", input.subject);
+    if (input.url) fd.append("url", input.url);
     fd.append("file", input.file);
     body = fd;
   } else {
     body = JSON.stringify(input);
   }
   const m = await request<ManualDTO>("/api/manuals", { method: "POST", body });
-  return { id: m._id, title: m.title, url: m.url };
+  return {
+    id: m._id,
+    title: m.title,
+    url: m.url,
+    category: m.category as Manual["category"],
+    date: m.date,
+    subject: m.subject,
+  };
 }
 export async function updateManual(
   id: string,
@@ -310,6 +335,10 @@ export async function updateManual(
   if (patch.file) {
     const fd = new FormData();
     if (patch.title) fd.append("title", patch.title);
+    if (patch.category) fd.append("category", patch.category);
+    if (patch.date) fd.append("date", patch.date);
+    if (patch.subject) fd.append("subject", patch.subject);
+    if (patch.url) fd.append("url", patch.url);
     fd.append("file", patch.file);
     body = fd;
   } else {
@@ -319,7 +348,14 @@ export async function updateManual(
     method: "PUT",
     body,
   });
-  return { id: m._id, title: m.title, url: m.url };
+  return {
+    id: m._id,
+    title: m.title,
+    url: m.url,
+    category: m.category as Manual["category"],
+    date: m.date,
+    subject: m.subject,
+  };
 }
 export async function deleteManual(id: string): Promise<{ success: boolean }> {
   await request(`/api/manuals/${id}`, { method: "DELETE" });
@@ -332,6 +368,7 @@ type CourtCaseDTO = {
   caseNumber: string;
   date: string;
   subject: string;
+  url?: string;
 };
 export async function getCourtCases(): Promise<CourtCase[]> {
   const list = await request<CourtCaseDTO[]>("/api/court-cases");
@@ -340,35 +377,62 @@ export async function getCourtCases(): Promise<CourtCase[]> {
     caseNumber: c.caseNumber,
     date: toDateStr(c.date),
     subject: c.subject,
+    url: c.url,
   }));
 }
 export async function createCourtCase(
-  input: Omit<CourtCase, "id">
+  input: Omit<CourtCase, "id"> & { file?: File }
 ): Promise<CourtCase> {
+  let body: BodyInit;
+  if (input.file) {
+    const fd = new FormData();
+    fd.append("caseNumber", input.caseNumber);
+    fd.append("date", input.date);
+    fd.append("subject", input.subject);
+    if (input.url) fd.append("url", input.url);
+    fd.append("file", input.file);
+    body = fd;
+  } else {
+    body = JSON.stringify(input);
+  }
   const c = await request<CourtCaseDTO>("/api/court-cases", {
     method: "POST",
-    body: JSON.stringify(input),
+    body,
   });
   return {
     id: c._id,
     caseNumber: c.caseNumber,
     date: toDateStr(c.date),
     subject: c.subject,
+    url: c.url,
   };
 }
 export async function updateCourtCase(
   id: string,
-  patch: Partial<CourtCase>
+  patch: Partial<CourtCase> & { file?: File }
 ): Promise<CourtCase> {
+  let body: BodyInit;
+  if (patch.file) {
+    const fd = new FormData();
+    if (patch.caseNumber) fd.append("caseNumber", patch.caseNumber);
+    if (patch.date) fd.append("date", patch.date);
+    if (patch.subject) fd.append("subject", patch.subject);
+    if (patch.url) fd.append("url", patch.url);
+    fd.append("file", patch.file);
+    body = fd;
+  } else {
+    body = JSON.stringify(patch);
+  }
   const c = await request<CourtCaseDTO>(`/api/court-cases/${id}`, {
     method: "PUT",
-    body: JSON.stringify(patch),
+    body,
   });
   return {
     id: c._id,
     caseNumber: c.caseNumber,
     date: toDateStr(c.date),
     subject: c.subject,
+    url: c.url,
   };
 }
 export async function deleteCourtCase(

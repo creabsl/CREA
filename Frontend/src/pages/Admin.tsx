@@ -2397,6 +2397,7 @@ function DocumentsAdmin({
   const circularFormRef = useRef<HTMLDivElement>(null);
   const manualFormRef = useRef<HTMLDivElement>(null);
   const courtCaseFormRef = useRef<HTMLDivElement>(null);
+  const caseFileInputRef = useRef<HTMLInputElement>(null);
 
   // Success message state
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
@@ -2473,6 +2474,7 @@ function DocumentsAdmin({
   const [caseDate, setCaseDate] = useState("");
   const [caseSubject, setCaseSubject] = useState("");
   const [caseUrl, setCaseUrl] = useState("");
+  const [caseFile, setCaseFile] = useState<File | null>(null);
   const [editingCourtCase, setEditingCourtCase] = useState<CourtCase | null>(
     null
   );
@@ -2501,6 +2503,10 @@ function DocumentsAdmin({
     setCaseDate("");
     setCaseSubject("");
     setCaseUrl("");
+    setCaseFile(null);
+    if (caseFileInputRef.current) {
+      caseFileInputRef.current.value = "";
+    }
     setEditingCourtCase(null);
   };
 
@@ -2540,6 +2546,7 @@ function DocumentsAdmin({
     setCaseDate(cc.date);
     setCaseSubject(cc.subject);
     setCaseUrl(cc.url || "");
+    setCaseFile(null);
     setEditingCourtCase(cc);
     setTimeout(() => {
       courtCaseFormRef.current?.scrollIntoView({
@@ -2740,6 +2747,26 @@ function DocumentsAdmin({
       setTimeout(() => setErrorMessage(null), 5000);
       return;
     }
+    if (!caseUrl && !caseFile) {
+      setErrorMessage("Either URL or File upload is required");
+      setTimeout(() => setErrorMessage(null), 5000);
+      return;
+    }
+    if (caseFile && caseFile.size > 10 * 1024 * 1024) {
+      setErrorMessage("File size must be less than 10MB");
+      setTimeout(() => setErrorMessage(null), 5000);
+      return;
+    }
+    if (
+      caseFile &&
+      !["application/pdf", "image/jpeg", "image/jpg", "image/png"].includes(
+        caseFile.type
+      )
+    ) {
+      setErrorMessage("Only PDF and image files (JPG, PNG) are allowed");
+      setTimeout(() => setErrorMessage(null), 5000);
+      return;
+    }
 
     try {
       setIsUploading(true);
@@ -2761,6 +2788,7 @@ function DocumentsAdmin({
             date: caseDate,
             subject: caseSubject,
             url: caseUrl || undefined,
+            file: caseFile || undefined,
           });
           onCourtCasesChange(
             courtCases.map((d) => (d.id === editingCourtCase.id ? upd : d))
@@ -2774,6 +2802,7 @@ function DocumentsAdmin({
             date: caseDate,
             subject: caseSubject,
             url: caseUrl || undefined,
+            file: caseFile || undefined,
           });
           onCourtCasesChange([cc, ...courtCases]);
           resetCourtCaseForm();
@@ -3731,7 +3760,22 @@ function DocumentsAdmin({
                     onChange={(e) => setCaseUrl(e.target.value)}
                   />
                   <p className="text-xs text-gray-500 mt-1">
-                    Link to case document or details
+                    Provide URL or upload a file below
+                  </p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    File (PDF or Image)
+                  </label>
+                  <input
+                    ref={caseFileInputRef}
+                    type="file"
+                    accept="application/pdf,image/*"
+                    className="block w-full text-sm text-gray-600 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-red-50 file:text-red-700 hover:file:bg-red-100"
+                    onChange={(e) => setCaseFile(e.target.files?.[0] || null)}
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    * Max 10MB • PDF or JPG/PNG only • Required if no URL
                   </p>
                 </div>
               </div>

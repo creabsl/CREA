@@ -164,7 +164,7 @@ export default function Documents() {
               id: m.id,
               title: m.title,
               description: "Manual document",
-              date: "",
+              date: m.date || "",
               type: "manual",
               fileUrl: getFullUrl(m.url),
               category: m.category,
@@ -308,12 +308,14 @@ export default function Documents() {
 
     if (type === "court-case") {
       return [
-        ...baseColumns,
+        baseColumns[0], // Title column
+        baseColumns[1], // Date column
         {
           key: "caseNumber" as keyof Document,
           header: "Case Number",
           render: (row: Document) => row.caseNumber || "-",
         },
+        baseColumns[2], // File column
       ];
     }
 
@@ -435,8 +437,17 @@ export default function Documents() {
                     d="M12 4v16m8-8H4"
                   />
                 </svg>
-                <span className="hidden sm:inline">{getAddButtonText(activeTab)}</span>
-                <span className="sm:hidden">Add {activeTab === 'circular' ? 'Circular' : activeTab === 'manual' ? 'Manual' : 'Case'}</span>
+                <span className="hidden sm:inline">
+                  {getAddButtonText(activeTab)}
+                </span>
+                <span className="sm:hidden">
+                  Add{" "}
+                  {activeTab === "circular"
+                    ? "Circular"
+                    : activeTab === "manual"
+                    ? "Manual"
+                    : "Case"}
+                </span>
               </Button>
             )}
           </div>
@@ -457,7 +468,11 @@ export default function Documents() {
               >
                 {tab.icon}
                 <span className="hidden sm:inline">{tab.label}</span>
-                <span className="sm:hidden">{tab.label.replace('Circulars', 'Docs').replace('Court Cases', 'Cases')}</span>
+                <span className="sm:hidden">
+                  {tab.label
+                    .replace("Circulars", "Docs")
+                    .replace("Court Cases", "Cases")}
+                </span>
                 <span
                   className={`ml-0.5 sm:ml-1 px-1.5 py-0.5 text-[10px] sm:text-xs rounded-full ${
                     activeTab === tab.value

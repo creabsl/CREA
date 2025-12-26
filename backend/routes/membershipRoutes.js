@@ -61,6 +61,59 @@ router.get("/stats", protect, getMembershipStats);
 router.get("/", protect, adminOnly, listMemberships);
 router.put("/:id/status", protect, adminOnly, updateMembershipStatus);
 router.put("/:id/renew", protect, adminOnly, renewMembership);
+router.delete("/:id", protect, adminOnly, async (req, res) => {
+  try {
+    const Membership = require("../models/membershipModel");
+    const membership = await Membership.findByIdAndDelete(req.params.id);
+
+    if (!membership) {
+      return res.status(404).json({
+        success: false,
+        message: "Membership not found",
+      });
+    }
+
+    res.json({
+      success: true,
+      message: "Membership deleted successfully",
+    });
+  } catch (error) {
+    console.error("Error deleting membership:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error deleting membership",
+      error: error.message,
+    });
+  }
+});
+router.post("/bulk-delete", protect, adminOnly, async (req, res) => {
+  try {
+    const { ids } = req.body;
+
+    if (!ids || !Array.isArray(ids) || ids.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "No membership IDs provided",
+      });
+    }
+
+    const Membership = require("../models/membershipModel");
+    const result = await Membership.deleteMany({ _id: { $in: ids } });
+
+    res.json({
+      success: true,
+      message: `Successfully deleted ${result.deletedCount} membership(s)`,
+      deletedCount: result.deletedCount,
+    });
+  } catch (error) {
+    console.error("Error deleting memberships:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error deleting memberships",
+      error: error.message,
+    });
+  }
+});
 router.post(
   "/bulk-upload",
   protect,
