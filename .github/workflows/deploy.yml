@@ -3,13 +3,13 @@ name: Backend Auto-Deploy
 on:
   push:
     branches:
-      - main  # Trigger when you push to main
+      - main
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Deploy via SSH
+      - name: SSH and Deploy to Debian VPS
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.REMOTE_HOST }}
@@ -18,12 +18,12 @@ jobs:
           script: |
             cd /var/www/crea-backend
             
-            # Pull only the backend folder
+            # Sync only the backend folder
             git pull origin main
             
-            # Go to the backend folder and refresh
+            # Move into the backend to refresh dependencies
             cd backend
             npm install --production
             
-            # Restart your app (adjust 'server.js' if your entry file is different)
-            pm2 restart all || pm2 start server.js --name "crea-backend"
+            # Restart the specific PM2 process
+            pm2 restart crea-api || pm2 start server.js --name "crea-api"
