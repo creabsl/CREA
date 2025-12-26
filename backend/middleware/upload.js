@@ -81,3 +81,13 @@ exports.uploadMultiple = (subdir) =>
     }, 
     limits: { fileSize: 10 * 1024 * 1024 } 
   }).array('photos', 10); // Allow up to 10 photos
+
+exports.uploadAchievementImage = multer({
+  storage: storageFor('achievements'),
+  fileFilter: (_req, file, cb) => {
+    const ok = file.mimetype.startsWith('image/');
+    if (!ok) return cb(new Error('Only images allowed for achievements'));
+    return cb(null, true);
+  },
+  limits: { fileSize: 5 * 1024 * 1024 } // 5MB limit for achievement images
+}).single('image');
