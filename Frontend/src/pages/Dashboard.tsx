@@ -198,7 +198,7 @@ export default function Dashboard() {
   const [calendarMonth, setCalendarMonth] = useState(new Date().getMonth())
   const [isDepartmentModalOpen, setIsDepartmentModalOpen] = useState(false)
   const [selectedDivision, setSelectedDivision] = useState<string | null>(null)
-  const triggerRef = useRef<HTMLButtonElement | null>(null)
+  const triggerRef = useRef<HTMLElement>(null)
   
   const handleMonthChange = (year: number, month: number) => {
     setCalendarYear(year)
