@@ -1,6 +1,6 @@
-import { useEffect, useState, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { getDepartmentStats } from '../services/api';
+import { useEffect, useState, useRef } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { getDepartmentStats } from "../services/api";
 
 interface DepartmentStat {
   department: string;
@@ -14,11 +14,33 @@ interface DepartmentTooltipProps {
   triggerRef: React.RefObject<HTMLButtonElement | null>;
 }
 
-export default function DepartmentModal({ isOpen, onClose, division, triggerRef }: DepartmentTooltipProps) {
+export default function DepartmentModal({
+  isOpen,
+  onClose,
+  division,
+  triggerRef,
+}: DepartmentTooltipProps) {
   const [departmentStats, setDepartmentStats] = useState<DepartmentStat[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const tooltipRef = useRef<HTMLDivElement>(null);
+
+  // Prevent body scroll when modal is open
+  useEffect(() => {
+    if (isOpen) {
+      const scrollY = window.scrollY;
+      document.body.style.position = "fixed";
+      document.body.style.top = `-${scrollY}px`;
+      document.body.style.width = "100%";
+
+      return () => {
+        document.body.style.position = "";
+        document.body.style.top = "";
+        document.body.style.width = "";
+        window.scrollTo(0, scrollY);
+      };
+    }
+  }, [isOpen]);
 
   useEffect(() => {
     if (!isOpen || !division) {
@@ -34,8 +56,8 @@ export default function DepartmentModal({ isOpen, onClose, division, triggerRef 
         const stats = await getDepartmentStats(division);
         setDepartmentStats(stats);
       } catch (err) {
-        console.error('Failed to fetch department stats:', err);
-        setError('Failed to load department statistics');
+        console.error("Failed to fetch department stats:", err);
+        setError("Failed to load department statistics");
       } finally {
         setLoading(false);
       }
@@ -58,18 +80,26 @@ export default function DepartmentModal({ isOpen, onClose, division, triggerRef 
     };
 
     if (isOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener("mousedown", handleClickOutside);
     }
 
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener("mousedown", handleClickOutside);
     };
   }, [isOpen, onClose, triggerRef]);
 
-  const totalMembers = departmentStats.reduce((sum, dept) => sum + dept.count, 0);
+  const totalMembers = departmentStats.reduce(
+    (sum, dept) => sum + dept.count,
+    0
+  );
 
   // Sort departments in the order specified: Electrical, Mechanical, Engineering, Signal & Telecommunication
-  const departmentOrder = ['Electrical', 'Mechanical', 'Engineering', 'Signal & Telecommunication'];
+  const departmentOrder = [
+    "Electrical",
+    "Mechanical",
+    "Engineering",
+    "Signal & Telecommunication",
+  ];
   const sortedStats = [...departmentStats].sort((a, b) => {
     const indexA = departmentOrder.indexOf(a.department);
     const indexB = departmentOrder.indexOf(b.department);
@@ -89,7 +119,7 @@ export default function DepartmentModal({ isOpen, onClose, division, triggerRef 
           style={{
             top: triggerRef.current
               ? triggerRef.current.getBoundingClientRect().bottom + 12
-              : '50%',
+              : "50%",
             left: triggerRef.current
               ? Math.max(
                   12,
@@ -97,8 +127,8 @@ export default function DepartmentModal({ isOpen, onClose, division, triggerRef 
                     triggerRef.current.getBoundingClientRect().width / 2 -
                     160
                 )
-              : '50%',
-            transform: triggerRef.current ? 'none' : 'translate(-50%, -50%)',
+              : "50%",
+            transform: triggerRef.current ? "none" : "translate(-50%, -50%)",
           }}
         >
           {/* Header */}
@@ -125,7 +155,8 @@ export default function DepartmentModal({ isOpen, onClose, division, triggerRef 
           ) : (
             <div className="space-y-2.5">
               {sortedStats.map((dept) => {
-                const percentage = totalMembers > 0 ? (dept.count / totalMembers) * 100 : 0;
+                const percentage =
+                  totalMembers > 0 ? (dept.count / totalMembers) * 100 : 0;
                 return (
                   <div key={dept.department} className="space-y-1">
                     <div className="flex items-center justify-between">
@@ -147,7 +178,7 @@ export default function DepartmentModal({ isOpen, onClose, division, triggerRef 
                       <motion.div
                         initial={{ width: 0 }}
                         animate={{ width: `${percentage}%` }}
-                        transition={{ duration: 0.5, ease: 'easeOut' }}
+                        transition={{ duration: 0.5, ease: "easeOut" }}
                         className="h-full bg-gradient-to-r from-[var(--primary)] to-[var(--accent)]"
                       />
                     </div>
@@ -157,7 +188,9 @@ export default function DepartmentModal({ isOpen, onClose, division, triggerRef 
 
               {/* Total Section */}
               <div className="mt-3 pt-2 border-t border-gray-200 flex items-center justify-between">
-                <span className="text-xs font-semibold text-gray-700">Total</span>
+                <span className="text-xs font-semibold text-gray-700">
+                  Total
+                </span>
                 <span className="text-sm font-bold text-[var(--primary)]">
                   {totalMembers} members
                 </span>
