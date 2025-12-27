@@ -10,7 +10,7 @@ interface DepartmentStat {
 interface DepartmentTooltipProps {
   isOpen: boolean;
   onClose: () => void;
-  division: string;
+  division: string | null;
   triggerRef: React.RefObject<HTMLButtonElement | null>;
 }
 
