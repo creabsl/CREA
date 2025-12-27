@@ -6,6 +6,23 @@ import { updateProfile, getProfile } from "../services/api";
 import Input from "../components/Input";
 import Button from "../components/Button";
 import type { User } from "../services/api";
+import {
+  calculateProfileCompletion,
+  getCompletionBadgeColor,
+  getCompletionMessage,
+} from "../utils/profileCompletion";
+
+// Helper function to format date for input[type="date"]
+const formatDateForInput = (dateString: string | undefined | null): string => {
+  if (!dateString) return "";
+  try {
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return "";
+    return date.toISOString().split("T")[0];
+  } catch {
+    return "";
+  }
+};
 
 export default function Profile() {
   const { user: contextUser } = useAuth();
@@ -24,6 +41,7 @@ export default function Profile() {
     division: user?.division || "",
     department: user?.department || "",
     mobile: user?.mobile || "",
+    dateOfBirth: formatDateForInput(user?.dateOfBirth),
   });
 
   // Fetch profile data from backend on mount
@@ -40,6 +58,7 @@ export default function Profile() {
           division: profileData.division || "",
           department: profileData.department || "",
           mobile: profileData.mobile || "",
+          dateOfBirth: formatDateForInput(profileData.dateOfBirth),
         });
         // Update localStorage with fresh data
         localStorage.setItem("crea:user", JSON.stringify(profileData));
@@ -54,6 +73,7 @@ export default function Profile() {
             division: contextUser.division || "",
             department: contextUser.department || "",
             mobile: contextUser.mobile || "",
+            dateOfBirth: formatDateForInput(contextUser.dateOfBirth),
           });
           // Don't show error if we have cached data
         } else {
@@ -78,6 +98,7 @@ export default function Profile() {
         division: user.division || "",
         department: user.department || "",
         mobile: user.mobile || "",
+        dateOfBirth: formatDateForInput(user.dateOfBirth),
       });
     }
   }, [user]);
@@ -125,6 +146,7 @@ export default function Profile() {
       division: user?.division || "",
       department: user?.department || "",
       mobile: user?.mobile || "",
+      dateOfBirth: formatDateForInput(user?.dateOfBirth),
     });
     setIsEditing(false);
     setError("");
@@ -141,6 +163,9 @@ export default function Profile() {
       </div>
     );
   }
+
+  const completion = calculateProfileCompletion(user);
+  const badgeColor = getCompletionBadgeColor(completion.percentage);
 
   return (
     <div className="max-w-3xl mx-auto space-y-6">
@@ -170,6 +195,95 @@ export default function Profile() {
           </Button>
         )}
       </motion.div>
+
+      {/* Profile Completion Card - Only show when incomplete */}
+      {completion.percentage < 100 && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          className="bg-gradient-to-br from-orange-50 to-amber-50 border-2 border-orange-200 rounded-xl p-6 shadow-sm"
+        >
+          <div className="flex items-start gap-4">
+            <div className="w-12 h-12 bg-orange-100 rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm">
+              <svg
+                className="w-6 h-6 text-orange-600"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              </svg>
+            </div>
+            <div className="flex-1">
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-lg font-bold text-gray-900">
+                  Profile Completion
+                </h3>
+                <span
+                  className={`px-3 py-1 rounded-full text-sm font-bold ${
+                    badgeColor === "green"
+                      ? "bg-green-100 text-green-700"
+                      : badgeColor === "blue"
+                      ? "bg-blue-100 text-blue-700"
+                      : badgeColor === "yellow"
+                      ? "bg-yellow-100 text-yellow-700"
+                      : "bg-red-100 text-red-700"
+                  }`}
+                >
+                  {completion.percentage}%
+                </span>
+              </div>
+              <p className="text-sm text-gray-700 mb-4">
+                {getCompletionMessage(completion.percentage)}
+              </p>
+
+              {/* Progress Bar */}
+              <div className="relative w-full h-3 bg-white rounded-full overflow-hidden shadow-inner mb-3">
+                <motion.div
+                  initial={{ width: 0 }}
+                  animate={{ width: `${completion.percentage}%` }}
+                  transition={{ duration: 1, ease: "easeOut" }}
+                  className={`absolute top-0 left-0 h-full rounded-full ${
+                    completion.percentage === 100
+                      ? "bg-gradient-to-r from-green-400 to-green-600"
+                      : completion.percentage >= 75
+                      ? "bg-gradient-to-r from-blue-400 to-blue-600"
+                      : completion.percentage >= 50
+                      ? "bg-gradient-to-r from-yellow-400 to-yellow-600"
+                      : "bg-gradient-to-r from-red-400 to-red-600"
+                  }`}
+                />
+              </div>
+
+              {/* Missing Fields */}
+              {completion.missingFields.length > 0 && (
+                <div className="space-y-1">
+                  <p className="text-xs font-semibold text-gray-700">
+                    Missing fields:
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {completion.missingFields.map((field) => (
+                      <span
+                        key={field}
+                        className="inline-flex items-center gap-1 text-xs bg-white/60 text-gray-700 px-2 py-1 rounded-md border border-orange-200"
+                      >
+                        <span className="w-1.5 h-1.5 bg-orange-500 rounded-full"></span>
+                        {field}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </motion.div>
+      )}
 
       {/* Messages */}
       {message && (
@@ -278,6 +392,21 @@ export default function Profile() {
                     required
                     pattern="[6-9][0-9]{9}"
                     maxLength={10}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1">
+                    Date of Birth
+                  </label>
+                  <Input
+                    value={formData.dateOfBirth}
+                    onChange={(e) =>
+                      setFormData({ ...formData, dateOfBirth: e.target.value })
+                    }
+                    type="date"
+                    max={new Date().toISOString().split("T")[0]}
+                    placeholder="Select your date of birth"
                   />
                 </div>
 
@@ -398,6 +527,21 @@ export default function Profile() {
                 </div>
                 <div className="text-base font-medium text-gray-900">
                   {user?.department || "Not provided"}
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                  Date of Birth
+                </div>
+                <div className="text-base font-medium text-gray-900">
+                  {user?.dateOfBirth
+                    ? new Date(user.dateOfBirth).toLocaleDateString("en-IN", {
+                        year: "numeric",
+                        month: "long",
+                        day: "numeric",
+                      })
+                    : "Not provided"}
                 </div>
               </div>
 

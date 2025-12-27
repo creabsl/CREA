@@ -7,9 +7,12 @@ import {
   getMembershipPricing,
   createMembershipOrder,
   verifyMembershipPayment,
+  getProfile,
 } from "../services/api";
 import { usePageTitle } from "../hooks/usePageTitle";
+import { useAuth } from "../context/auth";
 import type { MembershipFormData } from "../services/api";
+import type { Division } from "../types";
 import FileUploader from "../components/FileUploader";
 import { STATES, getCitiesForState } from "../data/statesAndCities";
 
@@ -25,6 +28,7 @@ declare global {
 type Form = MembershipFormData;
 
 export default function Membership() {
+  const { user: authUser } = useAuth();
   const [showForm, setShowForm] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [membershipId, setMembershipId] = useState<string | null>(null);
@@ -70,6 +74,49 @@ export default function Membership() {
     };
     fetchPricing();
   }, []);
+
+  // Fetch and pre-fill profile data when form is shown
+  useEffect(() => {
+    const fetchProfileData = async () => {
+      if (!showForm || !authUser) return;
+
+      try {
+        const profile = await getProfile();
+
+        // Validate division is one of the allowed values
+        const validDivisions: Division[] = [
+          "Bhusawal",
+          "Mumbai",
+          "Pune",
+          "Nagpur",
+          "Solapur",
+        ];
+        const profileDivision = validDivisions.includes(
+          profile.division as Division
+        )
+          ? (profile.division as Division)
+          : undefined;
+
+        setForm((f) => ({
+          ...f,
+          name: profile.name || f.name,
+          email: profile.email || f.email,
+          mobile: profile.mobile || f.mobile,
+          designation: profile.designation || f.designation,
+          division: profileDivision || f.division,
+          department: profile.department || f.department,
+          personalDetails: {
+            ...f.personalDetails,
+            dateOfBirth: profile.dateOfBirth || f.personalDetails.dateOfBirth,
+          },
+        }));
+      } catch (error) {
+        console.error("Failed to fetch profile data:", error);
+      }
+    };
+
+    fetchProfileData();
+  }, [showForm, authUser]);
 
   const startApplication = (type: "ordinary" | "lifetime") => {
     setForm((f) => ({

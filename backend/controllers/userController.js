@@ -1,37 +1,39 @@
-const jwt = require('jsonwebtoken');
-const User = require('../models/userModel');
-const { sendMail } = require('../config/mailer');
+const jwt = require("jsonwebtoken");
+const User = require("../models/userModel");
+const { sendMail } = require("../config/mailer");
 
 const generateToken = (id) => {
   const secret = process.env.JWT_SECRET;
-  if (!secret) throw new Error('JWT_SECRET is not defined');
-  return jwt.sign({ id }, secret, { expiresIn: '7d' });
+  if (!secret) throw new Error("JWT_SECRET is not defined");
+  return jwt.sign({ id }, secret, { expiresIn: "7d" });
 };
 
 // Helper function to generate next Member ID
 const generateNextMemberId = async (membershipType) => {
-  const prefix = membershipType === 'Ordinary' ? 'ORD' : 'LIF';
+  const prefix = membershipType === "Ordinary" ? "ORD" : "LIF";
   const regex = new RegExp(`^${prefix}-\\d{4}$`);
-  
+
   // Find all existing IDs with this prefix and extract the numeric part
-  const existingUsers = await User.find({ memberId: regex }).select('memberId').lean();
-  
+  const existingUsers = await User.find({ memberId: regex })
+    .select("memberId")
+    .lean();
+
   if (existingUsers.length === 0) {
     return `${prefix}-0001`;
   }
-  
+
   // Extract numbers and find the highest
-  const numbers = existingUsers.map(u => {
+  const numbers = existingUsers.map((u) => {
     const match = u.memberId.match(/\d{4}$/);
     return match ? parseInt(match[0], 10) : 0;
   });
-  
+
   const maxNumber = Math.max(...numbers);
   const nextNumber = maxNumber + 1;
-  
+
   // Pad with zeros to make it 4 digits
-  const paddedNumber = String(nextNumber).padStart(4, '0');
-  
+  const paddedNumber = String(nextNumber).padStart(4, "0");
+
   return `${prefix}-${paddedNumber}`;
 };
 
@@ -39,16 +41,26 @@ const generateNextMemberId = async (membershipType) => {
 // @route   POST /api/users/register
 // @access  Public
 exports.registerUser = async (req, res) => {
-  const { name, email, password, designation, division, department, membershipType } = req.body;
+  const {
+    name,
+    email,
+    password,
+    designation,
+    division,
+    department,
+    membershipType,
+  } = req.body;
 
   if (!name || !email || !password) {
-    return res.status(400).json({ message: 'Please provide name, email, and password' });
+    return res
+      .status(400)
+      .json({ message: "Please provide name, email, and password" });
   }
 
   try {
     const userExists = await User.findOne({ email });
     if (userExists) {
-      return res.status(400).json({ message: 'User already exists' });
+      return res.status(400).json({ message: "User already exists" });
     }
 
     const user = await User.create({
@@ -74,8 +86,8 @@ exports.registerUser = async (req, res) => {
       token: generateToken(user._id),
     });
   } catch (error) {
-    console.error('Register error:', error);
-    return res.status(500).json({ message: 'Server error' });
+    console.error("Register error:", error);
+    return res.status(500).json({ message: "Server error" });
   }
 };
 
@@ -86,20 +98,22 @@ exports.loginUser = async (req, res) => {
   const { email, password } = req.body;
 
   if (!email || !password) {
-    return res.status(400).json({ message: 'Please provide email and password' });
+    return res
+      .status(400)
+      .json({ message: "Please provide email and password" });
   }
 
   try {
     const user = await User.findOne({ email });
 
     if (!user) {
-      return res.status(401).json({ message: 'Invalid credentials' });
+      return res.status(401).json({ message: "Invalid credentials" });
     }
 
     const isMatch = await user.matchPassword(password);
 
     if (!isMatch) {
-      return res.status(401).json({ message: 'Invalid credentials' });
+      return res.status(401).json({ message: "Invalid credentials" });
     }
 
     return res.json({
@@ -117,8 +131,8 @@ exports.loginUser = async (req, res) => {
       token: generateToken(user._id),
     });
   } catch (error) {
-    console.error('Login error:', error);
-    return res.status(500).json({ message: 'Server error' });
+    console.error("Login error:", error);
+    return res.status(500).json({ message: "Server error" });
   }
 };
 
@@ -131,11 +145,13 @@ exports.listUsers = async (req, res) => {
     const filter = {};
     if (division) filter.division = division;
     if (role) filter.role = role;
-    const users = await User.find(filter).select('-password').sort({ createdAt: -1 });
+    const users = await User.find(filter)
+      .select("-password")
+      .sort({ createdAt: -1 });
     return res.json(users);
   } catch (error) {
-    console.error('List users error:', error);
-    return res.status(500).json({ message: 'Server error' });
+    console.error("List users error:", error);
+    return res.status(500).json({ message: "Server error" });
   }
 };
 
@@ -145,25 +161,38 @@ exports.listUsers = async (req, res) => {
 exports.updateUser = async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, designation, division, department, mobile, membershipType, role } = req.body;
+    const {
+      name,
+      designation,
+      division,
+      department,
+      mobile,
+      membershipType,
+      role,
+    } = req.body;
 
     // Only allow safe fields; password/email updates are out-of-scope here
     const patch = {};
-    if (typeof name === 'string') patch.name = name;
-    if (typeof designation === 'string') patch.designation = designation;
-    if (typeof division === 'string') patch.division = division;
-    if (typeof department === 'string') patch.department = department;
-    if (typeof mobile === 'string') patch.mobile = mobile;
-    if (typeof membershipType === 'string') patch.membershipType = membershipType;
+    if (typeof name === "string") patch.name = name;
+    if (typeof designation === "string") patch.designation = designation;
+    if (typeof division === "string") patch.division = division;
+    if (typeof department === "string") patch.department = department;
+    if (typeof mobile === "string") patch.mobile = mobile;
+    if (typeof membershipType === "string")
+      patch.membershipType = membershipType;
     // role change allowed but restrict to known values
-    if (role === 'admin' || role === 'member') patch.role = role;
+    if (role === "admin" || role === "member") patch.role = role;
 
-    const updated = await User.findByIdAndUpdate(id, { $set: patch }, { new: true, runValidators: true }).select('-password');
-    if (!updated) return res.status(404).json({ message: 'User not found' });
+    const updated = await User.findByIdAndUpdate(
+      id,
+      { $set: patch },
+      { new: true, runValidators: true }
+    ).select("-password");
+    if (!updated) return res.status(404).json({ message: "User not found" });
     return res.json(updated);
   } catch (error) {
-    console.error('Update user error:', error);
-    return res.status(500).json({ message: 'Server error' });
+    console.error("Update user error:", error);
+    return res.status(500).json({ message: "Server error" });
   }
 };
 
@@ -173,10 +202,10 @@ exports.updateUser = async (req, res) => {
 exports.getProfile = async (req, res) => {
   try {
     const userId = req.user._id;
-    const user = await User.findById(userId).select('-password');
-    
-    if (!user) return res.status(404).json({ message: 'User not found' });
-    
+    const user = await User.findById(userId).select("-password");
+
+    if (!user) return res.status(404).json({ message: "User not found" });
+
     return res.json({
       _id: user._id,
       name: user.name,
@@ -186,13 +215,14 @@ exports.getProfile = async (req, res) => {
       division: user.division,
       department: user.department,
       mobile: user.mobile,
+      dateOfBirth: user.dateOfBirth,
       memberId: user.memberId,
       membershipType: user.membershipType,
       isMember: user.isMember,
     });
   } catch (error) {
-    console.error('Get profile error:', error);
-    return res.status(500).json({ message: 'Server error' });
+    console.error("Get profile error:", error);
+    return res.status(500).json({ message: "Server error" });
   }
 };
 
@@ -202,19 +232,26 @@ exports.getProfile = async (req, res) => {
 exports.updateProfile = async (req, res) => {
   try {
     const userId = req.user._id;
-    const { name, designation, division, department, mobile } = req.body;
+    const { name, designation, division, department, mobile, dateOfBirth } =
+      req.body;
 
     // Members can only update their own profile fields (not role/membershipType)
     const patch = {};
-    if (typeof name === 'string') patch.name = name;
-    if (typeof designation === 'string') patch.designation = designation;
-    if (typeof division === 'string') patch.division = division;
-    if (typeof department === 'string') patch.department = department;
-    if (typeof mobile === 'string') patch.mobile = mobile;
+    if (typeof name === "string") patch.name = name;
+    if (typeof designation === "string") patch.designation = designation;
+    if (typeof division === "string") patch.division = division;
+    if (typeof department === "string") patch.department = department;
+    if (typeof mobile === "string") patch.mobile = mobile;
+    if (dateOfBirth !== undefined)
+      patch.dateOfBirth = dateOfBirth ? new Date(dateOfBirth) : null;
 
-    const updated = await User.findByIdAndUpdate(userId, { $set: patch }, { new: true, runValidators: true }).select('-password');
-    if (!updated) return res.status(404).json({ message: 'User not found' });
-    
+    const updated = await User.findByIdAndUpdate(
+      userId,
+      { $set: patch },
+      { new: true, runValidators: true }
+    ).select("-password");
+    if (!updated) return res.status(404).json({ message: "User not found" });
+
     return res.json({
       _id: updated._id,
       name: updated.name,
@@ -224,11 +261,12 @@ exports.updateProfile = async (req, res) => {
       division: updated.division,
       department: updated.department,
       mobile: updated.mobile,
+      dateOfBirth: updated.dateOfBirth,
       membershipType: updated.membershipType,
     });
   } catch (error) {
-    console.error('Update profile error:', error);
-    return res.status(500).json({ message: 'Server error' });
+    console.error("Update profile error:", error);
+    return res.status(500).json({ message: "Server error" });
   }
 };
 
@@ -239,36 +277,43 @@ exports.activateMembership = async (req, res) => {
   try {
     const userId = req.user._id;
     const { membershipType } = req.body; // 'Ordinary' or 'Lifetime'
-    
-    if (!membershipType || !['Ordinary', 'Lifetime'].includes(membershipType)) {
-      return res.status(400).json({ message: 'Invalid membership type. Must be Ordinary or Lifetime.' });
+
+    if (!membershipType || !["Ordinary", "Lifetime"].includes(membershipType)) {
+      return res
+        .status(400)
+        .json({
+          message: "Invalid membership type. Must be Ordinary or Lifetime.",
+        });
     }
-    
+
     const user = await User.findById(userId);
     if (!user) {
-      return res.status(404).json({ message: 'User not found' });
+      return res.status(404).json({ message: "User not found" });
     }
-    
+
     const oldMemberId = user.memberId;
-    const isUpgrade = oldMemberId && oldMemberId.startsWith('ORD-') && membershipType === 'Lifetime';
+    const isUpgrade =
+      oldMemberId &&
+      oldMemberId.startsWith("ORD-") &&
+      membershipType === "Lifetime";
     const isNew = !oldMemberId;
-    
+
     // Generate new Member ID
     const newMemberId = await generateNextMemberId(membershipType);
-    
+
     // Update user document
     user.memberId = newMemberId;
     user.membershipType = membershipType;
     user.isMember = true;
-    
+
     await user.save();
-    
+
     // Send email notification
     let emailSubject, emailBody;
-    
+
     if (isNew) {
       // New member
-      emailSubject = 'Welcome to CREA - Membership Confirmed';
+      emailSubject = "Welcome to CREA - Membership Confirmed";
       emailBody = `
         <h2>Welcome to Central Railway Engineers Association!</h2>
         <p>Dear ${user.name},</p>
@@ -281,7 +326,7 @@ exports.activateMembership = async (req, res) => {
       `;
     } else if (isUpgrade) {
       // Upgrade from Ordinary to Lifetime
-      emailSubject = 'Membership Upgrade Successful - CREA';
+      emailSubject = "Membership Upgrade Successful - CREA";
       emailBody = `
         <h2>Congratulations on Your Membership Upgrade!</h2>
         <p>Dear ${user.name},</p>
@@ -294,7 +339,7 @@ exports.activateMembership = async (req, res) => {
       `;
     } else {
       // Same type reactivation or edge case
-      emailSubject = 'CREA Membership Confirmed';
+      emailSubject = "CREA Membership Confirmed";
       emailBody = `
         <h2>Membership Confirmed</h2>
         <p>Dear ${user.name},</p>
@@ -305,7 +350,7 @@ exports.activateMembership = async (req, res) => {
         <p>Best regards,<br>CREA Team</p>
       `;
     }
-    
+
     // Send email
     try {
       await sendMail({
@@ -314,22 +359,23 @@ exports.activateMembership = async (req, res) => {
         html: emailBody,
       });
     } catch (emailError) {
-      console.error('Failed to send membership email:', emailError);
+      console.error("Failed to send membership email:", emailError);
       // Continue even if email fails - membership is still activated
     }
-    
+
     return res.json({
       success: true,
-      message: 'Membership activated successfully',
+      message: "Membership activated successfully",
       memberId: newMemberId,
       membershipType: membershipType,
       isUpgrade: isUpgrade,
       oldMemberId: isUpgrade ? oldMemberId : null,
     });
-    
   } catch (error) {
-    console.error('Activate membership error:', error);
-    return res.status(500).json({ message: 'Server error during membership activation' });
+    console.error("Activate membership error:", error);
+    return res
+      .status(500)
+      .json({ message: "Server error during membership activation" });
   }
 };
 
@@ -340,39 +386,43 @@ exports.generateMemberIdForUser = async (req, res) => {
   try {
     const { id } = req.params;
     const { membershipType } = req.body;
-    
+
     const user = await User.findById(id);
     if (!user) {
-      return res.status(404).json({ message: 'User not found' });
+      return res.status(404).json({ message: "User not found" });
     }
-    
+
     // Use the membershipType from request body if provided, otherwise use user's current type
     const targetMembershipType = membershipType || user.membershipType;
-    
-    if (!targetMembershipType || targetMembershipType === 'None') {
-      return res.status(400).json({ message: 'User must have a membership type assigned first' });
+
+    if (!targetMembershipType || targetMembershipType === "None") {
+      return res
+        .status(400)
+        .json({ message: "User must have a membership type assigned first" });
     }
-    
+
     // Check if upgrade is needed (changing from one type to another with existing ID)
     const oldMemberId = user.memberId;
-    const isUpgrade = oldMemberId && (
-      (oldMemberId.startsWith('ORD-') && targetMembershipType === 'Lifetime') ||
-      (oldMemberId.startsWith('LIF-') && targetMembershipType === 'Ordinary')
-    );
-    
+    const isUpgrade =
+      oldMemberId &&
+      ((oldMemberId.startsWith("ORD-") &&
+        targetMembershipType === "Lifetime") ||
+        (oldMemberId.startsWith("LIF-") &&
+          targetMembershipType === "Ordinary"));
+
     // Generate new Member ID based on target membership type
     const newMemberId = await generateNextMemberId(targetMembershipType);
-    
+
     // Update user
     user.memberId = newMemberId;
     user.membershipType = targetMembershipType;
     user.isMember = true;
     await user.save();
-    
+
     // Send email notification
     let emailSubject, emailBody;
     if (isUpgrade) {
-      emailSubject = 'CREA Membership Upgrade - New Member ID Assigned';
+      emailSubject = "CREA Membership Upgrade - New Member ID Assigned";
       emailBody = `
         <h2>Membership Upgraded!</h2>
         <p>Dear ${user.name},</p>
@@ -384,7 +434,7 @@ exports.generateMemberIdForUser = async (req, res) => {
         <p>Best regards,<br>CREA Team</p>
       `;
     } else {
-      emailSubject = 'CREA Membership Activated - Member ID Assigned';
+      emailSubject = "CREA Membership Activated - Member ID Assigned";
       emailBody = `
         <h2>Welcome to CREA!</h2>
         <p>Dear ${user.name},</p>
@@ -396,27 +446,26 @@ exports.generateMemberIdForUser = async (req, res) => {
         <p>Best regards,<br>CREA Team</p>
       `;
     }
-    
+
     try {
       await sendMail({
         to: user.email,
         subject: emailSubject,
-        html: emailBody
+        html: emailBody,
       });
     } catch (emailError) {
-      console.error('Failed to send email:', emailError);
+      console.error("Failed to send email:", emailError);
     }
-    
-    return res.json({ 
-      success: true, 
-      memberId: newMemberId, 
+
+    return res.json({
+      success: true,
+      memberId: newMemberId,
       membershipType: targetMembershipType,
       isUpgrade: isUpgrade,
-      oldMemberId: isUpgrade ? oldMemberId : null
+      oldMemberId: isUpgrade ? oldMemberId : null,
     });
-    
   } catch (error) {
-    console.error('Generate Member ID error:', error);
-    return res.status(500).json({ message: 'Server error' });
+    console.error("Generate Member ID error:", error);
+    return res.status(500).json({ message: "Server error" });
   }
 };

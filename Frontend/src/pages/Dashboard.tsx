@@ -3,6 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import Calendar from "../components/Calendar";
 import DepartmentModal from "../components/DepartmentModal";
+import ProfileCompletionModal from "../components/ProfileCompletionModal";
+import { useAuth } from "../context/auth";
 import {
   EventIcon,
   ForumIcon,
@@ -20,6 +22,7 @@ import {
   getActiveAdvertisements,
   getActiveAchievements,
   getActiveBreakingNews,
+  getProfile,
 } from "../services/api";
 import type {
   Circular,
@@ -276,6 +279,7 @@ function AdvertisementCarousel({
 }
 
 export default function Dashboard() {
+  const { user } = useAuth();
   const [counts, setCounts] = useState<MemberCount[]>([]);
   const [events, setEvents] = useState<EventItem[]>([]);
   const [topics, setTopics] = useState<ForumTopic[]>([]);
@@ -284,6 +288,8 @@ export default function Dashboard() {
   const [advertisements, setAdvertisements] = useState<Advertisement[]>([]);
   const [achievements, setAchievements] = useState<Achievement[]>([]);
   const [breakingNews, setBreakingNews] = useState<BreakingNews[]>([]);
+  const [showProfileModal, setShowProfileModal] = useState(false);
+  const [missingFields, setMissingFields] = useState<string[]>([]);
   const navigate = useNavigate();
   usePageTitle("CREA • Dashboard");
   const [totals, setTotals] = useState<{
@@ -333,6 +339,38 @@ export default function Dashboard() {
       setAdvertisements(advertisements);
       setAchievements(achievements);
       setBreakingNews(breakingNews);
+
+      // Check profile completion for logged-in users
+      if (user) {
+        try {
+          const profile = await getProfile();
+          const missing: string[] = [];
+
+          if (!profile.name?.trim()) missing.push("Name");
+          if (!profile.mobile?.trim()) missing.push("Mobile Number");
+          if (!profile.designation?.trim()) missing.push("Designation");
+          if (!profile.division?.trim()) missing.push("Division");
+          if (!profile.department?.trim()) missing.push("Department");
+          if (!profile.dateOfBirth) missing.push("Date of Birth");
+
+          // Only show modal if there are actually missing fields
+          if (missing.length > 0) {
+            setMissingFields(missing);
+            // Show modal only once per session
+            const modalShown = sessionStorage.getItem("profileModalShown");
+            if (!modalShown) {
+              setShowProfileModal(true);
+              sessionStorage.setItem("profileModalShown", "true");
+            }
+          } else {
+            // Profile is complete - ensure modal is hidden
+            setShowProfileModal(false);
+            setMissingFields([]);
+          }
+        } catch (error) {
+          console.error("Failed to check profile completion:", error);
+        }
+      }
     };
     load();
     const onStats = () => load();
@@ -342,7 +380,7 @@ export default function Dashboard() {
         "crea:stats-changed",
         onStats as EventListener
       );
-  }, []);
+  }, [user]);
 
   return (
     <div className="space-y-6">
@@ -1423,6 +1461,24 @@ export default function Dashboard() {
           </div>
         </div>
       </motion.div>
+
+      {/* Profile Completion Modal */}
+      <ProfileCompletionModal
+        open={showProfileModal}
+        onClose={() => setShowProfileModal(false)}
+        missingFields={missingFields}
+      />
+
+      {/* Department Modal */}
+      <DepartmentModal
+        open={isDepartmentModalOpen}
+        onClose={() => {
+          setIsDepartmentModalOpen(false);
+          setSelectedDivision(null);
+        }}
+        division={selectedDivision}
+        triggerRef={triggerRef}
+      />
     </div>
   );
 }

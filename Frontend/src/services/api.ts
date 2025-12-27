@@ -1111,6 +1111,7 @@ export type User = {
   division?: string;
   department?: string;
   mobile?: string;
+  dateOfBirth?: string;
   membershipType?: string;
   memberId?: string;
   isMember?: boolean;
@@ -1126,6 +1127,7 @@ type AuthDTO = {
   division?: string;
   department?: string;
   mobile?: string;
+  dateOfBirth?: string;
   membershipType?: string;
   memberId?: string;
   isMember?: boolean;
@@ -1263,6 +1265,7 @@ export async function updateProfile(data: {
   division?: string;
   department?: string;
   mobile?: string;
+  dateOfBirth?: string;
 }): Promise<User> {
   const res = await request<AuthDTO>("/api/users/profile", {
     method: "PUT",
@@ -1277,6 +1280,7 @@ export async function updateProfile(data: {
     division: res.division,
     department: res.department,
     mobile: res.mobile,
+    dateOfBirth: res.dateOfBirth,
     membershipType: res.membershipType,
     memberId: res.memberId,
     isMember: res.isMember,
@@ -1295,6 +1299,7 @@ export async function getProfile(): Promise<User> {
     division: res.division,
     department: res.department,
     mobile: res.mobile,
+    dateOfBirth: res.dateOfBirth,
     membershipType: res.membershipType,
     memberId: res.memberId,
     isMember: res.isMember,
