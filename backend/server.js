@@ -91,17 +91,45 @@ if (fs.existsSync(frontendDistPath)) {
 }
 
 // Serve document uploads (protected ones still use protect middleware via routes)
+// Try to serve from public uploads directory first (for production persistence)
+const publicUploadsDir = process.env.PUBLIC_UPLOADS_PATH || path.join(__dirname, 'uploads');
+
+// Ensure upload directories exist
+const uploadDirs = ['circulars', 'manuals', 'court-cases'];
+uploadDirs.forEach(dir => {
+  const dirPath = path.join(publicUploadsDir, dir);
+  if (!fs.existsSync(dirPath)) {
+    fs.mkdirSync(dirPath, { recursive: true });
+    console.log(`Created upload directory: ${dirPath}`);
+  }
+});
+
 app.use(
   '/uploads/circulars',
-  express.static(path.join(__dirname, 'uploads', 'circulars'))
+  express.static(path.join(publicUploadsDir, 'circulars'), {
+    setHeaders: (res, filePath) => {
+      res.setHeader('Content-Disposition', 'inline');
+      res.setHeader('Content-Type', 'application/pdf');
+    }
+  })
 );
 app.use(
   '/uploads/manuals',
-  express.static(path.join(__dirname, 'uploads', 'manuals'))
+  express.static(path.join(publicUploadsDir, 'manuals'), {
+    setHeaders: (res, filePath) => {
+      res.setHeader('Content-Disposition', 'inline');
+      res.setHeader('Content-Type', 'application/pdf');
+    }
+  })
 );
 app.use(
   '/uploads/court-cases',
-  express.static(path.join(__dirname, 'uploads', 'court-cases'))
+  express.static(path.join(publicUploadsDir, 'court-cases'), {
+    setHeaders: (res, filePath) => {
+      res.setHeader('Content-Disposition', 'inline');
+      res.setHeader('Content-Type', 'application/pdf');
+    }
+  })
 );
 
 // Static files for other uploaded assets with proper headers for PDF viewing

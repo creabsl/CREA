@@ -7,15 +7,20 @@ function ensureDir(dirPath) {
 }
 
 function storageFor(subdir) {
+  // Use PUBLIC_UPLOADS_PATH from environment if set (for production persistence)
+  // Otherwise use local uploads directory
+  const baseDir = process.env.PUBLIC_UPLOADS_PATH || path.join(__dirname, '..', 'uploads');
+  const dest = path.join(baseDir, subdir);
+  
   return multer.diskStorage({
     destination: (_req, _file, cb) => {
-      const dest = path.join(__dirname, '..', 'uploads', subdir);
       ensureDir(dest);
       cb(null, dest);
     },
     filename: (_req, file, cb) => {
       const ext = path.extname(file.originalname || '').toLowerCase();
       const name = `${Date.now()}-${Math.round(Math.random() * 1e9)}${ext}`;
+      console.log(`[UPLOAD] Saving ${subdir}/${name}`);
       cb(null, name);
     },
   });

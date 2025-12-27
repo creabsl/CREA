@@ -5,6 +5,7 @@ import Button from "../components/Button";
 import Input from "../components/Input";
 import Spinner from "../components/Spinner";
 import BulkMemberUpload from "../components/BulkMemberUpload";
+import Modal from "../components/Modal";
 import { usePageTitle } from "../hooks/usePageTitle";
 import {
   createCircular,
@@ -2621,7 +2622,6 @@ function DocumentsAdmin({
           );
           resetCircularForm();
           setSuccessMessage("Circular updated successfully!");
-          setTimeout(() => setSuccessMessage(null), 3000);
         } else {
           const c = await createCircular({
             boardNumber: circularBoardNumber,
@@ -2633,7 +2633,6 @@ function DocumentsAdmin({
           onCircularsChange([...circulars, c]);
           resetCircularForm();
           setSuccessMessage("Circular created successfully!");
-          setTimeout(() => setSuccessMessage(null), 3000);
         }
         setUploadProgress(100);
       } finally {
@@ -3059,17 +3058,16 @@ function DocumentsAdmin({
         </motion.div>
       )}
 
-      {/* Success Message */}
-      {successMessage && (
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -20 }}
-          className="bg-green-50 border-2 border-green-200 rounded-lg p-4 flex items-center gap-3 shadow-sm"
-        >
+      {/* Success Modal Popup */}
+      <Modal
+        open={!!successMessage}
+        onClose={() => setSuccessMessage(null)}
+        title="Success"
+      >
+        <div className="flex flex-col items-center gap-4 py-6">
           <div className="flex-shrink-0">
             <svg
-              className="w-6 h-6 text-green-600"
+              className="w-12 h-12 text-green-600"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -3082,31 +3080,12 @@ function DocumentsAdmin({
               />
             </svg>
           </div>
-          <div className="flex-1">
-            <p className="text-sm font-semibold text-green-800">
-              {successMessage}
-            </p>
-          </div>
-          <button
-            onClick={() => setSuccessMessage(null)}
-            className="flex-shrink-0 text-green-600 hover:text-green-800 transition-colors"
-          >
-            <svg
-              className="w-5 h-5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                d="M6 18L18 6M6 6l12 12"
-              />
-            </svg>
-          </button>
-        </motion.div>
-      )}
+          <p className="text-center text-gray-700">{successMessage}</p>
+          <Button onClick={() => setSuccessMessage(null)} className="mt-4">
+            OK
+          </Button>
+        </div>
+      </Modal>
 
       {/* Circulars Sub-Tab */}
       {subTab === "circulars" && (
