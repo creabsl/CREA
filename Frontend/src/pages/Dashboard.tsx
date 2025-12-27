@@ -1471,7 +1471,7 @@ export default function Dashboard() {
 
       {/* Department Modal */}
       <DepartmentModal
-        open={isDepartmentModalOpen}
+        isOpen={isDepartmentModalOpen}
         onClose={() => {
           setIsDepartmentModalOpen(false);
           setSelectedDivision(null);
