@@ -2,7 +2,12 @@ import { useState, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
 import Input from "../components/Input";
 import Button from "../components/Button";
-import { getMembershipPricing, createMembershipOrder, verifyMembershipPayment } from "../services/api";
+import Modal from "../components/Modal";
+import {
+  getMembershipPricing,
+  createMembershipOrder,
+  verifyMembershipPayment,
+} from "../services/api";
 import { usePageTitle } from "../hooks/usePageTitle";
 import type { MembershipFormData } from "../services/api";
 import FileUploader from "../components/FileUploader";
@@ -26,7 +31,9 @@ export default function Membership() {
   const [step, setStep] = useState(1);
   const [isFormValid, setIsFormValid] = useState(false);
   const [isStep2Valid, setIsStep2Valid] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [showErrorModal, setShowErrorModal] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [modalMessage, setModalMessage] = useState("");
   const [membershipFees, setMembershipFees] = useState({
     ordinary: 500,
     lifetime: 10000,
@@ -204,14 +211,21 @@ export default function Membership() {
 
   const submit = async () => {
     setSubmitting(true);
-    setError(null);
-    
+
     try {
       // Validate all required fields
-      if (!form.name?.trim() || !form.email?.trim() || !form.mobile?.trim() || 
-          !form.designation?.trim() || !form.division?.trim() || 
-          !form.department?.trim() || !form.type || !form.paymentAmount) {
-        setError("Please fill all required fields");
+      if (
+        !form.name?.trim() ||
+        !form.email?.trim() ||
+        !form.mobile?.trim() ||
+        !form.designation?.trim() ||
+        !form.division?.trim() ||
+        !form.department?.trim() ||
+        !form.type ||
+        !form.paymentAmount
+      ) {
+        setModalMessage("Please fill all required fields");
+        setShowErrorModal(true);
         setSubmitting(false);
         return;
       }
@@ -236,7 +250,8 @@ export default function Membership() {
       });
 
       if (!orderResponse.success) {
-        setError("Failed to create payment order");
+        setModalMessage("Failed to create payment order");
+        setShowErrorModal(true);
         setSubmitting(false);
         return;
       }
@@ -247,7 +262,8 @@ export default function Membership() {
         script.src = "https://checkout.razorpay.com/v1/checkout.js";
         script.onload = () => openRazorpayModal(orderResponse);
         script.onerror = () => {
-          setError("Failed to load Razorpay. Please try again.");
+          setModalMessage("Failed to load Razorpay. Please try again.");
+          setShowErrorModal(true);
           setSubmitting(false);
         };
         document.body.appendChild(script);
@@ -256,8 +272,12 @@ export default function Membership() {
       }
     } catch (error) {
       console.error("Error processing membership:", error);
-      const errorMessage = error instanceof Error ? error.message : "An error occurred. Please try again.";
-      setError(errorMessage);
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "An error occurred. Please try again.";
+      setModalMessage(errorMessage);
+      setShowErrorModal(true);
       setSubmitting(false);
     }
   };
@@ -282,7 +302,7 @@ export default function Membership() {
         netbanking: true,
       },
       upi: {
-        flow: 'otp',
+        flow: "otp",
       },
       handler: async (response: Record<string, unknown>) => {
         // Step 3: Verify payment on backend
@@ -296,7 +316,11 @@ export default function Membership() {
           if (verifyResponse.success) {
             setMembershipId(verifyResponse.membershipNumber);
             setStep(5); // Success step
-            
+            setModalMessage(
+              `Payment successful! Your membership ID is: ${verifyResponse.membershipNumber}`
+            );
+            setShowSuccessModal(true);
+
             // Reset form after showing success message
             setTimeout(() => {
               setForm({
@@ -319,19 +343,28 @@ export default function Membership() {
               });
               setShowForm(false);
               setStep(1);
+              setShowSuccessModal(false);
             }, 5000);
           } else {
-            setError(verifyResponse.message || "Payment verification failed");
+            setModalMessage(
+              verifyResponse.message || "Payment verification failed"
+            );
+            setShowErrorModal(true);
           }
         } catch (error) {
-          const errorMessage = error instanceof Error ? error.message : "Unknown error";
-          setError("Payment verification failed: " + errorMessage);
+          const errorMessage =
+            error instanceof Error ? error.message : "Unknown error";
+          setModalMessage("Payment verification failed: " + errorMessage);
+          setShowErrorModal(true);
         }
         setSubmitting(false);
       },
       modal: {
         ondismiss: () => {
-          setError("Payment cancelled");
+          setModalMessage(
+            "Payment was cancelled. Please try again when you're ready."
+          );
+          setShowErrorModal(true);
           setSubmitting(false);
         },
       },
@@ -660,21 +693,6 @@ export default function Membership() {
           </p>
         </motion.div>
 
-        {error && (
-          <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="mb-4 sm:mb-6 bg-red-50 border border-red-200 rounded-lg p-3 sm:p-4"
-          >
-            <div className="flex items-start gap-2 sm:gap-3">
-              <svg className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4v.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              <p className="text-xs sm:text-sm text-red-700">{error}</p>
-            </div>
-          </motion.div>
-        )}
-
         {membershipId ? (
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
@@ -806,11 +824,13 @@ export default function Membership() {
                         required
                       >
                         <option value="">Select Designation</option>
-                        {["Junior Engineer", "Senior Section Engineer"].map((designation) => (
-                          <option key={designation} value={designation}>
-                            {designation}
-                          </option>
-                        ))}
+                        {["Junior Engineer", "Senior Section Engineer"].map(
+                          (designation) => (
+                            <option key={designation} value={designation}>
+                              {designation}
+                            </option>
+                          )
+                        )}
                       </select>
                     </div>
                     <div>
@@ -826,13 +846,18 @@ export default function Membership() {
                         required
                       >
                         <option value="">Select Division</option>
-                        {["Bhusawal", "Mumbai", "Pune", "Nagpur", "Solapur", "HQ Unit"].map(
-                          (division) => (
-                            <option key={division} value={division}>
-                              {division}
-                            </option>
-                          )
-                        )}
+                        {[
+                          "Bhusawal",
+                          "Mumbai",
+                          "Pune",
+                          "Nagpur",
+                          "Solapur",
+                          "HQ Unit",
+                        ].map((division) => (
+                          <option key={division} value={division}>
+                            {division}
+                          </option>
+                        ))}
                       </select>
                     </div>
                     <div>
@@ -848,13 +873,16 @@ export default function Membership() {
                         required
                       >
                         <option value="">Select Department</option>
-                        {["Electrical", "Mechanical", "Engineering", "Signal and Telecommunication"].map(
-                          (department) => (
-                            <option key={department} value={department}>
-                              {department}
-                            </option>
-                          )
-                        )}
+                        {[
+                          "Electrical",
+                          "Mechanical",
+                          "Engineering",
+                          "Signal and Telecommunication",
+                        ].map((department) => (
+                          <option key={department} value={department}>
+                            {department}
+                          </option>
+                        ))}
                       </select>
                     </div>
                     <Input
@@ -1205,13 +1233,17 @@ export default function Membership() {
                       </h3>
                       <div className="space-y-3">
                         <div className="flex justify-between items-center py-2">
-                          <span className="text-sm text-gray-600">Membership Type</span>
+                          <span className="text-sm text-gray-600">
+                            Membership Type
+                          </span>
                           <span className="font-semibold text-gray-900 capitalize bg-white px-3 py-1 rounded-lg">
                             {form.type}
                           </span>
                         </div>
                         <div className="flex justify-between items-center py-2">
-                          <span className="text-sm text-gray-600">Duration</span>
+                          <span className="text-sm text-gray-600">
+                            Duration
+                          </span>
                           <span className="font-semibold text-gray-900 bg-white px-3 py-1 rounded-lg">
                             {form.type === "lifetime" ? "Lifetime" : "1 Year"}
                           </span>
@@ -1236,11 +1268,24 @@ export default function Membership() {
                     </div>
 
                     <div className="rounded-lg border border-orange-100 bg-blue-50 p-4 flex items-start gap-3">
-                      <svg className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      <svg
+                        className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth="2"
+                          d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                        />
                       </svg>
                       <p className="text-xs sm:text-sm text-blue-700">
-                        <span className="font-semibold">Secure Payment:</span> You'll be redirected to Razorpay's secure payment gateway. Multiple payment methods available including UPI, Cards, Net Banking, and Wallets.
+                        <span className="font-semibold">Secure Payment:</span>{" "}
+                        You'll be redirected to Razorpay's secure payment
+                        gateway. Multiple payment methods available including
+                        UPI, Cards, Net Banking, and Wallets.
                       </p>
                     </div>
 
@@ -1270,6 +1315,71 @@ export default function Membership() {
           </div>
         )}
       </div>
+
+      {/* Error Modal */}
+      <Modal
+        open={showErrorModal}
+        onClose={() => {
+          setShowErrorModal(false);
+        }}
+        title="Payment Error"
+      >
+        <div className="text-center py-4">
+          <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg
+              className="w-8 h-8 text-red-600"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                d="M6 18L18 6M6 6l12 12"
+              />
+            </svg>
+          </div>
+          <p className="text-gray-700 text-base mb-6">{modalMessage}</p>
+          <Button
+            onClick={() => {
+              setShowErrorModal(false);
+            }}
+            className="w-full"
+          >
+            Close
+          </Button>
+        </div>
+      </Modal>
+
+      {/* Success Modal */}
+      <Modal
+        open={showSuccessModal}
+        onClose={() => setShowSuccessModal(false)}
+        title="Payment Successful"
+      >
+        <div className="text-center py-4">
+          <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg
+              className="w-8 h-8 text-green-600"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                d="M5 13l4 4L19 7"
+              />
+            </svg>
+          </div>
+          <p className="text-gray-700 text-base mb-6">{modalMessage}</p>
+          <Button onClick={() => setShowSuccessModal(false)} className="w-full">
+            Close
+          </Button>
+        </div>
+      </Modal>
     </div>
   );
 }
