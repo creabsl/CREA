@@ -122,6 +122,9 @@ export default function Admin() {
   const [transfers, setTransfers] = useState<MutualTransfer[]>([]);
   const [forumTopics, setForumTopics] = useState<ForumTopic[]>([]);
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
+  const tabScrollRef = useRef<HTMLDivElement>(null);
+  const [showLeftArrow, setShowLeftArrow] = useState(false);
+  const [showRightArrow, setShowRightArrow] = useState(true);
 
   // Persist active tab to localStorage and URL when it changes
   useEffect(() => {
@@ -150,6 +153,35 @@ export default function Admin() {
     getForumTopics().then(setForumTopics).catch(console.error);
     getSuggestions().then(setSuggestions).catch(console.error);
   }, []);
+
+  const checkScroll = () => {
+    const container = tabScrollRef.current;
+    if (container) {
+      setShowLeftArrow(container.scrollLeft > 0);
+      setShowRightArrow(
+        container.scrollLeft <
+          container.scrollWidth - container.clientWidth - 10
+      );
+    }
+  };
+
+  useEffect(() => {
+    checkScroll();
+    window.addEventListener("resize", checkScroll);
+    return () => window.removeEventListener("resize", checkScroll);
+  }, []);
+
+  const scroll = (direction: "left" | "right") => {
+    const container = tabScrollRef.current;
+    if (container) {
+      const scrollAmount = 300;
+      container.scrollBy({
+        left: direction === "left" ? -scrollAmount : scrollAmount,
+        behavior: "smooth",
+      });
+      setTimeout(checkScroll, 300);
+    }
+  };
 
   return (
     <div className="space-y-4 sm:space-y-6">
@@ -222,59 +254,158 @@ export default function Admin() {
         </div>
       </motion.div>
 
-      {/* Responsive Tab Navigation */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:flex lg:flex-wrap gap-2">
-        {(
-          [
-            "events",
-            "advertisements",
-            "documents",
-            "forum",
-            "suggestions",
-            "members",
-            "membership",
-            "transfers",
-            "association-body",
-            "donations",
-            "breaking-news",
-          ] as const
-        ).map((k) => (
+      {/* Professional Horizontal Scrollable Tab Navigation */}
+      <div className="relative bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        {/* Left Scroll Arrow */}
+        {showLeftArrow && (
           <motion.button
-            key={k}
-            onClick={() => setTab(k === "membership" ? "settings" : k)}
-            className={`px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200 whitespace-nowrap ${
-              (k === "membership" ? tab === "settings" : tab === k)
-                ? "bg-gradient-to-r from-[var(--primary)] to-[#19417d] text-white shadow-lg shadow-[var(--primary)]/30"
-                : "bg-white text-gray-700 border border-gray-200 hover:border-[var(--primary)] hover:text-[var(--primary)] hover:shadow-md"
-            }`}
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            onClick={() => scroll("left")}
+            className="absolute left-0 top-0 bottom-0 z-20 w-12 bg-gradient-to-r from-white to-transparent flex items-center justify-center hover:from-gray-50 transition-all"
           >
-            {k === "transfers"
-              ? "Mutual Transfers"
-              : k === "breaking-news"
-              ? "Breaking News"
-              : k === "members"
-              ? "Users"
-              : k
-                  .split("-")
-                  .map((word) => word[0].toUpperCase() + word.slice(1))
-                  .join(" ")}
+            <svg
+              className="w-5 h-5 text-[var(--primary)]"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M15 19l-7-7 7-7"
+              />
+            </svg>
           </motion.button>
-        ))}
-        <motion.button
-          key={"about"}
-          onClick={() => setTab("about")}
-          className={`px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200 whitespace-nowrap ${
-            tab === "about"
-              ? "bg-gradient-to-r from-[var(--primary)] to-[#19417d] text-white shadow-lg shadow-[var(--primary)]/30"
-              : "bg-white text-gray-700 border border-gray-200 hover:border-[var(--primary)] hover:text-[var(--primary)] hover:shadow-md"
-          }`}
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
+        )}
+
+        {/* Right Scroll Arrow */}
+        {showRightArrow && (
+          <motion.button
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            onClick={() => scroll("right")}
+            className="absolute right-0 top-0 bottom-0 z-20 w-12 bg-gradient-to-l from-white to-transparent flex items-center justify-center hover:from-gray-50 transition-all"
+          >
+            <svg
+              className="w-5 h-5 text-[var(--primary)]"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M9 5l7 7-7 7"
+              />
+            </svg>
+          </motion.button>
+        )}
+
+        {/* Scrollable Tabs Container */}
+        <div
+          ref={tabScrollRef}
+          onScroll={checkScroll}
+          className="flex overflow-x-auto scrollbar-hide px-4"
+          style={{ scrollBehavior: "smooth" }}
         >
-          About
-        </motion.button>
+          {(
+            [
+              "events",
+              "carousel",
+              "documents",
+              "forum",
+              "suggestions",
+              "members",
+              "memberships",
+              "transfers",
+              "association-body",
+              "donations",
+              "breaking-news",
+            ] as const
+          ).map((k) => (
+            <motion.button
+              key={k}
+              onClick={() =>
+                setTab(
+                  k === "carousel"
+                    ? "advertisements"
+                    : k === "memberships"
+                    ? "settings"
+                    : k
+                )
+              }
+              className={`relative py-4 px-6 font-medium text-sm whitespace-nowrap transition-all duration-200 flex-shrink-0 ${
+                (
+                  k === "memberships"
+                    ? tab === "settings"
+                    : k === "carousel"
+                    ? tab === "advertisements"
+                    : tab === k
+                )
+                  ? "text-[var(--primary)]"
+                  : "text-gray-600 hover:text-[var(--primary)]"
+              }`}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              {k === "transfers"
+                ? "Mutual Transfers"
+                : k === "breaking-news"
+                ? "Breaking News"
+                : k === "members"
+                ? "Users"
+                : k === "carousel"
+                ? "Carousel"
+                : k === "memberships"
+                ? "Membership"
+                : k === "association-body"
+                ? "Association Body"
+                : k
+                    .split("-")
+                    .map((word) => word[0].toUpperCase() + word.slice(1))
+                    .join(" ")}
+
+              {/* Animated underline indicator */}
+              {(k === "memberships"
+                ? tab === "settings"
+                : k === "carousel"
+                ? tab === "advertisements"
+                : tab === k) && (
+                <motion.div
+                  layoutId="underline"
+                  className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-[var(--primary)] to-blue-600 rounded-t"
+                  transition={{ type: "spring", stiffness: 380, damping: 40 }}
+                />
+              )}
+            </motion.button>
+          ))}
+
+          {/* About Tab */}
+          <motion.button
+            key="about"
+            onClick={() => setTab("about")}
+            className={`relative py-4 px-6 font-medium text-sm whitespace-nowrap transition-all duration-200 flex-shrink-0 ${
+              tab === "about"
+                ? "text-[var(--primary)]"
+                : "text-gray-600 hover:text-[var(--primary)]"
+            }`}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+          >
+            About
+            {/* Animated underline indicator */}
+            {tab === "about" && (
+              <motion.div
+                layoutId="underline"
+                className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-[var(--primary)] to-blue-600 rounded-t"
+                transition={{ type: "spring", stiffness: 380, damping: 40 }}
+              />
+            )}
+          </motion.button>
+        </div>
       </div>
 
       {tab === "events" && <EventsAdmin data={events} onChange={setEvents} />}

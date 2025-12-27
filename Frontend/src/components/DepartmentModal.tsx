@@ -23,7 +23,10 @@ export default function DepartmentModal({
   const [departmentStats, setDepartmentStats] = useState<DepartmentStat[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [position, setPosition] = useState<{ top: number; left: number } | null>(null);
+  const [position, setPosition] = useState<{
+    top: number;
+    left: number;
+  } | null>(null);
   const tooltipRef = useRef<HTMLDivElement>(null);
 
   // Calculate position when modal opens
@@ -32,10 +35,7 @@ export default function DepartmentModal({
       const rect = triggerRef.current.getBoundingClientRect();
       setPosition({
         top: rect.bottom + window.scrollY + 12,
-        left: Math.max(
-          12,
-          rect.left + window.scrollX + rect.width / 2 - 160
-        ),
+        left: Math.max(12, rect.left + window.scrollX + rect.width / 2 - 160),
       });
     }
   }, [isOpen, triggerRef]);

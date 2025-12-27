@@ -45,7 +45,7 @@ function AdvertisementCarousel({
   const [isPaused, setIsPaused] = useState(false);
 
   useEffect(() => {
-    if (isPaused) return;
+    if (isPaused || advertisements.length === 0) return;
     const timer = setInterval(() => {
       setCurrentIndex((prev) => (prev + 1) % advertisements.length);
     }, 5000); // Auto-advance every 5 seconds
@@ -62,6 +62,17 @@ function AdvertisementCarousel({
 
   const handleVideoPlay = () => setIsPaused(true);
   const handleVideoPause = () => setIsPaused(false);
+
+  if (advertisements.length === 0) {
+    console.log("AdvertisementCarousel: No advertisements to display");
+    return null;
+  }
+
+  console.log(
+    "AdvertisementCarousel: Rendering with",
+    advertisements.length,
+    "advertisements"
+  );
 
   const currentAd = advertisements[currentIndex];
 
@@ -307,6 +318,21 @@ export default function Dashboard() {
     setCalendarYear(year);
     setCalendarMonth(month);
   };
+
+  // Close department modal on scroll
+  useEffect(() => {
+    const handleScroll = () => {
+      if (isDepartmentModalOpen) {
+        setIsDepartmentModalOpen(false);
+        setSelectedDivision(null);
+      }
+    };
+
+    window.addEventListener("scroll", handleScroll, true);
+    return () => {
+      window.removeEventListener("scroll", handleScroll, true);
+    };
+  }, [isDepartmentModalOpen]);
   useEffect(() => {
     const load = async () => {
       const [
@@ -326,7 +352,10 @@ export default function Dashboard() {
         getForumTopics(),
         getCirculars(),
         getCourtCases(),
-        getActiveAdvertisements().catch(() => []),
+        getActiveAdvertisements().catch((err) => {
+          console.error("Failed to load advertisements:", err);
+          return [];
+        }),
         getActiveAchievements().catch(() => []),
         getActiveBreakingNews().catch(() => []),
       ]);
@@ -337,6 +366,7 @@ export default function Dashboard() {
       setCirculars(circulars);
       setCases(cases);
       setAdvertisements(advertisements);
+      console.log("Loaded advertisements:", advertisements);
       setAchievements(achievements);
       setBreakingNews(breakingNews);
 
