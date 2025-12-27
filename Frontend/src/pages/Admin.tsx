@@ -2702,7 +2702,6 @@ function DocumentsAdmin({
           );
           resetManualForm();
           setSuccessMessage("Manual updated successfully!");
-          setTimeout(() => setSuccessMessage(null), 3000);
         } else {
           const m = await createManual({
             title: manualTitle,
@@ -2715,7 +2714,6 @@ function DocumentsAdmin({
           onManualsChange([...manuals, m]);
           resetManualForm();
           setSuccessMessage("Manual created successfully!");
-          setTimeout(() => setSuccessMessage(null), 3000);
         }
         setUploadProgress(100);
       } finally {
@@ -2794,7 +2792,6 @@ function DocumentsAdmin({
           );
           resetCourtCaseForm();
           setSuccessMessage("Court case updated successfully!");
-          setTimeout(() => setSuccessMessage(null), 3000);
         } else {
           const cc = await createCourtCase({
             caseNumber: caseCaseNumber,
@@ -2806,7 +2803,6 @@ function DocumentsAdmin({
           onCourtCasesChange([cc, ...courtCases]);
           resetCourtCaseForm();
           setSuccessMessage("Court case created successfully!");
-          setTimeout(() => setSuccessMessage(null), 3000);
         }
         setUploadProgress(100);
       } finally {
