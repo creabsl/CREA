@@ -21,6 +21,7 @@ import type {
   PendingForumComment,
   BreakingNews,
   DocumentFeedItem,
+  AboutMilestone,
 } from "../types";
 
 // Base URL for backend API (normalize to avoid trailing slash or trailing `/api`)
@@ -139,7 +140,9 @@ export type DepartmentStat = {
   count: number;
 };
 
-export async function getDepartmentStats(division: string): Promise<DepartmentStat[]> {
+export async function getDepartmentStats(
+  division: string
+): Promise<DepartmentStat[]> {
   const res = await request<{
     departmentStats: DepartmentStat[];
   }>(`/api/stats/department-stats?division=${encodeURIComponent(division)}`);
@@ -1749,6 +1752,122 @@ export async function toggleBreakingNewsStatus(
 ): Promise<BreakingNews> {
   return await request<BreakingNews>(`/api/breaking-news/${id}/toggle`, {
     method: "PATCH",
+  });
+}
+
+// ==================== ABOUT MILESTONES ====================
+
+export async function getAboutMilestones(params?: {
+  includeInactive?: boolean;
+}): Promise<AboutMilestone[]> {
+  const queryParams = new URLSearchParams();
+  if (params?.includeInactive) {
+    queryParams.append("includeInactive", "true");
+  }
+  const query = queryParams.toString();
+  return await request<AboutMilestone[]>(
+    `/api/about-milestones${query ? `?${query}` : ""}`
+  );
+}
+
+export async function getAboutMilestoneById(
+  id: string
+): Promise<AboutMilestone> {
+  return await request<AboutMilestone>(`/api/about-milestones/${id}`);
+}
+
+export async function createAboutMilestone(
+  data: Partial<AboutMilestone>
+): Promise<AboutMilestone> {
+  return await request<AboutMilestone>("/api/about-milestones", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+}
+
+export async function updateAboutMilestone(
+  id: string,
+  data: Partial<AboutMilestone>
+): Promise<AboutMilestone> {
+  return await request<AboutMilestone>(`/api/about-milestones/${id}`, {
+    method: "PUT",
+    body: JSON.stringify(data),
+  });
+}
+
+export async function deleteAboutMilestone(id: string): Promise<void> {
+  await request<void>(`/api/about-milestones/${id}`, {
+    method: "DELETE",
+  });
+}
+
+export async function deleteAboutMilestones(ids: string[]): Promise<void> {
+  await request<void>("/api/about-milestones/bulk-delete", {
+    method: "POST",
+    body: JSON.stringify({ ids }),
+  });
+}
+
+// ==================== PAST EVENTS ====================
+
+export async function getPastEvents(params?: {
+  includeInactive?: boolean;
+}): Promise<any[]> {
+  const queryParams = new URLSearchParams();
+  if (params?.includeInactive) {
+    queryParams.append("includeInactive", "true");
+  }
+  const query = queryParams.toString();
+  return await request<any[]>(`/api/past-events${query ? `?${query}` : ""}`);
+}
+
+export async function getPastEventById(id: string): Promise<any> {
+  return await request<any>(`/api/past-events/${id}`);
+}
+
+export async function createPastEvent(data: {
+  title: string;
+  type: "photo" | "video";
+  thumbnail: string;
+  description?: string;
+  date?: string;
+  order?: number;
+  isActive?: boolean;
+}): Promise<any> {
+  return await request<any>("/api/past-events", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+}
+
+export async function updatePastEvent(
+  id: string,
+  data: Partial<{
+    title: string;
+    type: "photo" | "video";
+    thumbnail: string;
+    description: string;
+    date: string;
+    order: number;
+    isActive: boolean;
+  }>
+): Promise<any> {
+  return await request<any>(`/api/past-events/${id}`, {
+    method: "PUT",
+    body: JSON.stringify(data),
+  });
+}
+
+export async function deletePastEvent(id: string): Promise<void> {
+  await request<void>(`/api/past-events/${id}`, {
+    method: "DELETE",
+  });
+}
+
+export async function deletePastEvents(ids: string[]): Promise<void> {
+  await request<void>("/api/past-events/bulk-delete", {
+    method: "POST",
+    body: JSON.stringify({ ids }),
   });
 }
 

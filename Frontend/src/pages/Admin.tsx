@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, useRef } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import Button from "../components/Button";
@@ -46,6 +46,16 @@ import {
   getSuggestions,
   deleteSuggestion,
   getAllDonations,
+  getAboutMilestones,
+  createAboutMilestone,
+  updateAboutMilestone,
+  deleteAboutMilestone,
+  deleteAboutMilestones,
+  getPastEvents,
+  createPastEvent,
+  updatePastEvent,
+  deletePastEvent,
+  deletePastEvents,
 } from "../services/api";
 import type {
   Circular,
@@ -63,12 +73,6 @@ import MembershipsAdmin from "../components/MembershipsAdmin";
 import AdvertisementsAdmin from "../components/AdvertisementsAdmin";
 import { DIVISIONS } from "../types";
 import type { MemberUser, Setting } from "../services/api";
-import {
-  defaultTimelineStops,
-  defaultPastEvents,
-  type TimelineStop,
-  type PastEvent,
-} from "../data/aboutDefaults";
 
 export default function Admin() {
   usePageTitle("CREA • Admin");
@@ -309,101 +313,50 @@ function AboutAdmin() {
   const [eventTitle, setEventTitle] = useState("");
   const [eventImage, setEventImage] = useState("");
 
-  const [extrasMilestones, setExtrasMilestones] = useState<TimelineStop[]>([]);
-  const [extrasGallery, setExtrasGallery] = useState<PastEvent[]>([]);
-  const [removedDefaultMilestones, setRemovedDefaultMilestones] = useState<
-    string[]
-  >([]);
-  const [removedDefaultGallery, setRemovedDefaultGallery] = useState<number[]>(
-    []
+  // Database milestones
+  const [milestones, setMilestones] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [editingMilestoneId, setEditingMilestoneId] = useState<string | null>(
+    null
   );
-  const [editingDefaultMilestoneKey, setEditingDefaultMilestoneKey] = useState<
-    string | null
-  >(null);
-  const [editingDefaultGalleryId, setEditingDefaultGalleryId] = useState<
-    number | null
-  >(null);
 
+  // Database past events
+  const [pastEvents, setPastEvents] = useState<any[]>([]);
+  const [editingEventId, setEditingEventId] = useState<string | null>(null);
+
+  // Load milestones and past events from database
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem("crea_timeline_milestones");
-      const parsed: TimelineStop[] = raw ? JSON.parse(raw) : [];
-      if (Array.isArray(parsed)) setExtrasMilestones(parsed);
-    } catch (e) {
-      console.error(e);
-    }
-    try {
-      const rawGal = localStorage.getItem("crea_past_events");
-      const parsedGal: PastEvent[] = rawGal ? JSON.parse(rawGal) : [];
-      if (Array.isArray(parsedGal)) setExtrasGallery(parsedGal);
-    } catch (e) {
-      console.error(e);
-    }
-    try {
-      const rawRemoved = localStorage.getItem("crea_timeline_removed_defaults");
-      const arr: string[] = rawRemoved ? JSON.parse(rawRemoved) : [];
-      if (Array.isArray(arr)) setRemovedDefaultMilestones(arr);
-    } catch (e) {
-      console.error(e);
-    }
-    try {
-      const rawRemovedGal = localStorage.getItem(
-        "crea_past_events_removed_defaults"
-      );
-      const arrGal: number[] = rawRemovedGal ? JSON.parse(rawRemovedGal) : [];
-      if (Array.isArray(arrGal)) setRemovedDefaultGallery(arrGal);
-    } catch (e) {
-      console.error(e);
-    }
+    loadMilestones();
+    loadPastEvents();
   }, []);
 
-  const saveMilestones = (list: TimelineStop[]) => {
-    localStorage.setItem("crea_timeline_milestones", JSON.stringify(list));
-    setExtrasMilestones(list);
+  const loadMilestones = async () => {
     try {
-      window.dispatchEvent(new Event("crea_milestones_updated"));
-    } catch (e) {
-      console.error(e);
+      setLoading(true);
+      const data = await getAboutMilestones({ includeInactive: true });
+      setMilestones(data);
+    } catch (error) {
+      console.error("Failed to load milestones:", error);
+      alert("Failed to load milestones");
+    } finally {
+      setLoading(false);
     }
   };
 
-  const saveGallery = (list: PastEvent[]) => {
-    localStorage.setItem("crea_past_events", JSON.stringify(list));
-    setExtrasGallery(list);
+  const loadPastEvents = async () => {
     try {
-      window.dispatchEvent(new Event("crea_gallery_updated"));
-    } catch (e) {
-      console.error(e);
+      setLoading(true);
+      const data = await getPastEvents({ includeInactive: true });
+      setPastEvents(data);
+    } catch (error) {
+      console.error("Failed to load past events:", error);
+      alert("Failed to load past events");
+    } finally {
+      setLoading(false);
     }
   };
 
-  const saveRemovedMilestones = (keys: string[]) => {
-    localStorage.setItem(
-      "crea_timeline_removed_defaults",
-      JSON.stringify(keys)
-    );
-    setRemovedDefaultMilestones(keys);
-    try {
-      window.dispatchEvent(new Event("crea_milestones_updated"));
-    } catch (e) {
-      console.error(e);
-    }
-  };
-
-  const saveRemovedGallery = (ids: number[]) => {
-    localStorage.setItem(
-      "crea_past_events_removed_defaults",
-      JSON.stringify(ids)
-    );
-    setRemovedDefaultGallery(ids);
-    try {
-      window.dispatchEvent(new Event("crea_gallery_updated"));
-    } catch (e) {
-      console.error(e);
-    }
-  };
-
-  const addOne = () => {
+  const addOne = async () => {
     const y = year.trim();
     const t = title.trim();
     const d = description.trim();
@@ -419,32 +372,109 @@ function AboutAdmin() {
       alert("Description is required");
       return;
     }
-    const next = [
-      ...extrasMilestones,
-      { year: y, title: t, description: d, icon: icon || "🎉" },
-    ];
-    next.sort((a, b) => parseInt(a.year) - parseInt(b.year));
-    saveMilestones(next);
-    if (editingDefaultMilestoneKey) {
-      // hide the default we are replacing
-      const keys = new Set(removedDefaultMilestones);
-      keys.add(editingDefaultMilestoneKey);
-      saveRemovedMilestones(Array.from(keys));
+
+    try {
+      setLoading(true);
+      if (editingMilestoneId) {
+        // Update existing milestone
+        await updateAboutMilestone(editingMilestoneId, {
+          year: y,
+          title: t,
+          description: d,
+          icon: icon || "🎉",
+        });
+        alert("Milestone updated successfully!");
+      } else {
+        // Create new milestone
+        await createAboutMilestone({
+          year: y,
+          title: t,
+          description: d,
+          icon: icon || "🎉",
+        });
+        alert("Milestone added successfully!");
+      }
+      await loadMilestones();
+      setTitle("");
+      setYear("");
+      setDescription("");
+      setIcon("🎉");
+      setEditingMilestoneId(null);
+      // Notify About page to reload
+      try {
+        window.dispatchEvent(new Event("crea_milestones_updated"));
+      } catch (e) {
+        console.error(e);
+      }
+    } catch (error) {
+      console.error("Failed to save milestone:", error);
+      alert((error as any)?.message || "Failed to save milestone");
+    } finally {
+      setLoading(false);
     }
-    setTitle("");
-    setYear("");
-    setDescription("");
-    setIcon("🎉");
-    setEditingDefaultMilestoneKey(null);
-    alert("Milestone added. Check About page timeline!");
   };
 
-  const removeOne = (key: string) => {
-    const next = extrasMilestones.filter((m) => `${m.year}|${m.title}` !== key);
-    saveMilestones(next);
+  const removeOne = async (id: string) => {
+    if (!confirm("Are you sure you want to delete this milestone?")) return;
+    try {
+      setLoading(true);
+      await deleteAboutMilestone(id);
+      await loadMilestones();
+      alert("Milestone deleted successfully!");
+      // Notify About page to reload
+      try {
+        window.dispatchEvent(new Event("crea_milestones_updated"));
+      } catch (e) {
+        console.error(e);
+      }
+    } catch (error) {
+      console.error("Failed to delete milestone:", error);
+      alert("Failed to delete milestone");
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const addGalleryItem = () => {
+  const editMilestone = (milestone: any) => {
+    setEditingMilestoneId(milestone._id);
+    setYear(milestone.year);
+    setTitle(milestone.title);
+    setDescription(milestone.description);
+    setIcon(milestone.icon);
+    // Scroll to form
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const clearAll = async () => {
+    if (
+      !confirm(
+        "Are you sure you want to delete ALL milestones? This cannot be undone!"
+      )
+    )
+      return;
+    try {
+      setLoading(true);
+      const ids = milestones.map((m) => m._id);
+      if (ids.length > 0) {
+        await deleteAboutMilestones(ids);
+      }
+      await loadMilestones();
+      alert("All milestones cleared!");
+      // Notify About page to reload
+      try {
+        window.dispatchEvent(new Event("crea_milestones_updated"));
+      } catch (e) {
+        console.error(e);
+      }
+    } catch (error) {
+      console.error("Failed to clear milestones:", error);
+      alert("Failed to clear milestones");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const addGalleryItem = async () => {
     const t = eventTitle.trim();
     const img = eventImage.trim();
     if (!t) {
@@ -455,66 +485,105 @@ function AboutAdmin() {
       alert("Please upload an image file");
       return;
     }
-    const id = Date.now();
-    const next = [
-      ...extrasGallery,
-      {
-        id,
-        title: t,
-        type: "photo" as const,
-        thumbnail: img,
-        description: "",
-        date: new Date().toLocaleDateString(),
-      },
-    ];
-    saveGallery(next);
-    if (editingDefaultGalleryId != null) {
-      const ids = new Set(removedDefaultGallery);
-      ids.add(editingDefaultGalleryId);
-      saveRemovedGallery(Array.from(ids));
+
+    try {
+      setLoading(true);
+      if (editingEventId) {
+        // Update existing event
+        await updatePastEvent(editingEventId, {
+          title: t,
+          type: "photo",
+          thumbnail: img,
+          description: "",
+          date: new Date().toLocaleDateString(),
+        });
+        alert("Past event updated successfully!");
+      } else {
+        // Create new event
+        await createPastEvent({
+          title: t,
+          type: "photo",
+          thumbnail: img,
+          description: "",
+          date: new Date().toLocaleDateString(),
+        });
+        alert("Past event added successfully!");
+      }
+      await loadPastEvents();
+      setEventTitle("");
+      setEventImage("");
+      setEditingEventId(null);
+      // Notify About page to reload
+      try {
+        window.dispatchEvent(new Event("crea_gallery_updated"));
+      } catch (e) {
+        console.error(e);
+      }
+    } catch (error) {
+      console.error("Failed to save past event:", error);
+      alert((error as any)?.message || "Failed to save past event");
+    } finally {
+      setLoading(false);
     }
-    setEventTitle("");
-    setEventImage("");
-    setEditingDefaultGalleryId(null);
-    alert("Event added. Check About page gallery!");
   };
 
-  const removeGalleryItem = (id: number) => {
-    const next = extrasGallery.filter((g) => g.id !== id);
-    saveGallery(next);
+  const removeGalleryItem = async (id: string) => {
+    if (!confirm("Are you sure you want to delete this past event?")) return;
+    try {
+      setLoading(true);
+      await deletePastEvent(id);
+      await loadPastEvents();
+      alert("Past event deleted successfully!");
+      // Notify About page to reload
+      try {
+        window.dispatchEvent(new Event("crea_gallery_updated"));
+      } catch (e) {
+        console.error(e);
+      }
+    } catch (error) {
+      console.error("Failed to delete past event:", error);
+      alert("Failed to delete past event");
+    } finally {
+      setLoading(false);
+    }
   };
 
-  // Derived combined lists (defaults + extras). Defaults are non-removable.
-  const defaultMilestoneKeys = useMemo(
-    () => new Set(defaultTimelineStops.map((m) => `${m.year}|${m.title}`)),
-    []
-  );
-  const removedMilestonesSet = useMemo(
-    () => new Set(removedDefaultMilestones),
-    [removedDefaultMilestones]
-  );
-  const combinedMilestones = useMemo(() => {
-    const defaultsFiltered = defaultTimelineStops.filter(
-      (m) => !removedMilestonesSet.has(`${m.year}|${m.title}`)
-    );
-    const merged = [...defaultsFiltered, ...extrasMilestones];
-    return merged.sort((a, b) => parseInt(a.year) - parseInt(b.year));
-  }, [extrasMilestones, removedMilestonesSet]);
+  const editGalleryItem = (event: any) => {
+    setEditingEventId(event._id);
+    setEventTitle(event.title);
+    setEventImage(event.thumbnail);
+    // Scroll to form
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
 
-  const defaultGalleryIds = useMemo(
-    () => new Set(defaultPastEvents.map((g) => g.id)),
-    []
-  );
-  const removedGallerySet = useMemo(
-    () => new Set(removedDefaultGallery),
-    [removedDefaultGallery]
-  );
-  const combinedGallery = useMemo(() => {
-    const defaultsFiltered = defaultPastEvents.filter(
-      (g) => !removedGallerySet.has(g.id)
-    );
-    return [...defaultsFiltered, ...extrasGallery];
-  }, [extrasGallery, removedGallerySet]);
+  const clearAllGallery = async () => {
+    if (
+      !confirm(
+        "Are you sure you want to delete ALL past events? This cannot be undone!"
+      )
+    )
+      return;
+    try {
+      setLoading(true);
+      const ids = pastEvents.map((e) => e._id);
+      if (ids.length > 0) {
+        await deletePastEvents(ids);
+      }
+      await loadPastEvents();
+      alert("All past events cleared!");
+      // Notify About page to reload
+      try {
+        window.dispatchEvent(new Event("crea_gallery_updated"));
+      } catch (e) {
+        console.error(e);
+      }
+    } catch (error) {
+      console.error("Failed to clear past events:", error);
+      alert("Failed to clear past events");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <motion.div
@@ -595,10 +664,30 @@ function AboutAdmin() {
             <div className="flex gap-2">
               <Button
                 onClick={addOne}
+                disabled={loading}
                 className="text-xs sm:text-sm px-3 sm:px-4 py-2 w-full sm:w-auto"
               >
-                Add Milestone
+                {loading
+                  ? "Saving..."
+                  : editingMilestoneId
+                  ? "Update Milestone"
+                  : "Add Milestone"}
               </Button>
+              {editingMilestoneId && (
+                <Button
+                  variant="secondary"
+                  onClick={() => {
+                    setEditingMilestoneId(null);
+                    setTitle("");
+                    setYear("");
+                    setDescription("");
+                    setIcon("🎉");
+                  }}
+                  className="text-xs sm:text-sm px-3 sm:px-4 py-2 w-full sm:w-auto"
+                >
+                  Cancel Edit
+                </Button>
+              )}
             </div>
           </div>
         </div>
@@ -606,102 +695,80 @@ function AboutAdmin() {
           <div className="rounded-lg border border-gray-200 p-2 sm:p-3">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-0">
               <h4 className="text-sm sm:text-base font-semibold text-gray-800">
-                Existing Milestones ({combinedMilestones.length})
+                Database Milestones ({milestones.length})
               </h4>
               <div className="flex items-center gap-2 flex-wrap">
                 <Button
                   variant="secondary"
-                  onClick={() => saveMilestones([])}
+                  onClick={loadMilestones}
+                  disabled={loading}
                   className="text-xs sm:text-sm px-2 sm:px-3 py-1.5 sm:py-2 flex-1 sm:flex-none"
                 >
-                  Clear Added
+                  {loading ? "Loading..." : "Refresh"}
                 </Button>
                 <Button
-                  variant="secondary"
-                  onClick={() => saveRemovedMilestones([])}
+                  variant="danger"
+                  onClick={clearAll}
+                  disabled={loading || milestones.length === 0}
                   className="text-xs sm:text-sm px-2 sm:px-3 py-1.5 sm:py-2 flex-1 sm:flex-none"
                 >
-                  Restore Defaults
+                  Clear All
                 </Button>
               </div>
             </div>
             <ul className="divide-y divide-gray-100 mt-3">
-              {combinedMilestones.map((m, idx) => {
-                const key = `${m.year}|${m.title}`;
-                const isDefault = defaultMilestoneKeys.has(key);
-                return (
-                  <li
-                    key={`${key}-${idx}`}
-                    className="py-2 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2"
-                  >
-                    <div className="flex-1 min-w-0">
-                      <div className="text-xs sm:text-sm font-medium text-gray-800 truncate">
-                        {m.title}{" "}
-                        <span className="text-gray-500">• {m.year}</span>
+              {loading && milestones.length === 0 ? (
+                <li className="py-4 text-center text-gray-500 text-sm">
+                  Loading milestones...
+                </li>
+              ) : milestones.length === 0 ? (
+                <li className="py-4 text-center text-gray-500 text-sm">
+                  No milestones yet. Add one above!
+                </li>
+              ) : (
+                milestones
+                  .sort((a, b) => parseInt(a.year) - parseInt(b.year))
+                  .map((m) => (
+                    <li
+                      key={m._id}
+                      className={`py-2 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 ${
+                        editingMilestoneId === m._id
+                          ? "bg-blue-50 border-l-4 border-blue-500 pl-2"
+                          : ""
+                      }`}
+                    >
+                      <div className="flex-1 min-w-0">
+                        <div className="text-xs sm:text-sm font-medium text-gray-800 truncate">
+                          {m.title}{" "}
+                          <span className="text-gray-500">• {m.year}</span>
+                        </div>
+                        <div className="text-xs text-gray-600 line-clamp-2">
+                          {m.description}
+                        </div>
                       </div>
-                      <div className="text-xs text-gray-600 line-clamp-2">
-                        {m.description}
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2 flex-shrink-0">
-                      <span className="text-lg sm:text-xl">{m.icon}</span>
-                      {isDefault ? (
-                        <>
-                          <Button
-                            variant="secondary"
-                            onClick={() => {
-                              setTitle(m.title);
-                              setYear(m.year);
-                              setDescription(m.description);
-                              setIcon(m.icon);
-                              setEditingDefaultMilestoneKey(key);
-                            }}
-                            className="text-xs px-2 py-1"
-                          >
-                            Edit
-                          </Button>
-                          <Button
-                            variant="danger"
-                            onClick={() => {
-                              const keys = new Set(removedDefaultMilestones);
-                              keys.add(key);
-                              saveRemovedMilestones(Array.from(keys));
-                            }}
-                            className="text-xs px-2 py-1"
-                          >
-                            Remove
-                          </Button>
-                        </>
-                      ) : (
+                      <div className="flex items-center gap-2 flex-shrink-0">
+                        <span className="text-lg sm:text-xl">{m.icon}</span>
                         <Button
                           variant="secondary"
-                          onClick={() => removeOne(key)}
+                          onClick={() => editMilestone(m)}
+                          disabled={loading}
                           className="text-xs px-2 py-1"
                         >
-                          Remove
+                          Edit
                         </Button>
-                      )}
-                    </div>
-                  </li>
-                );
-              })}
-              {combinedMilestones.length === 0 && (
-                <li className="py-6 text-sm text-gray-500 text-center">
-                  No milestones yet.
-                </li>
+                        <Button
+                          variant="danger"
+                          onClick={() => removeOne(m._id)}
+                          disabled={loading}
+                          className="text-xs px-2 py-1"
+                        >
+                          Delete
+                        </Button>
+                      </div>
+                    </li>
+                  ))
               )}
             </ul>
-            {editingDefaultMilestoneKey && (
-              <div className="mt-2 text-xs text-amber-700 bg-amber-50 border border-amber-200 p-2 rounded">
-                Replacing default milestone. Saving will hide the original.
-                <button
-                  className="ml-2 underline"
-                  onClick={() => setEditingDefaultMilestoneKey(null)}
-                >
-                  Cancel
-                </button>
-              </div>
-            )}
           </div>
         </div>
       </div>
@@ -717,17 +784,19 @@ function AboutAdmin() {
           <div className="flex items-center gap-2 flex-wrap">
             <Button
               variant="secondary"
-              onClick={() => saveGallery([])}
+              onClick={loadPastEvents}
+              disabled={loading}
               className="text-xs sm:text-sm px-2 sm:px-3 py-1.5 sm:py-2 flex-1 sm:flex-none"
             >
-              Clear Added
+              {loading ? "Loading..." : "Refresh"}
             </Button>
             <Button
-              variant="secondary"
-              onClick={() => saveRemovedGallery([])}
+              variant="danger"
+              onClick={clearAllGallery}
+              disabled={loading || pastEvents.length === 0}
               className="text-xs sm:text-sm px-2 sm:px-3 py-1.5 sm:py-2 flex-1 sm:flex-none"
             >
-              Restore Defaults
+              Clear All
             </Button>
           </div>
         </div>
@@ -810,25 +879,56 @@ function AboutAdmin() {
               <div className="flex gap-2">
                 <Button
                   onClick={addGalleryItem}
+                  disabled={loading}
                   className="text-xs sm:text-sm px-3 sm:px-4 py-2 w-full sm:w-auto"
                 >
-                  Add Photo
+                  {loading
+                    ? "Saving..."
+                    : editingEventId
+                    ? "Update Photo"
+                    : "Add Photo"}
                 </Button>
+                {editingEventId && (
+                  <Button
+                    variant="secondary"
+                    onClick={() => {
+                      setEditingEventId(null);
+                      setEventTitle("");
+                      setEventImage("");
+                    }}
+                    className="text-xs sm:text-sm px-3 sm:px-4 py-2 w-full sm:w-auto"
+                  >
+                    Cancel Edit
+                  </Button>
+                )}
               </div>
             </div>
           </div>
           <div>
             <div className="rounded-lg border border-gray-200 p-2 sm:p-3">
-              <h4 className="text-sm sm:text-base font-semibold text-gray-800">
-                Existing Photos ({combinedGallery.length})
-              </h4>
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-0">
+                <h4 className="text-sm sm:text-base font-semibold text-gray-800">
+                  Database Past Events ({pastEvents.length})
+                </h4>
+              </div>
               <ul className="divide-y divide-gray-100 mt-3">
-                {combinedGallery.map((item) => {
-                  const isDefault = defaultGalleryIds.has(item.id);
-                  return (
+                {loading && pastEvents.length === 0 ? (
+                  <li className="py-4 text-center text-gray-500 text-sm">
+                    Loading past events...
+                  </li>
+                ) : pastEvents.length === 0 ? (
+                  <li className="py-4 text-center text-gray-500 text-sm">
+                    No past events yet. Add one above!
+                  </li>
+                ) : (
+                  pastEvents.map((item) => (
                     <li
-                      key={item.id}
-                      className="py-2 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2"
+                      key={item._id}
+                      className={`py-2 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 ${
+                        editingEventId === item._id
+                          ? "bg-blue-50 border-l-4 border-blue-500 pl-2"
+                          : ""
+                      }`}
                     >
                       <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
                         <img
@@ -846,61 +946,27 @@ function AboutAdmin() {
                         </div>
                       </div>
                       <div className="flex items-center gap-2 flex-shrink-0">
-                        {isDefault ? (
-                          <>
-                            <Button
-                              variant="secondary"
-                              onClick={() => {
-                                setEventTitle(item.title);
-                                setEventImage("");
-                                setEditingDefaultGalleryId(item.id);
-                              }}
-                              className="text-xs px-2 py-1 flex-1 sm:flex-none"
-                            >
-                              Edit
-                            </Button>
-                            <Button
-                              variant="danger"
-                              onClick={() => {
-                                const ids = new Set(removedDefaultGallery);
-                                ids.add(item.id);
-                                saveRemovedGallery(Array.from(ids));
-                              }}
-                              className="text-xs px-2 py-1 flex-1 sm:flex-none"
-                            >
-                              Remove
-                            </Button>
-                          </>
-                        ) : (
-                          <Button
-                            variant="secondary"
-                            onClick={() => removeGalleryItem(item.id)}
-                            className="text-xs px-2 py-1 w-full sm:w-auto"
-                          >
-                            Remove
-                          </Button>
-                        )}
+                        <Button
+                          variant="secondary"
+                          onClick={() => editGalleryItem(item)}
+                          disabled={loading}
+                          className="text-xs px-2 py-1 flex-1 sm:flex-none"
+                        >
+                          Edit
+                        </Button>
+                        <Button
+                          variant="danger"
+                          onClick={() => removeGalleryItem(item._id)}
+                          disabled={loading}
+                          className="text-xs px-2 py-1 flex-1 sm:flex-none"
+                        >
+                          Delete
+                        </Button>
                       </div>
                     </li>
-                  );
-                })}
-                {combinedGallery.length === 0 && (
-                  <li className="py-6 text-sm text-gray-500 text-center">
-                    No photos yet.
-                  </li>
+                  ))
                 )}
               </ul>
-              {editingDefaultGalleryId != null && (
-                <div className="mt-2 text-xs text-amber-700 bg-amber-50 border border-amber-200 p-2 rounded">
-                  Replacing default photo. Saving will hide the original.
-                  <button
-                    className="ml-2 underline"
-                    onClick={() => setEditingDefaultGalleryId(null)}
-                  >
-                    Cancel
-                  </button>
-                </div>
-              )}
             </div>
           </div>
         </div>

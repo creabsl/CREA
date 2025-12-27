@@ -330,3 +330,20 @@ export type DocumentFeedItem = {
   externalUrl?: string;
   fileName?: string;
 };
+
+export type AboutMilestone = {
+  _id: string;
+  year: string;
+  title: string;
+  description: string;
+  icon: string;
+  order: number;
+  isActive: boolean;
+  createdBy?: {
+    _id: string;
+    name: string;
+    email: string;
+  };
+  createdAt: string;
+  updatedAt: string;
+};
