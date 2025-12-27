@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from "react";
 import { motion } from "framer-motion";
 import Button from "./Button";
 import Spinner from "./Spinner";
+import BulkUploadModal from "./BulkUploadModal";
 import {
   getAllMemberships,
   deleteMembership,
@@ -19,6 +20,7 @@ export default function MembershipsAdmin() {
   const [selectMode, setSelectMode] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [deleting, setDeleting] = useState(false);
+  const [showBulkUpload, setShowBulkUpload] = useState(false);
 
   useEffect(() => {
     fetchMemberships();
@@ -497,7 +499,14 @@ export default function MembershipsAdmin() {
             </select>
           </div>
           <div className="flex items-end gap-2">
-            <Button onClick={exportToCSV} variant="primary" className="flex-1">
+            <Button
+              onClick={() => setShowBulkUpload(true)}
+              variant="primary"
+              className="flex-1"
+            >
+              Bulk Upload
+            </Button>
+            <Button onClick={exportToCSV} variant="secondary" className="flex-1">
               Export CSV
             </Button>
             <Button
@@ -796,6 +805,16 @@ export default function MembershipsAdmin() {
           </table>
         </div>
       </div>
+
+      {/* Bulk Upload Modal */}
+      <BulkUploadModal
+        isOpen={showBulkUpload}
+        onClose={() => setShowBulkUpload(false)}
+        onSuccess={() => {
+          setShowBulkUpload(false);
+          fetchMemberships();
+        }}
+      />
     </motion.div>
   );
 }

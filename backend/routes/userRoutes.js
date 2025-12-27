@@ -7,8 +7,6 @@ const {
   updateUser,
   getProfile,
   updateProfile,
-  activateMembership,
-  generateMemberIdForUser,
 } = require("../controllers/userController");
 const { protect, adminOnly } = require("../middleware/authMiddleware");
 
@@ -18,9 +16,6 @@ router.post("/login", loginUser);
 // Self profile (any authenticated user)
 router.get("/profile", protect, getProfile);
 router.put("/profile", protect, updateProfile);
-
-// Membership activation
-router.post("/activate-membership", protect, activateMembership);
 
 // Admin member management
 router.get("/", protect, adminOnly, listUsers);
@@ -78,11 +73,5 @@ router.post("/bulk-delete", protect, adminOnly, async (req, res) => {
     });
   }
 });
-router.post(
-  "/:id/generate-member-id",
-  protect,
-  adminOnly,
-  generateMemberIdForUser
-);
 
 module.exports = router;

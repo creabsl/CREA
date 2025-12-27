@@ -125,7 +125,6 @@ exports.loginUser = async (req, res) => {
       division: user.division,
       department: user.department,
       mobile: user.mobile,
-      memberId: user.memberId,
       membershipType: user.membershipType,
       isMember: user.isMember,
       token: generateToken(user._id),
@@ -216,7 +215,6 @@ exports.getProfile = async (req, res) => {
       department: user.department,
       mobile: user.mobile,
       dateOfBirth: user.dateOfBirth,
-      memberId: user.memberId,
       membershipType: user.membershipType,
       isMember: user.isMember,
     });
@@ -270,6 +268,7 @@ exports.updateProfile = async (req, res) => {
   }
 };
 
+<<<<<<< HEAD
 // @desc    Activate membership (generate Member ID, update status, send email)
 // @route   POST /api/users/activate-membership
 // @access  Private (authenticated user)
@@ -469,3 +468,6 @@ exports.generateMemberIdForUser = async (req, res) => {
     return res.status(500).json({ message: "Server error" });
   }
 };
+=======
+
+>>>>>>> 7222243 (feat: Migrate to single-source membership system with CREA IDs)

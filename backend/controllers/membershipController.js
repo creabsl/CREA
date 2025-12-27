@@ -22,8 +22,8 @@ if (process.env.RAZORPAY_KEY_ID && process.env.RAZORPAY_KEY_SECRET) {
 const transporter = nodemailer.createTransport({
   service: "gmail",
   auth: {
-    user: process.env.EMAIL_USER || "your-email@gmail.com",
-    pass: process.env.EMAIL_PASSWORD || "your-app-password",
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASSWORD,
   },
 });
 
@@ -156,36 +156,7 @@ const generateMembershipReceipt = async (membership, razorpayPaymentId) => {
   });
 };
 
-/**
- * Generate unique member ID based on type
- * Format: ORD-YYYY-XXXX for Ordinary, LIF-YYYY-XXXX for Lifetime
- */
-const generateMemberId = async (membershipType) => {
-  try {
-    const currentYear = new Date().getFullYear();
-    const prefix = membershipType === "ordinary" ? "ORD" : "LIF";
 
-    // Count existing members of this type to generate sequential number
-    const count = await User.countDocuments({
-      memberId: { $regex: `^${prefix}-${currentYear}` },
-    });
-
-    const sequentialNumber = (count + 1).toString().padStart(4, "0");
-    const memberId = `${prefix}-${currentYear}-${sequentialNumber}`;
-
-    // Check if this ID already exists (collision prevention)
-    const existingUser = await User.findOne({ memberId });
-    if (existingUser) {
-      // If collision, recursively try next number
-      return generateMemberId(membershipType);
-    }
-
-    return memberId;
-  } catch (error) {
-    console.error("Error generating member ID:", error);
-    throw error;
-  }
-};
 
 /**
  * Send Membership Receipt Email with Member ID
@@ -193,20 +164,18 @@ const generateMemberId = async (membershipType) => {
 const sendMembershipReceiptEmail = async (
   membership,
   receiptPath,
-  razorpay_payment_id,
-  memberId
+  razorpay_payment_id
 ) => {
   try {
     const membershipTypeLabel =
       membership.type === "ordinary"
         ? "Ordinary Membership"
         : "Lifetime Membership";
-    const memberIdPrefix = membership.type === "ordinary" ? "ORD" : "LIF";
 
     const mailOptions = {
       from: process.env.EMAIL_USER || "noreply@crea.org",
       to: membership.email,
-      subject: `🎉 Welcome to CREA! Your Member ID: ${memberId}`,
+      subject: `🎉 Welcome to CREA! Your Member ID: ${membership.membershipId}`,
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9f9f9;">
           <div style="background: linear-gradient(135deg, #1e5a8e 0%, #2874b8 100%); color: white; padding: 30px; border-radius: 10px 10px 0 0; text-align: center;">
@@ -228,7 +197,7 @@ const sendMembershipReceiptEmail = async (
               <table style="width: 100%; border-collapse: collapse;">
                 <tr>
                   <td style="padding: 8px 0; color: #666; font-weight: bold;">Member ID:</td>
-                  <td style="padding: 8px 0; color: #1e5a8e; font-weight: bold; font-size: 18px;">${memberId}</td>
+                  <td style="padding: 8px 0; color: #1e5a8e; font-weight: bold; font-size: 18px;">${membership.membershipId}</td>
                 </tr>
                 <tr>
                   <td style="padding: 8px 0; color: #666;">Membership Type:</td>
@@ -236,7 +205,7 @@ const sendMembershipReceiptEmail = async (
                 </tr>
                 <tr>
                   <td style="padding: 8px 0; color: #666;">Payment ID:</td>
-                  <td style="padding: 8px 0; color: #333; font-family: monospace;">${razorpayPaymentId}</td>
+                  <td style="padding: 8px 0; color: #333; font-family: monospace;">${razorpay_payment_id}</td>
                 </tr>
                 <tr>
                   <td style="padding: 8px 0; color: #666;">Amount Paid:</td>
@@ -296,7 +265,7 @@ const sendMembershipReceiptEmail = async (
 
     await transporter.sendMail(mailOptions);
     console.log(
-      `✅ Membership email sent to ${membership.email} with Member ID: ${memberId}`
+      `✅ Membership email sent to ${membership.email} with Member ID: ${membership.membershipId}`
     );
   } catch (error) {
     console.error("❌ Error sending membership receipt email:", error);
@@ -539,8 +508,7 @@ exports.verifyPayment = async (req, res) => {
 
     await membership.save();
 
-    // Generate unique member ID
-    let memberId = null;
+    // Find or create user account (for login purposes only)
     let user = null;
 
     try {
@@ -548,26 +516,7 @@ exports.verifyPayment = async (req, res) => {
       user = await User.findOne({ email: membership.email });
 
       if (user) {
-        // Check if user is upgrading from Ordinary to Lifetime
-        const isUpgrade =
-          user.membershipType === "Ordinary" && membership.type === "lifetime";
-
-        if (isUpgrade) {
-          console.log(
-            `🔄 User ${user.email} is upgrading from Ordinary to Lifetime membership`
-          );
-          // Generate new Lifetime member ID
-          memberId = await generateMemberId("lifetime");
-        } else if (!user.memberId) {
-          // User exists but doesn't have member ID yet (first membership)
-          memberId = await generateMemberId(membership.type);
-        } else {
-          // User already has member ID, keep existing one
-          memberId = user.memberId;
-        }
-
         // Update user's membership details
-        user.memberId = memberId;
         user.membershipType =
           membership.type === "ordinary" ? "Ordinary" : "Lifetime";
         user.isMember = true;
@@ -580,13 +529,8 @@ exports.verifyPayment = async (req, res) => {
           membership.personalDetails?.dateOfBirth || user.dateOfBirth;
 
         await user.save();
-        console.log(
-          `✅ Updated existing user ${user.email} with Member ID: ${memberId}, Type: ${user.membershipType}`
-        );
       } else {
         // Create new user account (user doesn't exist)
-        memberId = await generateMemberId(membership.type);
-
         // Generate a temporary password (user can reset via forgot password)
         const tempPassword =
           Math.random().toString(36).slice(-8) +
@@ -601,7 +545,6 @@ exports.verifyPayment = async (req, res) => {
           department: membership.department,
           mobile: membership.mobile,
           dateOfBirth: membership.personalDetails?.dateOfBirth,
-          memberId: memberId,
           membershipType:
             membership.type === "ordinary" ? "Ordinary" : "Lifetime",
           isMember: true,
@@ -609,16 +552,15 @@ exports.verifyPayment = async (req, res) => {
         });
 
         await user.save();
-        console.log(
-          `✅ Created new user account for ${user.email} with Member ID: ${memberId}`
-        );
       }
     } catch (userError) {
       console.error("❌ Error creating/updating user account:", userError);
       // Don't fail the payment verification, but log the error
     }
 
-    // Generate receipt PDF and send email with member ID
+    // Generate receipt PDF and send email
+    let emailSent = false;
+    let emailError = null;
     try {
       const receiptPath = await generateMembershipReceipt(
         membership,
@@ -627,14 +569,15 @@ exports.verifyPayment = async (req, res) => {
       await sendMembershipReceiptEmail(
         membership,
         receiptPath,
-        razorpay_payment_id,
-        memberId
+        razorpay_payment_id
       );
       console.log(`✅ Receipt and welcome email sent to ${membership.email}`);
+      emailSent = true;
     } catch (receiptError) {
+      emailError = receiptError.message;
       console.error(
-        "❌ Receipt generation error (non-blocking):",
-        receiptError
+        "❌ Receipt/email error (non-blocking):",
+        receiptError.message
       );
       // Continue - don't fail payment verification
     }
@@ -644,10 +587,10 @@ exports.verifyPayment = async (req, res) => {
       message: "Payment verified successfully",
       membershipId: membership._id,
       membershipNumber: membership.membershipId,
-      memberId: memberId,
       status: membership.status,
       paymentStatus: membership.paymentStatus,
-      receiptSent: true,
+      receiptSent: emailSent,
+      emailError: emailError,
       isUpgrade:
         user?.membershipType === "Lifetime" && membership.type === "lifetime",
     });
@@ -1068,6 +1011,37 @@ exports.bulkUploadMembers = async (req, res) => {
   }
 };
 
+// GET /api/memberships/my-membership (get current user's membership)
+exports.getMyMembership = async (req, res) => {
+  try {
+    const userEmail = req.user.email;
+    
+    const membership = await Membership.findOne({ email: userEmail })
+      .sort({ createdAt: -1 }); // Get the latest membership
+    
+    if (!membership) {
+      return res.status(404).json({ 
+        success: false, 
+        message: "No membership found" 
+      });
+    }
+
+    return res.json({
+      success: true,
+      membership: {
+        ...membership.toObject(),
+        isExpired: membership.isExpired(),
+      }
+    });
+  } catch (err) {
+    console.error("Get my membership error:", err);
+    return res.status(500).json({ 
+      success: false, 
+      message: "Server error" 
+    });
+  }
+};
+
 // GET /api/memberships (admin)
 exports.listMemberships = async (req, res) => {
   try {
@@ -1246,14 +1220,10 @@ exports.bulkUploadMembers = async (req, res) => {
       total: members.length,
     };
 
+    // Minimal required fields - only what we absolutely need to create a record
     const requiredFields = [
       "name",
-      "email",
       "mobile",
-      "designation",
-      "division",
-      "department",
-      "type",
     ];
 
     for (let i = 0; i < members.length; i++) {
@@ -1268,8 +1238,9 @@ exports.bulkUploadMembers = async (req, res) => {
           normalizedData[normalizedKey] = memberData[key];
         });
 
-        // Map common field variations
+        // Enhanced field mapping with all supported fields
         const fieldMapping = {
+          // Basic info
           name: ["name", "full name", "fullname", "member name"],
           email: ["email", "e-mail", "email address"],
           mobile: [
@@ -1282,18 +1253,57 @@ exports.bulkUploadMembers = async (req, res) => {
           designation: ["designation", "position", "post"],
           division: ["division", "div"],
           department: ["department", "dept"],
-          type: ["type", "membership type", "membershiptype"],
           place: ["place", "location"],
           unit: ["unit"],
+          
+          // Membership info
+          type: ["type", "membership type", "membershiptype"],
+          status: ["status", "membership status"],
           paymentMethod: ["payment method", "paymentmethod", "payment"],
+          paymentStatus: ["payment status", "paymentstatus"],
           paymentAmount: ["payment amount", "paymentamount", "amount"],
+          paymentReference: [
+            "payment reference", 
+            "paymentreference", 
+            "transaction id", 
+            "transactionid",
+            "payment utr number",
+            "utr number",
+            "utr",
+          ],
+          
+          // Dates
           purchaseDate: [
+            "timestamp",
             "purchase date",
             "purchasedate",
             "date of purchase",
+            "date created",
+            "datecreated",
             "membership date",
             "start date",
             "startdate",
+          ],
+          dateOfBirth: [
+            "date of birth",
+            "dateofbirth",
+            "dob",
+            "birth date",
+            "birthdate",
+          ],
+          validFrom: [
+            "valid from",
+            "validfrom",
+            "validity from",
+            "validity start",
+          ],
+          validUntil: [
+            "valid until",
+            "validuntil",
+            "valid to",
+            "validto",
+            "validity end",
+            "validity until",
           ],
         };
 
@@ -1303,7 +1313,8 @@ exports.bulkUploadMembers = async (req, res) => {
           for (const variation of variations) {
             if (
               normalizedData[variation] !== undefined &&
-              normalizedData[variation] !== ""
+              normalizedData[variation] !== "" &&
+              normalizedData[variation] !== "N/A"
             ) {
               processedData[field] = normalizedData[variation];
               break;
@@ -1324,90 +1335,188 @@ exports.bulkUploadMembers = async (req, res) => {
           continue;
         }
 
-        // Validate membership type
-        const membershipType = processedData.type.toLowerCase();
-        if (!["ordinary", "lifetime"].includes(membershipType)) {
-          results.failed.push({
-            row: rowNumber,
-            data: memberData,
-            error: `Invalid membership type: ${processedData.type}. Must be 'ordinary' or 'lifetime'`,
-          });
-          continue;
+        // Generate temporary email if not provided
+        const needsProfileCompletion = [];
+        if (!processedData.email) {
+          processedData.email = `temp_${Date.now()}_${i}@incomplete.profile`;
+          needsProfileCompletion.push("email");
         }
 
-        // Parse and validate purchase date if provided
-        let purchaseDate = new Date(); // Default to current date
-        if (processedData.purchaseDate) {
-          const parsedDate = new Date(processedData.purchaseDate);
-          if (isNaN(parsedDate.getTime())) {
+        // Set defaults for optional critical fields
+        if (!processedData.designation) {
+          processedData.designation = "Not Specified";
+          needsProfileCompletion.push("designation");
+        }
+        if (!processedData.division) {
+          processedData.division = "Not Specified";
+          needsProfileCompletion.push("division");
+        }
+        if (!processedData.department) {
+          processedData.department = "Not Specified";
+          needsProfileCompletion.push("department");
+        }
+        if (!processedData.type) {
+          processedData.type = "ordinary";
+          needsProfileCompletion.push("membership type");
+        }
+
+        // Validate membership type (if provided)
+        let membershipType = "ordinary"; // default
+        if (processedData.type) {
+          membershipType = processedData.type.toLowerCase();
+          if (!["ordinary", "lifetime"].includes(membershipType)) {
             results.failed.push({
               row: rowNumber,
               data: memberData,
-              error: `Invalid purchase date format: ${processedData.purchaseDate}. Use YYYY-MM-DD or MM/DD/YYYY`,
+              error: `Invalid membership type: ${processedData.type}. Must be 'ordinary' or 'lifetime'`,
             });
             continue;
           }
-          purchaseDate = parsedDate;
         }
 
-        // Calculate validity dates based on purchase date
-        const validFrom = new Date(purchaseDate);
-        let validUntil;
-
-        if (membershipType === "lifetime") {
-          validUntil = new Date(2099, 11, 31); // Far future date for lifetime members
-        } else {
-          // For ordinary membership, add 1 year to purchase date
-          validUntil = new Date(validFrom);
-          validUntil.setFullYear(validUntil.getFullYear() + 1);
-        }
-
-        // Prepare membership document
-        const membershipDoc = {
-          name: processedData.name,
-          email: processedData.email.toLowerCase().trim(),
-          mobile: processedData.mobile,
-          designation: processedData.designation,
-          division: processedData.division,
-          department: processedData.department,
-          place: processedData.place || "Not specified",
-          unit: processedData.unit || "Not specified",
-          type: membershipType,
-          paymentMethod: processedData.paymentMethod || "upi",
-          paymentAmount:
-            processedData.paymentAmount ||
-            (membershipType === "lifetime" ? 5000 : 500),
-          paymentStatus: "pending",
-          status: "pending",
-          validFrom: validFrom,
-          validUntil: validUntil,
-          paymentDate: purchaseDate,
-        };
-
-        // Check for duplicate email
-        const existingMember = await Membership.findOne({
-          email: membershipDoc.email,
-        });
-        if (existingMember) {
+        // Validate and parse status if provided
+        const status = processedData.status
+          ? processedData.status.toLowerCase()
+          : "pending";
+        if (!["pending", "active", "expired", "rejected"].includes(status)) {
           results.failed.push({
             row: rowNumber,
             data: memberData,
-            error: `Email already exists: ${membershipDoc.email}`,
+            error: `Invalid status: ${processedData.status}. Must be 'pending', 'active', 'expired', or 'rejected'`,
           });
           continue;
         }
 
-        // Create and save membership (validity dates already set above)
+        // Validate payment status if provided
+        const paymentStatus = processedData.paymentStatus
+          ? processedData.paymentStatus.toLowerCase()
+          : "pending";
+        if (!["pending", "completed", "failed"].includes(paymentStatus)) {
+          results.failed.push({
+            row: rowNumber,
+            data: memberData,
+            error: `Invalid payment status: ${processedData.paymentStatus}. Must be 'pending', 'completed', or 'failed'`,
+          });
+          continue;
+        }
+
+        // Parse dates - Use sheet timestamp if available, otherwise current date
+        let purchaseDate = new Date();
+        if (processedData.purchaseDate) {
+          const parsedDate = parseDate(processedData.purchaseDate);
+          if (parsedDate) {
+            purchaseDate = parsedDate;
+          }
+        }
+
+        // Parse valid from date
+        let validFrom = new Date(purchaseDate);
+        if (processedData.validFrom) {
+          const parsedDate = parseDate(processedData.validFrom);
+          if (parsedDate) {
+            validFrom = parsedDate;
+          }
+        }
+
+        // Parse valid until date
+        let validUntil;
+        if (processedData.validUntil) {
+          const parsedDate = parseDate(processedData.validUntil);
+          if (parsedDate) {
+            validUntil = parsedDate;
+          }
+        }
+
+        // If validUntil not provided, calculate based on type
+        if (!validUntil) {
+          if (membershipType === "lifetime") {
+            validUntil = new Date(2099, 11, 31);
+          } else {
+            validUntil = new Date(validFrom);
+            validUntil.setFullYear(validUntil.getFullYear() + 1);
+          }
+        }
+
+        // Parse date of birth
+        let dateOfBirth = null;
+        if (processedData.dateOfBirth) {
+          const parsedDate = parseDate(processedData.dateOfBirth);
+          if (parsedDate) {
+            dateOfBirth = parsedDate;
+          }
+        }
+
+        // Get or default payment details
+        const paymentMethod = (processedData.paymentMethod || "upi").toLowerCase();
+        const paymentAmount =
+          processedData.paymentAmount ||
+          (membershipType === "lifetime" ? 10000 : 500);
+
+        // Prepare membership document
+        const membershipDoc = {
+          name: processedData.name.trim(),
+          email: processedData.email.toLowerCase().trim(),
+          mobile: String(processedData.mobile).trim(),
+          designation: processedData.designation.trim(),
+          division: processedData.division.trim(),
+          department: processedData.department.trim(),
+          place: (processedData.place || "Not specified").trim(),
+          unit: (processedData.unit || "Not specified").trim(),
+          type: membershipType,
+          status: status,
+          paymentMethod: ["upi", "card", "netbanking", "qr"].includes(paymentMethod)
+            ? paymentMethod
+            : "upi",
+          paymentStatus: paymentStatus,
+          paymentAmount: Number(paymentAmount),
+          paymentReference:
+            processedData.paymentReference || null,
+          validFrom: validFrom,
+          validUntil: validUntil,
+          paymentDate: purchaseDate,
+          createdAt: purchaseDate, // Use the timestamp from sheet, not current date
+          updatedAt: purchaseDate,
+          personalDetails: {
+            dateOfBirth: dateOfBirth,
+          },
+        };
+
+        // Check for duplicate email (only if it's a real email, not temp)
+        if (!membershipDoc.email.includes("@incomplete.profile")) {
+          const existingMember = await Membership.findOne({
+            email: membershipDoc.email,
+          });
+          if (existingMember) {
+            results.failed.push({
+              row: rowNumber,
+              data: memberData,
+              error: `Email already exists: ${membershipDoc.email}`,
+            });
+            continue;
+          }
+        }
+
+        // Create and save membership
         const membership = new Membership(membershipDoc);
         await membership.save();
+
+        const successMessage = needsProfileCompletion.length > 0
+          ? `✓ Created - User needs to complete: ${needsProfileCompletion.join(", ")}`
+          : "✓ Created successfully";
 
         results.success.push({
           row: rowNumber,
           membershipId: membership.membershipId,
           name: membership.name,
-          email: membership.email,
+          email: membership.email.includes("@incomplete.profile") 
+            ? "⚠️ Email required" 
+            : membership.email,
+          status: membership.status,
           validFrom: membership.validFrom,
           validUntil: membership.validUntil,
+          message: successMessage,
+          needsProfileCompletion: needsProfileCompletion.length > 0,
+          incompleteFields: needsProfileCompletion,
         });
       } catch (error) {
         results.failed.push({
@@ -1439,6 +1548,72 @@ exports.bulkUploadMembers = async (req, res) => {
     });
   }
 };
+
+/**
+ * Helper function to parse dates in multiple formats
+ */
+function parseDate(dateString) {
+  if (!dateString) return null;
+
+  // Remove extra whitespace
+  dateString = String(dateString).trim();
+
+  // Check if it's an Excel serial number (number format)
+  const excelSerial = parseFloat(dateString);
+  if (!isNaN(excelSerial) && excelSerial > 1000) {
+    // Excel date serial number (days since 1900-01-01)
+    const excelEpoch = new Date(1899, 11, 30); // Dec 30, 1899
+    const msPerDay = 24 * 60 * 60 * 1000;
+    const date = new Date(excelEpoch.getTime() + excelSerial * msPerDay);
+    if (!isNaN(date.getTime())) {
+      return date;
+    }
+  }
+
+  // Try parsing as-is first (handles ISO and many formats)
+  let date = new Date(dateString);
+  if (!isNaN(date.getTime())) {
+    return date;
+  }
+
+  // Try M/D/YYYY H:MM:SS format (e.g., "7/12/2024 15:55:59")
+  const timestampMatch = dateString.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})\s+\d{1,2}:\d{1,2}:\d{1,2}$/);
+  if (timestampMatch) {
+    const month = parseInt(timestampMatch[1], 10) - 1;
+    const day = parseInt(timestampMatch[2], 10);
+    const year = parseInt(timestampMatch[3], 10);
+    date = new Date(year, month, day);
+    if (!isNaN(date.getTime())) {
+      return date;
+    }
+  }
+
+  // Try DD/MM/YYYY format
+  const ddmmyyyyMatch = dateString.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (ddmmyyyyMatch) {
+    const day = parseInt(ddmmyyyyMatch[1], 10);
+    const month = parseInt(ddmmyyyyMatch[2], 10) - 1;
+    const year = parseInt(ddmmyyyyMatch[3], 10);
+    date = new Date(year, month, day);
+    if (!isNaN(date.getTime())) {
+      return date;
+    }
+  }
+
+  // Try M/D/YYYY format (e.g., "7/12/2024")
+  const mdyyyyMatch = dateString.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (mdyyyyMatch) {
+    const month = parseInt(mdyyyyMatch[1], 10) - 1;
+    const day = parseInt(mdyyyyMatch[2], 10);
+    const year = parseInt(mdyyyyMatch[3], 10);
+    date = new Date(year, month, day);
+    if (!isNaN(date.getTime())) {
+      return date;
+    }
+  }
+
+  return null;
+}
 
 /**
  * Upgrade Membership from Ordinary to Lifetime

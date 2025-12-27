@@ -12,6 +12,7 @@ const {
   createOrder,
   verifyPayment,
   upgradeMembership,
+  getMyMembership,
 } = require("../controllers/membershipController");
 const { protect, adminOnly } = require("../middleware/authMiddleware");
 const { uploadBulkMembers } = require("../middleware/upload");
@@ -56,6 +57,7 @@ router.post("/", protect, submitMembership);
 
 // Protected routes (logged-in users)
 router.get("/stats", protect, getMembershipStats);
+router.get("/my-membership", protect, getMyMembership);
 
 // Admin routes
 router.get("/", protect, adminOnly, listMemberships);

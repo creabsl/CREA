@@ -17,7 +17,6 @@ const userSchema = new mongoose.Schema(
     department: { type: String },
     mobile: { type: String },
     dateOfBirth: { type: Date },
-    memberId: { type: String, unique: true, sparse: true }, // Unique Member ID (ORD-XXXX or LIF-XXXX)
     membershipType: {
       type: String,
       enum: ["Ordinary", "Lifetime", "None"],

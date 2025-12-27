@@ -61,8 +61,31 @@ const membershipSchema = new mongoose.Schema(
 membershipSchema.pre('save', async function(next) {
   if (!this.membershipId) {
     const currentYear = new Date().getFullYear();
-    const count = await mongoose.model('Membership').countDocuments();
-    this.membershipId = `CREA${currentYear}${(count + 1).toString().padStart(4, '0')}`;
+    let membershipId;
+    let attempts = 0;
+    const maxAttempts = 100;
+    
+    // Keep trying until we find a unique ID
+    while (attempts < maxAttempts) {
+      const count = await mongoose.model('Membership').countDocuments();
+      const randomSuffix = Math.floor(Math.random() * 1000);
+      const idNumber = count + 1 + attempts + randomSuffix;
+      membershipId = `CREA${currentYear}${idNumber.toString().padStart(4, '0')}`;
+      
+      // Check if this ID already exists
+      const existing = await mongoose.model('Membership').findOne({ membershipId });
+      if (!existing) {
+        this.membershipId = membershipId;
+        break;
+      }
+      attempts++;
+    }
+    
+    // Fallback: use timestamp-based ID if still no unique ID found
+    if (!this.membershipId) {
+      const timestamp = Date.now().toString().slice(-4);
+      this.membershipId = `CREA${currentYear}${timestamp}`;
+    }
   }
   next();
 });

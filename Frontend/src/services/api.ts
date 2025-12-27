@@ -1290,6 +1290,22 @@ export async function updateProfile(data: {
 // Get current user profile
 export async function getProfile(): Promise<User> {
   const res = await request<AuthDTO>("/api/users/profile", { method: "GET" });
+  
+  // Fetch user's own membership to get CREA ID
+  let membershipId: string | undefined;
+  try {
+    const membershipRes = await request<{ success: boolean; membership: any }>(
+      "/api/memberships/my-membership", 
+      { method: "GET" }
+    );
+    if (membershipRes.success && membershipRes.membership) {
+      membershipId = membershipRes.membership.membershipId;
+    }
+  } catch (err) {
+    // User might not have a membership yet, that's okay
+    // Silent handling - user may not have membership yet
+  }
+  
   return {
     id: res._id,
     name: res.name,
@@ -1301,7 +1317,7 @@ export async function getProfile(): Promise<User> {
     mobile: res.mobile,
     dateOfBirth: res.dateOfBirth,
     membershipType: res.membershipType,
-    memberId: res.memberId,
+    memberId: membershipId, // Use CREA ID from Membership table
     isMember: res.isMember,
   };
 }
@@ -1436,7 +1452,17 @@ export async function adminListUsers(params?: {
   const list = await request<UserDTO[]>(
     `/api/users${q.toString() ? `?${q.toString()}` : ""}`
   );
-  return list.map(toMemberUser);
+  
+  // Fetch all memberships to get CREA membership IDs
+  const memberships = await request<any[]>("/api/memberships");
+  const membershipMap = new Map(memberships.map(m => [m.email, m.membershipId]));
+  
+  return list.map(u => {
+    const memberUser = toMemberUser(u);
+    // Override memberId with CREA ID from Membership table
+    memberUser.memberId = membershipMap.get(u.email) || undefined;
+    return memberUser;
+  });
 }
 
 export async function adminUpdateUser(

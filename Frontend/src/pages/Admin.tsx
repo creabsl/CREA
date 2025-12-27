@@ -1656,113 +1656,15 @@ function MembersAdmin({
                       </select>
                     </td>
                     <td className="px-4 py-3">
-                      {(() => {
-                        const membershipType = (e.membershipType ??
-                          u.membershipType) as string;
-                        const needsNewId =
-                          membershipType !== "None" &&
-                          (!u.memberId ||
-                            (membershipType === "Lifetime" &&
-                              u.memberId.startsWith("ORD-")) ||
-                            (membershipType === "Ordinary" &&
-                              u.memberId.startsWith("LIF-")));
-
-                        if (u.memberId && !needsNewId) {
-                          return (
-                            <span className="text-sm font-bold text-[var(--primary)]">
-                              {u.memberId}
-                            </span>
-                          );
-                        } else if (needsNewId) {
-                          return (
-                            <button
-                              onClick={async () => {
-                                const currentDbType = u.membershipType;
-                                const targetType = membershipType;
-                                const currentId = u.memberId;
-
-                                const action = currentId
-                                  ? `Upgrade ${u.name} from ${currentId} to ${targetType} membership`
-                                  : `Generate ${targetType} Member ID for ${u.name}`;
-
-                                if (
-                                  confirm(
-                                    `${action}?\n\nThis will ${
-                                      currentId
-                                        ? "invalidate the old ID and generate a new one"
-                                        : "create a new Member ID"
-                                    }.`
-                                  )
-                                ) {
-                                  try {
-                                    // If membership type has changed in editing state, save it first
-                                    if (
-                                      e.membershipType &&
-                                      e.membershipType !== currentDbType
-                                    ) {
-                                      await onUpdate(u.id, {
-                                        membershipType: e.membershipType,
-                                      });
-                                      await new Promise((resolve) =>
-                                        setTimeout(resolve, 500)
-                                      );
-                                    }
-
-                                    const res = await fetch(
-                                      `${
-                                        import.meta.env.VITE_API_URL ||
-                                        "https://api.crea.org.in"
-                                      }/api/users/${u.id}/generate-member-id`,
-                                      {
-                                        method: "POST",
-                                        headers: {
-                                          Authorization: `Bearer ${localStorage.getItem(
-                                            "crea:token"
-                                          )}`,
-                                          "Content-Type": "application/json",
-                                        },
-                                        body: JSON.stringify({
-                                          membershipType: targetType,
-                                        }),
-                                      }
-                                    );
-
-                                    const data = await res.json();
-
-                                    if (res.ok && data.success) {
-                                      const message = data.isUpgrade
-                                        ? `✅ Member ID upgraded successfully!\n\nOld ID: ${data.oldMemberId} (no longer valid)\nNew ID: ${data.memberId}\nType: ${data.membershipType}`
-                                        : `✅ Member ID generated successfully!\n\nNew ID: ${data.memberId}\nType: ${data.membershipType}`;
-                                      alert(message);
-                                      onReload(division);
-                                    } else {
-                                      alert(
-                                        data.message ||
-                                          "Failed to generate Member ID"
-                                      );
-                                    }
-                                  } catch (err) {
-                                    console.error(
-                                      "Generate Member ID error:",
-                                      err
-                                    );
-                                    alert("Error: " + (err as Error).message);
-                                  }
-                                }
-                              }}
-                              className="text-xs px-2 py-1 bg-green-600 text-white rounded hover:bg-green-700 whitespace-nowrap"
-                            >
-                              {u.memberId ? "Upgrade ID" : "Generate ID"}
-                            </button>
-                          );
-                        } else {
-                          return (
-                            <span className="text-xs text-gray-400">
-                              No membership
-                            </span>
-                          );
-                        }
-                      })()}
+                      {u.memberId ? (
+                        <span className="text-sm font-bold text-[var(--primary)]">
+                          {u.memberId}
+                        </span>
+                      ) : (
+                        <span className="text-xs text-gray-400">
+                          No membership
+                        </span>
+                      )}
                     </td>
                     <td className="px-4 py-3">
                       <select
@@ -5193,7 +5095,8 @@ function SettingsAdmin({
   };
 
   const membershipSettings = data.filter(
-    (s) => s.category === "Membership Settings"
+    (s) => s.category === "Membership Settings" && 
+    (s.key === "membership_ordinary_price" || s.key === "membership_lifetime_price")
   );
   const hasChanges = data.some(
     (s) => editing[s.key] !== undefined && editing[s.key] !== s.value
@@ -6783,11 +6686,7 @@ function DonationsAdmin() {
       setLoading(true);
       setError(null);
 
-      console.log("Fetching donations from API...");
-
       const data = await getAllDonations();
-      console.log("Donations data received:", data);
-      console.log("Number of donations:", data?.length || 0);
 
       setDonations(data || []);
     } catch (error) {
