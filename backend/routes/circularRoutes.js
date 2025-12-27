@@ -17,11 +17,13 @@ router.post(
   async (req, res) => {
     try {
       const body = req.body || {};
-      
+
       // Validate required fields
       const title = body.boardNumber || body.title;
       if (!title || !title.trim()) {
-        return res.status(400).json({ message: "Board Number/Title is required" });
+        return res
+          .status(400)
+          .json({ message: "Board Number/Title is required" });
       }
       if (!body.subject || !body.subject.trim()) {
         return res.status(400).json({ message: "Subject is required" });
@@ -29,13 +31,13 @@ router.post(
       if (!body.dateOfIssue) {
         return res.status(400).json({ message: "Date of Issue is required" });
       }
-      
+
       const doc = {
         title: title.trim(),
         subject: body.subject.trim(),
         dateOfIssue: new Date(body.dateOfIssue),
       };
-      
+
       if (req.file) {
         doc.fileName = req.file.filename;
         doc.mimeType = req.file.mimetype;
@@ -44,13 +46,13 @@ router.post(
       } else if (body.url) {
         doc.url = body.url;
       }
-      
+
       const created = await Circular.create(doc);
       return res.status(201).json(created);
     } catch (e) {
       console.error("Circular creation error:", e);
-      return res.status(500).json({ 
-        message: e.message || "Server error creating circular" 
+      return res.status(500).json({
+        message: e.message || "Server error creating circular",
       });
     }
   }
@@ -64,36 +66,37 @@ router.put(
   async (req, res) => {
     try {
       const patch = { ...req.body };
-      
+
       // Map boardNumber to title if provided
       if (patch.boardNumber) {
         patch.title = patch.boardNumber.trim();
         delete patch.boardNumber;
       }
-      
+
       // Trim string fields if they exist
       if (patch.title) patch.title = patch.title.trim();
       if (patch.subject) patch.subject = patch.subject.trim();
       if (patch.dateOfIssue) patch.dateOfIssue = new Date(patch.dateOfIssue);
-      
+
       if (req.file) {
         patch.fileName = req.file.filename;
         patch.mimeType = req.file.mimetype;
         patch.size = req.file.size;
         patch.url = `/uploads/circulars/${req.file.filename}`;
       }
-      
+
       const updated = await Circular.findByIdAndUpdate(req.params.id, patch, {
         new: true,
         runValidators: true,
       });
-      
-      if (!updated) return res.status(404).json({ message: "Circular not found" });
+
+      if (!updated)
+        return res.status(404).json({ message: "Circular not found" });
       return res.json(updated);
     } catch (e) {
       console.error("Circular update error:", e);
-      return res.status(500).json({ 
-        message: e.message || "Server error updating circular" 
+      return res.status(500).json({
+        message: e.message || "Server error updating circular",
       });
     }
   }
