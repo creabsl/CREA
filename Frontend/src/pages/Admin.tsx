@@ -76,9 +76,23 @@ import type { MemberUser, Setting } from "../services/api";
 
 export default function Admin() {
   usePageTitle("CREA • Admin");
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const urlTab = searchParams.get("tab");
   const urlSubTab = searchParams.get("subTab");
+
+  // Get initial tab from localStorage or URL or default to "events"
+  const getInitialTab = () => {
+    if (urlTab) return urlTab as any;
+    const savedTab = localStorage.getItem("adminActiveTab");
+    return (savedTab as any) || "events";
+  };
+
+  // Get initial document sub-tab from localStorage or URL or default to "circulars"
+  const getInitialDocumentSubTab = () => {
+    if (urlSubTab) return urlSubTab as any;
+    const savedSubTab = localStorage.getItem("adminDocumentSubTab");
+    return (savedSubTab as any) || "circulars";
+  };
 
   const [tab, setTab] = useState<
     | "events"
@@ -94,10 +108,10 @@ export default function Admin() {
     | "breaking-news"
     | "memberships"
     | "advertisements"
-  >((urlTab as any) || "events");
+  >(getInitialTab());
   const [documentSubTab, setDocumentSubTab] = useState<
     "circulars" | "manuals" | "court-cases"
-  >((urlSubTab as any) || "circulars");
+  >(getInitialDocumentSubTab());
   const [events, setEvents] = useState<EventItem[]>([]);
   const [manuals, setManuals] = useState<Manual[]>([]);
   const [circulars, setCirculars] = useState<Circular[]>([]);
@@ -108,6 +122,20 @@ export default function Admin() {
   const [transfers, setTransfers] = useState<MutualTransfer[]>([]);
   const [forumTopics, setForumTopics] = useState<ForumTopic[]>([]);
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
+
+  // Persist active tab to localStorage and URL when it changes
+  useEffect(() => {
+    localStorage.setItem("adminActiveTab", tab);
+    setSearchParams({ tab });
+  }, [tab, setSearchParams]);
+
+  // Persist document sub-tab to localStorage and URL when it changes
+  useEffect(() => {
+    if (tab === "documents") {
+      localStorage.setItem("adminDocumentSubTab", documentSubTab);
+      setSearchParams({ tab, subTab: documentSubTab });
+    }
+  }, [tab, documentSubTab, setSearchParams]);
 
   useEffect(() => {
     getEvents().then(setEvents).catch(console.error);

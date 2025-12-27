@@ -757,14 +757,9 @@ export default function Dashboard() {
                     triggerRef.current = el;
                   }
                 }}
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
+                onClick={() => {
                   setSelectedDivision(c.division);
                   setIsDepartmentModalOpen(true);
-                }}
-                onMouseDown={(e) => {
-                  e.preventDefault();
                 }}
                 className="bg-gray-50 rounded border border-gray-200 p-3 hover:border-blue-400 hover:bg-blue-50 transition-all cursor-pointer text-left group"
               >
@@ -791,7 +786,7 @@ export default function Dashboard() {
           setIsDepartmentModalOpen(false);
           setSelectedDivision(null);
         }}
-        division={selectedDivision || ""}
+        division={selectedDivision}
         triggerRef={triggerRef}
       />
 

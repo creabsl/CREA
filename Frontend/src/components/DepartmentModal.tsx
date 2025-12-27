@@ -23,24 +23,22 @@ export default function DepartmentModal({
   const [departmentStats, setDepartmentStats] = useState<DepartmentStat[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [position, setPosition] = useState<{ top: number; left: number } | null>(null);
   const tooltipRef = useRef<HTMLDivElement>(null);
 
-  // Prevent body scroll when modal is open
+  // Calculate position when modal opens
   useEffect(() => {
-    if (isOpen) {
-      const scrollY = window.scrollY;
-      document.body.style.position = "fixed";
-      document.body.style.top = `-${scrollY}px`;
-      document.body.style.width = "100%";
-
-      return () => {
-        document.body.style.position = "";
-        document.body.style.top = "";
-        document.body.style.width = "";
-        window.scrollTo(0, scrollY);
-      };
+    if (isOpen && triggerRef.current) {
+      const rect = triggerRef.current.getBoundingClientRect();
+      setPosition({
+        top: rect.bottom + window.scrollY + 12,
+        left: Math.max(
+          12,
+          rect.left + window.scrollX + rect.width / 2 - 160
+        ),
+      });
     }
-  }, [isOpen]);
+  }, [isOpen, triggerRef]);
 
   useEffect(() => {
     if (!isOpen || !division) {
@@ -108,27 +106,17 @@ export default function DepartmentModal({
 
   return (
     <AnimatePresence>
-      {isOpen && (
+      {isOpen && position && (
         <motion.div
           ref={tooltipRef}
           initial={{ opacity: 0, scale: 0.85, y: -10 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.85, y: -10 }}
           transition={{ duration: 0.2 }}
-          className="fixed z-50 bg-white rounded-lg shadow-2xl border border-gray-200 p-4 w-80"
+          className="absolute z-50 bg-white rounded-lg shadow-2xl border border-gray-200 p-4 w-80"
           style={{
-            top: triggerRef.current
-              ? triggerRef.current.getBoundingClientRect().bottom + 12
-              : "50%",
-            left: triggerRef.current
-              ? Math.max(
-                  12,
-                  triggerRef.current.getBoundingClientRect().left +
-                    triggerRef.current.getBoundingClientRect().width / 2 -
-                    160
-                )
-              : "50%",
-            transform: triggerRef.current ? "none" : "translate(-50%, -50%)",
+            top: `${position.top}px`,
+            left: `${position.left}px`,
           }}
         >
           {/* Header */}
